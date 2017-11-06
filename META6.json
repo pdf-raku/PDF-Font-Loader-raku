@@ -1,0 +1,16 @@
+{
+    "perl"        : "6.*",
+    "name"        : "PDF::Font::FreeType",
+    "version"     : "0.0.1",
+    "tags"        : ["pdf"],
+    "license"     : "Artistic-2.0",
+    "api"         : "PDF-1.7",
+    "auth"        : "github:p6-pdf",
+    "description" : "Font loader for the PDF Tool-chain",
+    "depends"     : [ "PDF::Lite", "PDF::Content", "Font::FreeType", "PDF" ],
+    "source-url"  : "git://github.com/p6-pdf/PDF-Lite-p6.git",
+    "provides"    : {
+        "PDF::Font::FreeType" : "lib/PDF/Font/FreeType.pm",
+        "PDF::Font::FreeType" : "lib/PDF/Font/FreeType/TrueType.pm"
+     }
+}
