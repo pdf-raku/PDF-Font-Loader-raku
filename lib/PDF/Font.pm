@@ -1,4 +1,4 @@
-class PDF::Font::FreeType {
+class PDF::Font {
 
     use Font::FreeType;
     use Font::FreeType::Face;
@@ -12,7 +12,7 @@ class PDF::Font::FreeType {
     }
 
     multi method load-font(TrueTypeFace $face, |c) {
-        (require PDF::Font::FreeType::TrueType).new( :$face, |c);
+        (require PDF::Font::TrueType).new( :$face, |c);
     }
 
     multi method load-font(Font::FreeType::Face $face, |c) {

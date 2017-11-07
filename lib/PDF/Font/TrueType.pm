@@ -1,4 +1,4 @@
-class PDF::Font::FreeType::TrueType {
+class PDF::Font::TrueType {
     use PDF::DAO;
     use PDF::IO::Blob;
     use PDF::Content::Font::Enc::Type1;
