@@ -2,7 +2,7 @@
     "perl"        : "6.*",
     "name"        : "PDF::Font",
     "version"     : "0.0.1",
-    "tags"        : ["pdf"],
+    "tags"        : ["pdf", "font"],
     "license"     : "Artistic-2.0",
     "api"         : "PDF-1.7",
     "auth"        : "github:p6-pdf",
