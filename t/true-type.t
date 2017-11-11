@@ -8,6 +8,7 @@ srand(123456);
 my $pdf = PDF::Lite.new;
 my $page = $pdf.add-page;
 my $font = PDF::Font.load-font("t/fonts/DejaVuSans.ttf");
+my $font2 = PDF::Font.load-font("t/fonts/DejaVuSans.ttf", :enc<win>);
 
 $page.text: {
    .font = .use-font: $font;
@@ -16,11 +17,12 @@ $page.text: {
 }
 $page = $pdf.add-page;
 $page.text: {
-   .font = .use-font: $font;
+   .font = .use-font: $font2;
    .text-position = [10, 10];
    .say: 'Bye, for now';
 }
-lives-ok { $pdf.save-as: "t/true-type.pdf" };
+##lives-ok {
+$pdf.save-as: "t/true-type.pdf";  ## };
 
 done-testing;
 
