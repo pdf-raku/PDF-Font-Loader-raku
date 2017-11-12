@@ -134,7 +134,7 @@ class PDF::Font::TrueType {
                 my @Widths;
                 my int $j = -2;
                 my $chars = [];
-                loop (my int $i = $!first-char; $i < $!last-char; $i++) {
+                loop (my int $i = $!first-char; $i <= $!last-char; $i++) {
                     my int $w = @!widths[$i];
                     if $w {
                         if ++$j == $i {
