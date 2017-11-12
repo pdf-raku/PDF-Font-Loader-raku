@@ -11,9 +11,9 @@ class PDF::Font::TrueType {
     has Blob $.font-stream is required;
     use PDF::Content::Font;
     has PDF::Content::Font $!dict;
-    has Int $!first-char;
-    has Int $!last-char;
-    has int16 @!widths;
+    has uint16 $!first-char;
+    has uint16 $!last-char;
+    has uint16 @!widths;
     my subset EncodingScheme of Str where 'mac'|'win'|'identity-h';
     has EncodingScheme $!enc;
 
@@ -26,15 +26,13 @@ class PDF::Font::TrueType {
 
     method encode(Str $text, :$str) {
         my buf8 $encoded = $!encoder.encode($text);
-        unless $!enc eq 'identity-h' {
-            my $to-unicode := $!encoder.to-unicode;
-            my $min = $encoded.min;
-            my $max = $encoded.max;
-            $!first-char = $min if !$!first-char || $min < $!first-char;
-            $!last-char = $max if !$!last-char || $max > $!last-char;
-            for $encoded.list {
-                @!widths[$_] ||= $.stringwidth($to-unicode[$_].chr).round;
-            }
+        my $to-unicode := $!encoder.to-unicode;
+        my $min = $encoded.min;
+        my $max = $encoded.max;
+        $!first-char = $min if !$!first-char || $min < $!first-char;
+        $!last-char = $max if !$!last-char || $max > $!last-char;
+        for $encoded.list {
+            @!widths[$_] ||= $.stringwidth($to-unicode[$_].chr).round;
         }
 
         $str
@@ -84,6 +82,8 @@ class PDF::Font::TrueType {
           my $BaseFont = $FontDescriptor<FontName>;
           my $DescendantFonts = [
               :dict{
+                  :Type( :name<Font> ),
+                  :Subtype( :name<CIDFontType2> ),
                   :$BaseFont,
                   :CIDToGIDMap( :name<Identity> ),
                   :CIDSystemInfo{
@@ -129,12 +129,32 @@ class PDF::Font::TrueType {
 
     method cb-finish {
 
-        unless $!enc eq 'identity-h' {
-            warn "FINISH";
-            given $.to-dict {
-                .<FirstChar> = $!first-char;
-                .<LastChar> = $!last-char;
-                .<Widths> = @!widths[$!first-char .. $!last-char];
+        given $!enc {
+            when 'identity-h' {
+                my @Widths;
+                my int $j = -2;
+                my $chars = [];
+                loop (my int $i = $!first-char; $i < $!last-char; $i++) {
+                    my int $w = @!widths[$i];
+                    if $w {
+                        if ++$j == $i {
+                            $chars.push: $w;
+                        }
+                        else {
+                            $chars = [ $w, ];
+                            $j = $i;
+                            @Widths.append: ($i, $chars);
+                        }
+                    }
+                }
+                $.to-dict<DescendantFonts>[0]<W> = @Widths;
+            }
+            default {
+                given $.to-dict {
+                    .<FirstChar> = $!first-char;
+                    .<LastChar> = $!last-char;
+                    .<Widths> = @!widths[$!first-char .. $!last-char];
+                }
             }
         }
     }

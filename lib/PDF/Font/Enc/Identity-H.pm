@@ -4,7 +4,7 @@ class PDF::Font::Enc::Identity-H {
     use PDF::DAO;
 
     has Font::FreeType::Face $.face is required;
-    has UInt %.to-unicode;
+    has uint32 @.to-unicode;
 
     multi method encode(Str $text, :$str! --> Str) {
         my $hex-string = self.encode($text).decode: 'latin-1';
@@ -15,7 +15,7 @@ class PDF::Font::Enc::Identity-H {
         my $face-struct = $!face.struct;
         for $text.ords {
             my uint $index = $face-struct.FT_Get_Char_Index($_);
-            %.to-unicode{$index} //= $_;
+            @!to-unicode[$index] ||= $_;
             @codes.push: $index div 256;
             @codes.push: $index mod 256;
         }

@@ -13,7 +13,7 @@ class PDF::Font {
     }
 
     multi method load-font(TrueTypeFace $face, |c) {
-        PDF::Font::TrueType.new( :$face, |c);
+        PDF::Font::TrueType.new( :$face, |c).to-dict;
     }
 
     multi method load-font(Font::FreeType::Face $face, |c) {

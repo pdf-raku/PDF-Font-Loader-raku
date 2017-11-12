@@ -7,22 +7,21 @@ use Test;
 srand(123456);
 my $pdf = PDF::Lite.new;
 my $page = $pdf.add-page;
-my $font = PDF::Font.load-font("t/fonts/DejaVuSans.ttf");
-my $font2 = PDF::Font.load-font("t/fonts/DejaVuSans.ttf", :enc<win>);
+my $deja = PDF::Font.load-font("t/fonts/DejaVuSans.ttf");
+my $deja-vu = PDF::Font.load-font("t/fonts/DejaVuSans.ttf", :enc<win>);
 
 $page.text: {
-   .font = .use-font: $font;
+   .font = $deja;
    .text-position = [10, 10];
    .say: 'Hello, world';
 }
 $page = $pdf.add-page;
 $page.text: {
-   .font = .use-font: $font2;
+   .font = $deja-vu;
    .text-position = [10, 10];
    .say: 'Bye, for now';
 }
-##lives-ok {
-$pdf.save-as: "t/true-type.pdf";  ## };
+lives-ok { $pdf.save-as: "t/true-type.pdf"; };
 
 done-testing;
 
