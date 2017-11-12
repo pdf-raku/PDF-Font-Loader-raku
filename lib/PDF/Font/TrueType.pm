@@ -61,66 +61,65 @@ class PDF::Font::TrueType {
         };
     }
 
-      method !make-roman-dict {
-          my %enc-name = :win<WinAnsiEncoding>, :mac<MacRomanEncoding>;
-          my $FontDescriptor = self!font-descriptor;
-          my $BaseFont = $FontDescriptor<FontName>;
-          my $dict = { :Type( :name<Font> ), :Subtype( :name<TrueType> ),
-                       :$BaseFont,
-                       :$FontDescriptor,
-                   };
+    method !make-roman-dict {
+        my %enc-name = :win<WinAnsiEncoding>, :mac<MacRomanEncoding>;
+        my $FontDescriptor = self!font-descriptor;
+        my $BaseFont = $FontDescriptor<FontName>;
+        my $dict = { :Type( :name<Font> ), :Subtype( :name<TrueType> ),
+                     :$BaseFont,
+                     :$FontDescriptor,
+                 };
 
-          with %enc-name{$!enc} -> $name {
-              $dict<Encoding> = :$name;
-          }
-          $dict;
-      }
+        with %enc-name{$!enc} -> $name {
+            $dict<Encoding> = :$name;
+        }
+        $dict;
+    }
 
-      method !make-index-dict {
-          my %enc-name = :win<WinAnsiEncoding>, :mac<MacRomanEncoding>, :identity-h<Identity-H>;
-          my $FontDescriptor = self!font-descriptor;
-          my $BaseFont = $FontDescriptor<FontName>;
-          my $DescendantFonts = [
-              :dict{
-                  :Type( :name<Font> ),
+    method !make-index-dict {
+        my %enc-name = :win<WinAnsiEncoding>, :mac<MacRomanEncoding>, :identity-h<Identity-H>;
+        my $FontDescriptor = self!font-descriptor;
+        my $BaseFont = $FontDescriptor<FontName>;
+        my $DescendantFonts = [
+            :dict{
+                :Type( :name<Font> ),
                   :Subtype( :name<CIDFontType2> ),
                   :$BaseFont,
                   :CIDToGIDMap( :name<Identity> ),
                   :CIDSystemInfo{
                       :Ordering<Identity>,
-                      :Registry<Adobe>,
-                      :Supplement(0),
-                  },
-                  :$FontDescriptor,
-              }
-          ];
-          my $dict = { :Type( :name<Font> ), :Subtype( :name<Type0> ),
-                       :$BaseFont,
-                       :$DescendantFonts,
-                       :Encoding( :name<Identity-H> ),
-                   };
+                        :Registry<Adobe>,
+                        :Supplement(0),
+                    },
+                    :$FontDescriptor,
+                }
+           ];
+        my $dict = { :Type( :name<Font> ), :Subtype( :name<Type0> ),
+                     :$BaseFont,
+                     :$DescendantFonts,
+                     :Encoding( :name<Identity-H> ),
+                 };
 
-          with %enc-name{$!enc} -> $name {
-              $dict<Encoding> = :$name;
-          }
+        with %enc-name{$!enc} -> $name {
+            $dict<Encoding> = :$name;
+        }
 
           $dict;
-      }
-
-      method !make-dict {
-          $!enc eq 'identity-h'
-            ?? self!make-index-dict
-            !! self!make-roman-dict
-      }
-
-      method to-dict {
-        $!dict //=  PDF::Content::Font.make-font(
-                PDF::DAO::Dict.coerce(self!make-dict),
-                self);
-
     }
 
-    multi method stringwidth(Str $str is copy, $pointsize = 1000, Bool :$kern=False) {
+    method !make-dict {
+        $!enc eq 'identity-h'
+          ?? self!make-index-dict
+          !! self!make-roman-dict
+      }
+
+    method to-dict {
+        $!dict //= PDF::Content::Font.make-font(
+            PDF::DAO::Dict.coerce(self!make-dict),
+            self);
+    }
+
+    method stringwidth(Str $str is copy, $pointsize = 1000, Bool :$kern=False) {
         $str = 'i' if $str eq ' '; # hack
         $!face.set-char-size($pointsize, $pointsize, 72, 72);
         my $vec = $!face.measure-text( $str, :$kern);
@@ -128,7 +127,6 @@ class PDF::Font::TrueType {
     }
 
     method cb-finish {
-
         given $!enc {
             when 'identity-h' {
                 my @Widths;
