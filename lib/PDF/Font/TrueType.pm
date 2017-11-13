@@ -5,6 +5,11 @@ class PDF::Font::TrueType {
     use PDF::Font::Enc::Identity-H;
     use Font::FreeType;
     use Font::FreeType::Face;
+    use Font::FreeType::Error;
+    use Font::FreeType::Native;
+    use Font::FreeType::Native::Types;
+
+    constant Px = 64.0;
 
     has Font::FreeType::Face $.face;
     has $!encoder handles <decode>;
@@ -22,6 +27,13 @@ class PDF::Font::TrueType {
                 ?? PDF::Font::Enc::Identity-H.new: :$!face
                 !! PDF::Content::Font::Enc::Type1.new: :$!enc;
         @!widths[255] = 0;
+    }
+
+    method height($pointsize, Bool :$from-baseline) {
+        die "todo: non-scaling fonts" unless $!face.is-scalable;
+        my $height = $!face.ascender;
+        $height -= $!face.descender unless $from-baseline;
+        $height / ($pointsize * Px);
     }
 
     method encode(Str $text, :$str) {
@@ -124,6 +136,48 @@ class PDF::Font::TrueType {
         $!face.set-char-size($pointsize, $pointsize, 72, 72);
         my $vec = $!face.measure-text( $str, :$kern);
         $vec.x;
+    }
+
+    method kern(Str $text, Numeric $pointsize?) {
+        my FT_Pos $x = 0;
+        my FT_Pos $y = 0;
+        my FT_UInt $prev-idx = 0;
+        my $kerning = FT_Vector.new;
+        my $face-struct = $!face.struct;
+        my $glyph-slot = $face-struct.glyph;
+        my $str = '';
+        my @chunks;
+        my Numeric $stringwidth = 0.0;
+
+        for $text.ords -> $char-code {
+            my FT_UInt $this-idx =  $face-struct.FT_Get_Char_Index( $char-code );
+            if $this-idx {
+                ft-try({ $face-struct.FT_Load_Glyph( $this-idx, FT_LOAD_NO_SCALE); });
+                $stringwidth += $glyph-slot.metrics.hori-advance;
+                if $prev-idx {
+                    ft-try({ $face-struct.FT_Get_Kerning($prev-idx, $this-idx, FT_KERNING_UNSCALED, $kerning); });
+                    my $dx = $kerning.x;
+                    unless $dx =~= 0 {
+                        $stringwidth += $dx;
+                        @chunks.push: $str;
+                        $dx *= $pointsize / 1000
+                            if $pointsize;
+                        @chunks.push: $dx;
+                        $str = '';
+                    }
+                }
+                $str ~= $char-code.chr;
+                $prev-idx = $this-idx;
+            }
+        }
+
+        @chunks.push: $str
+            if $str.chars;
+
+        $stringwidth *= $pointsize / 1000
+            if $pointsize;
+warn { :$text, :@chunks, :$stringwidth }.perl;
+        @chunks, $stringwidth;
     }
 
     method cb-finish {

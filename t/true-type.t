@@ -12,8 +12,9 @@ my $deja-vu = PDF::Font.load-font("t/fonts/DejaVuSans.ttf", :enc<win>);
 
 $page.text: {
    .font = $deja;
-   .text-position = [10, 10];
+   .text-position = [10, 50];
    .say: 'Hello, world';
+   .say: 'RVX', :kern;
 }
 $page = $pdf.add-page;
 $page.text: {
