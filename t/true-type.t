@@ -9,6 +9,7 @@ my $pdf = PDF::Lite.new;
 my $page = $pdf.add-page;
 my $deja = PDF::Font.load-font("t/fonts/DejaVuSans.ttf");
 my $deja-vu = PDF::Font.load-font("t/fonts/DejaVuSans.ttf", :enc<win>);
+my $otf-font = PDF::Font.load-font("t/fonts/Cantarell-Oblique.otf");
 
 $page.text: {
    .font = $deja;
@@ -18,8 +19,10 @@ $page.text: {
 }
 $page = $pdf.add-page;
 $page.text: {
+   .text-position = [10, 50];
+   .font = $otf-font;
+   .say: "Sample Open Type Font";
    .font = $deja-vu;
-   .text-position = [10, 10];
    .say: 'Bye, for now';
 }
 lives-ok { $pdf.save-as: "t/true-type.pdf"; };

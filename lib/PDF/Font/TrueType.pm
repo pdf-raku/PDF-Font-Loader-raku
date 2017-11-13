@@ -53,6 +53,12 @@ class PDF::Font::TrueType {
             !! $encoded;
     }
 
+    my subset FontFormat of Str where 'TrueType'|'OpenType';
+    method !font-format returns FontFormat { $!face.font-format eq 'CFF' ?? 'OpenType' !! 'TrueType' };
+    method !font-file-entry {
+        self!font-format eq 'TrueType' ?? 'FontFile2' !! 'FontFile3';
+    }
+
     method !font-descriptor {
         my $Ascent = $!face.ascender;
         my $Descent = $!face.descender;
@@ -60,17 +66,20 @@ class PDF::Font::TrueType {
         my $FontFamily = $!face.family-name;
         my $FontBBox = $!face.bounding-box.Array;
         my $decoded = PDF::IO::Blob.new: $!font-stream;
-        my $FontFile2 = PDF::DAO.coerce: :stream{
+        my $font-file = PDF::DAO.coerce: :stream{
             :$decoded,
             :dict{
                 :Length1($!font-stream.bytes),
                 :Filter( :name<FlateDecode> ),
             },
         };
+        $font-file<Subtype> = :name<CIDFontType0C>
+            unless self!font-format eq 'TrueType';
 
         my $dict = {
             :Type( :name<FontDescriptor> ),
-            :$FontName, :$FontFamily, :$Ascent, :$Descent, :$FontBBox, :$FontFile2,
+            :$FontName, :$FontFamily, :$Ascent, :$Descent, :$FontBBox,
+            self!font-file-entry => $font-file,
         };
     }
 
@@ -78,7 +87,7 @@ class PDF::Font::TrueType {
         my %enc-name = :win<WinAnsiEncoding>, :mac<MacRomanEncoding>;
         my $FontDescriptor = self!font-descriptor;
         my $BaseFont = $FontDescriptor<FontName>;
-        my $dict = { :Type( :name<Font> ), :Subtype( :name<TrueType> ),
+        my $dict = { :Type( :name<Font> ), :Subtype( :name(self!font-format) ),
                      :$BaseFont,
                      :$FontDescriptor,
                  };
@@ -157,20 +166,23 @@ class PDF::Font::TrueType {
     method !make-index-dict {
         my $FontDescriptor = self!font-descriptor;
         my $BaseFont = $FontDescriptor<FontName>;
+        my $Subtype = :name(self!font-format eq 'TrueType'
+                              ?? 'CIDFontType2'
+                              !! 'CIDFontType0');
+
         my $DescendantFonts = [
             :dict{
                 :Type( :name<Font> ),
-                  :Subtype( :name<CIDFontType2> ),
-                  :$BaseFont,
-                  :CIDToGIDMap( :name<Identity> ),
-                  :CIDSystemInfo{
-                      :Ordering<Identity>,
-                        :Registry<Adobe>,
-                        :Supplement(0),
-                    },
-                    :$FontDescriptor,
-                }
-           ];
+                :$Subtype,
+                :$BaseFont,
+                :CIDToGIDMap( :name<Identity> ),
+                :CIDSystemInfo{
+                    :Ordering<Identity>,
+                      :Registry<Adobe>,
+                      :Supplement(0),
+                  },
+                  :$FontDescriptor,
+            }, ];
 
         { :Type( :name<Font> ), :Subtype( :name<Type0> ),
             :$BaseFont,
