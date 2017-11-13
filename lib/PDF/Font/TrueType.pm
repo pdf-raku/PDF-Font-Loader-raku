@@ -100,12 +100,33 @@ class PDF::Font::TrueType {
         };
 
         my $to-unicode := $!encoder.to-unicode;
-        my @cmap;
+        my @cmap-char;
+        my @cmap-range;
 
-        for $!first-char .. $!last-char -> int $cid {
+        loop (my int $cid = $!first-char; $cid <= $!last-char; $cid++) {
             my $char-code = $to-unicode[$cid]
               || next;
-            @cmap.push: '<%04X> <%04X> <%04X>'.sprintf($cid, $cid, $char-code);
+            my $start-cid = $cid;
+            my $start-code = $char-code;
+            while $cid < $!last-char && $to-unicode[$cid + 1] == $char-code+1 {
+                $cid++; $char-code++;
+            }
+            if $start-cid == $cid {
+                @cmap-char.push: '<%04X> <%04X>'.sprintf($cid, $start-code);
+            }
+            else {
+                @cmap-range.push: '<%04X> <%04X> <%04X>'.sprintf($start-cid, $cid, $start-code);
+            }
+        }
+
+        if @cmap-char {
+            @cmap-char.unshift: "{+@cmap-char} beginbfchar";
+            @cmap-char.push: 'endbfchar';
+        }
+
+        if @cmap-range {
+            @cmap-range.unshift: "{+@cmap-range} beginbfrange";
+            @cmap-range.push: 'endbfrange';
         }
 
         my $postscript-name = PDF::Writer.new.write: :literal($!face.postscript-name);
@@ -122,13 +143,10 @@ class PDF::Font::TrueType {
             >> def
             /CMapName /pdfapi2-BiCBA+0 def
             1 begincodespacerange <{$!first-char.fmt("%04x")}> <{$!last-char.fmt("%04x")}> endcodespacerange
-            {+@cmap} beginbfrange
-            {@cmap.join: "\n"}
-            endbfrange
+            {@cmap-char.join: "\n"}
+            {@cmap-range.join: "\n"}
             endcmap CMapName currendict /CMap defineresource pop end end
             --END--
-
-
 
         PDF::DAO.coerce: :stream{ :$dict, :$decoded };
     }
