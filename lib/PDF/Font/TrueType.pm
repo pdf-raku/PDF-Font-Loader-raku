@@ -129,7 +129,10 @@ class PDF::Font::TrueType {
             @cmap-range.push: 'endbfrange';
         }
 
-        my $postscript-name = PDF::Writer.new.write: :literal($!face.postscript-name);
+        my $writer = PDF::Writer.new;
+        my $cmap-name = $writer.write: :name('pdf-font-p6-' ~ $!face.postscript-name);
+        my $postscript-name = $writer.write: :literal($!face.postscript-name);
+
         my $decoded = qq:to<--END-->.chomp;
             %% Custom
             %% CMap
@@ -141,7 +144,7 @@ class PDF::Font::TrueType {
                /Ordering (XYZ)
                /Supplement 0
             >> def
-            /CMapName /pdfapi2-BiCBA+0 def
+            /CMapName $cmap-name def
             1 begincodespacerange <{$!first-char.fmt("%04x")}> <{$!last-char.fmt("%04x")}> endcodespacerange
             {@cmap-char.join: "\n"}
             {@cmap-range.join: "\n"}
