@@ -8,6 +8,7 @@ class PDF::Font::TrueType {
     use Font::FreeType::Error;
     use Font::FreeType::Native;
     use Font::FreeType::Native::Types;
+    use PDF::Writer;
 
     constant Px = 64.0;
 
@@ -59,7 +60,7 @@ class PDF::Font::TrueType {
         my $FontFamily = $!face.family-name;
         my $FontBBox = $!face.bounding-box.Array;
         my $decoded = PDF::IO::Blob.new: $!font-stream;
-        my $FontFile2 = PDF::DAO.coerce: :stream{ 
+        my $FontFile2 = PDF::DAO.coerce: :stream{
             :$decoded,
             :dict{
                 :Length1($!font-stream.bytes),
@@ -88,8 +89,51 @@ class PDF::Font::TrueType {
         $dict;
     }
 
+    method !unicode-cmap {
+        my $dict = {
+            :Type( :name<CMap> ),
+              :CIDSystemInfo{
+                  :Ordering<Identity>,
+                    :Registry($!face.postscript-name),
+                    :Supplement(0),
+                },
+        };
+
+        my $to-unicode := $!encoder.to-unicode;
+        my @cmap;
+
+        for $!first-char .. $!last-char -> int $cid {
+            my $char-code = $to-unicode[$cid]
+              || next;
+            @cmap.push: '<%04X> <%04X> <%04X>'.sprintf($cid, $cid, $char-code);
+        }
+
+        my $postscript-name = PDF::Writer.new.write: :literal($!face.postscript-name);
+        my $decoded = qq:to<--END-->.chomp;
+            %% Custom
+            %% CMap
+            %%
+            /CIDInit /ProcSet findresource begin
+            12 dict begin begincmap
+            /CIDSystemInfo <<
+               /Registry $postscript-name
+               /Ordering (XYZ)
+               /Supplement 0
+            >> def
+            /CMapName /pdfapi2-BiCBA+0 def
+            1 begincodespacerange <{$!first-char.fmt("%04x")}> <{$!last-char.fmt("%04x")}> endcodespacerange
+            {+@cmap} beginbfrange
+            {@cmap.join: "\n"}
+            endbfrange
+            endcmap CMapName currendict /CMap defineresource pop end end
+            --END--
+
+
+
+        PDF::DAO.coerce: :stream{ :$dict, :$decoded };
+    }
+
     method !make-index-dict {
-        my %enc-name = :win<WinAnsiEncoding>, :mac<MacRomanEncoding>, :identity-h<Identity-H>;
         my $FontDescriptor = self!font-descriptor;
         my $BaseFont = $FontDescriptor<FontName>;
         my $DescendantFonts = [
@@ -106,17 +150,12 @@ class PDF::Font::TrueType {
                     :$FontDescriptor,
                 }
            ];
-        my $dict = { :Type( :name<Font> ), :Subtype( :name<Type0> ),
-                     :$BaseFont,
-                     :$DescendantFonts,
-                     :Encoding( :name<Identity-H> ),
-                 };
 
-        with %enc-name{$!enc} -> $name {
-            $dict<Encoding> = :$name;
-        }
-
-          $dict;
+        { :Type( :name<Font> ), :Subtype( :name<Type0> ),
+            :$BaseFont,
+            :$DescendantFonts,
+            :Encoding( :name<Identity-H> ),
+        };
     }
 
     method !make-dict {
@@ -176,7 +215,7 @@ class PDF::Font::TrueType {
 
         $stringwidth *= $pointsize / 1000
             if $pointsize;
-warn { :$text, :@chunks, :$stringwidth }.perl;
+
         @chunks, $stringwidth;
     }
 
@@ -200,6 +239,7 @@ warn { :$text, :@chunks, :$stringwidth }.perl;
                     }
                 }
                 $.to-dict<DescendantFonts>[0]<W> = @Widths;
+                $.to-dict<ToUnicode> = self!unicode-cmap;
             }
             default {
                 given $.to-dict {
