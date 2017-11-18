@@ -30,11 +30,13 @@ class PDF::Font::TrueType {
         @!widths[255] = 0;
     }
 
-    method height($pointsize, Bool :$from-baseline) {
-        die "todo: non-scaling fonts" unless $!face.is-scalable;
-        my $height = $!face.ascender;
-        $height -= $!face.descender unless $from-baseline;
-        $height / ($pointsize * Px);
+    method height($pointsize = 1000, Bool :$from-baseline, Bool :$hanging) {
+        die "todo: height of non-scaling fonts" unless $!face.is-scalable;
+        my List $bbox = $!face.bounding-box.Array;
+	my Numeric $height = $hanging ?? $!face.ascender !! $bbox[3];
+	$height -= $hanging ?? $!face.descender !! $bbox[1]
+            unless $from-baseline;
+        $height * $pointsize / $!face.units-per-EM;
     }
 
     method encode(Str $text, :$str) {
@@ -58,11 +60,14 @@ class PDF::Font::TrueType {
     method !font-file-entry {
         self!font-format eq 'TrueType' ?? 'FontFile2' !! 'FontFile3';
     }
+    method font-name {
+        $!face.postscript-name
+    }
 
     method !font-descriptor {
         my $Ascent = $!face.ascender;
         my $Descent = $!face.descender;
-        my $FontName = PDF::DAO.coerce: :name($!face.postscript-name);
+        my $FontName = PDF::DAO.coerce: :name($.font-name);
         my $FontFamily = $!face.family-name;
         my $FontBBox = $!face.bounding-box.Array;
         my $decoded = PDF::IO::Blob.new: $!font-stream;
@@ -103,7 +108,7 @@ class PDF::Font::TrueType {
             :Type( :name<CMap> ),
               :CIDSystemInfo{
                   :Ordering<Identity>,
-                    :Registry($!face.postscript-name),
+                    :Registry($.font-name),
                     :Supplement(0),
                 },
         };
@@ -139,8 +144,8 @@ class PDF::Font::TrueType {
         }
 
         my $writer = PDF::Writer.new;
-        my $cmap-name = $writer.write: :name('pdf-font-p6-' ~ $!face.postscript-name);
-        my $postscript-name = $writer.write: :literal($!face.postscript-name);
+        my $cmap-name = $writer.write: :name('pdf-font-p6-' ~ $.font-name);
+        my $postscript-name = $writer.write: :literal($.font-name);
 
         my $decoded = qq:to<--END-->.chomp;
             %% Custom
@@ -203,14 +208,35 @@ class PDF::Font::TrueType {
             self);
     }
 
-    method stringwidth(Str $str is copy, $pointsize = 1000, Bool :$kern=False) {
-        $str = 'i' if $str eq ' '; # hack
-        $!face.set-char-size($pointsize, $pointsize, 72, 72);
-        my $vec = $!face.measure-text( $str, :$kern);
-        $vec.x;
+    method stringwidth(Str $text is copy, Numeric $pointsize?, Bool :$kern) {
+        my FT_Pos $x = 0;
+        my FT_Pos $y = 0;
+        my FT_UInt $prev-idx = 0;
+        my $kerning = FT_Vector.new;
+        my $struct = $!face.struct;
+        my $glyph-slot = $struct.glyph;
+        my Numeric $stringwidth = 0;
+        my $scale = 1000 / $!face.units-per-EM;
+
+        for $text.ords -> $char-code {
+            my FT_UInt $this-idx = $struct.FT_Get_Char_Index( $char-code );
+            if $this-idx {
+                ft-try({ $struct.FT_Load_Glyph( $this-idx, FT_LOAD_NO_SCALE ); });
+                $stringwidth += $glyph-slot.metrics.hori-advance * $scale;
+                if $kern && $prev-idx {
+                    ft-try({ $struct.FT_Get_Kerning($prev-idx, $this-idx, FT_KERNING_UNSCALED, $kerning); });
+                    my $dx = ($kerning.x * $scale).round;
+                    $stringwidth += $dx;
+                }
+            }
+            $prev-idx = $this-idx;
+        }
+        $stringwidth = $stringwidth.round;
+        $stringwidth *= $_ / 1000 with $pointsize;
+        $stringwidth;
     }
 
-    method kern(Str $text, Numeric $pointsize?) {
+    method kern(Str $text) {
         my FT_Pos $x = 0;
         my FT_Pos $y = 0;
         my FT_UInt $prev-idx = 0;
@@ -220,21 +246,20 @@ class PDF::Font::TrueType {
         my $str = '';
         my @chunks;
         my Numeric $stringwidth = 0.0;
+        my $scale = 1000 / $!face.units-per-EM;
 
         for $text.ords -> $char-code {
             my FT_UInt $this-idx =  $face-struct.FT_Get_Char_Index( $char-code );
             if $this-idx {
                 ft-try({ $face-struct.FT_Load_Glyph( $this-idx, FT_LOAD_NO_SCALE); });
-                $stringwidth += $glyph-slot.metrics.hori-advance;
+                $stringwidth += $glyph-slot.metrics.hori-advance * $scale;
                 if $prev-idx {
                     ft-try({ $face-struct.FT_Get_Kerning($prev-idx, $this-idx, FT_KERNING_UNSCALED, $kerning); });
-                    my $dx = $kerning.x;
-                    unless $dx =~= 0 {
-                        $stringwidth += $dx;
+                    my $dx = ($kerning.x * $scale).round;
+                    if $dx {
                         @chunks.push: $str;
-                        $dx *= $pointsize / 1000
-                            if $pointsize;
                         @chunks.push: $dx;
+                        $stringwidth += $dx;
                         $str = '';
                     }
                 }
@@ -246,10 +271,7 @@ class PDF::Font::TrueType {
         @chunks.push: $str
             if $str.chars;
 
-        $stringwidth *= $pointsize / 1000
-            if $pointsize;
-
-        @chunks, $stringwidth;
+        @chunks, $stringwidth.round;
     }
 
     method cb-finish {
