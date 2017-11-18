@@ -23,7 +23,7 @@ class PDF::Font::TrueType {
     my subset EncodingScheme of Str where 'mac'|'win'|'identity-h';
     has EncodingScheme $!enc;
 
-    submethod TWEAK(:$!enc = 'identity-h') {
+    submethod TWEAK(:$!enc = 'win') {
         $!encoder = $!enc eq 'identity-h'
                 ?? PDF::Font::Enc::Identity-H.new: :$!face
                 !! PDF::Content::Font::Enc::Type1.new: :$!enc;
@@ -301,6 +301,15 @@ class PDF::Font::TrueType {
                     .<FirstChar> = $!first-char;
                     .<LastChar> = $!last-char;
                     .<Widths> = @!widths[$!first-char .. $!last-char];
+                    my @Differences = $!encoder.differences;
+                    if @Differences {
+                        my $Encoding = %(
+                            :Type( :name<Encoding> ),
+                            :BaseEncoding( .<Encoding> ),
+                            :@Differences,
+                           );
+                        .<Encoding> = $Encoding;
+                    }
                 }
             }
         }
