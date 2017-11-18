@@ -88,19 +88,23 @@ class PDF::Font::TrueType {
         };
     }
 
+    method !encoding-name {
+        my %enc-name = :win<WinAnsiEncoding>, :mac<MacRomanEncoding>, :identity-h<Identity-H>;
+        with %enc-name{$!enc} -> $name {
+            :$name;
+        }
+    }
+
     method !make-roman-dict {
         my %enc-name = :win<WinAnsiEncoding>, :mac<MacRomanEncoding>;
         my $FontDescriptor = self!font-descriptor;
         my $BaseFont = $FontDescriptor<FontName>;
-        my $dict = { :Type( :name<Font> ), :Subtype( :name(self!font-format) ),
-                     :$BaseFont,
-                     :$FontDescriptor,
-                 };
-
-        with %enc-name{$!enc} -> $name {
-            $dict<Encoding> = :$name;
-        }
-        $dict;
+        {
+            :Type( :name<Font> ), :Subtype( :name(self!font-format) ),
+            :$BaseFont,
+            :Encoding(self!encoding-name),
+            :$FontDescriptor,
+        };
     }
 
     method !unicode-cmap {
@@ -303,12 +307,11 @@ class PDF::Font::TrueType {
                     .<Widths> = @!widths[$!first-char .. $!last-char];
                     my @Differences = $!encoder.differences;
                     if @Differences {
-                        my $Encoding = %(
+                        .<Encoding> = %(
                             :Type( :name<Encoding> ),
-                            :BaseEncoding( .<Encoding> ),
+                            :BaseEncoding(self!encoding-name),
                             :@Differences,
                            );
-                        .<Encoding> = $Encoding;
                     }
                 }
             }
