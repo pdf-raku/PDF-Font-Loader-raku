@@ -1,8 +1,8 @@
 class PDF::Font::TrueType {
     use PDF::DAO;
     use PDF::IO::Blob;
-    use PDF::Content::Font::Enc::Type1;
     use PDF::Font::Enc::Identity-H;
+    use PDF::Font::Enc::Type1;
     use Font::FreeType;
     use Font::FreeType::Face;
     use Font::FreeType::Error;
@@ -23,10 +23,10 @@ class PDF::Font::TrueType {
     my subset EncodingScheme of Str where 'mac'|'win'|'identity-h';
     has EncodingScheme $!enc;
 
-    submethod TWEAK(:$!enc = 'win') {
+    submethod TWEAK(:$!enc = 'identity-h') {
         $!encoder = $!enc eq 'identity-h'
                 ?? PDF::Font::Enc::Identity-H.new: :$!face
-                !! PDF::Content::Font::Enc::Type1.new: :$!enc;
+                !! PDF::Font::Enc::Type1.new: :$!enc, :$!face;
         @!widths[255] = 0;
     }
 

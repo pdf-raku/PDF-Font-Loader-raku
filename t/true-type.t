@@ -2,7 +2,6 @@ use v6;
 use PDF::Font;
 use PDF::Lite;
 use Test;
-
 # ensure consistant document ID generation
 srand(123456);
 my $pdf = PDF::Lite.new;

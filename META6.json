@@ -7,10 +7,12 @@
     "api"         : "PDF-1.7",
     "auth"        : "github:p6-pdf",
     "description" : "Font loader for the PDF Tool-chain",
-    "depends"     : [ "PDF::Lite", "PDF::Content", "Font::FreeType", "PDF" ],
+    "depends"     : [ "PDF::Lite", "PDF::Content", "Font::FreeType", "PDF", "Native::Packing" ],
     "source-url"  : "git://github.com/p6-pdf/PDF-Font-p6.git",
     "provides"    : {
         "PDF::Font" : "lib/PDF/Font.pm",
+        "PDF::Font" : "lib/PDF/Font/Enc/Identity-H.pm",
+        "PDF::Font" : "lib/PDF/Font/Enc/Type1.pm",
         "PDF::Font" : "lib/PDF/Font/TrueType.pm"
      }
 }

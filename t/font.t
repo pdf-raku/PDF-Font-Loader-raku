@@ -12,7 +12,8 @@ is $vera.height(:from-baseline).round, 928, 'font height from baseline';
 is $vera.height(:hanging).round, 1164, 'font height hanging';
 is-approx $vera.height(12), 13.96875, 'font height @ 12pt';
 is-approx $vera.height(12, :from-baseline), 11.138672, 'font base-height @ 12pt';
-is $vera.encode("A♥♣✔B", :str), "A\x[1]\x[2]B", '.encode(...) sanity';
+# Vera defines: AB˚. Doesn't include: ♥♣✔
+is $vera.encode("A♥♣✔˚B", :str), "A\x[1]B", '.encode(...) sanity';
 
 my $vera-dict = $vera.to-dict;
 my $descriptor-dict = $vera-dict<FontDescriptor>:delete;
