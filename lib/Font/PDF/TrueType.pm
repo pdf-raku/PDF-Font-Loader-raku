@@ -1,8 +1,8 @@
-class PDF::Font::TrueType {
+class Font::PDF::TrueType {
     use PDF::DAO;
     use PDF::IO::Blob;
-    use PDF::Font::Enc::Identity-H;
-    use PDF::Font::Enc::Type1;
+    use Font::PDF::Enc::Identity-H;
+    use Font::PDF::Enc::Type1;
     use Font::FreeType;
     use Font::FreeType::Face;
     use Font::FreeType::Error;
@@ -25,8 +25,8 @@ class PDF::Font::TrueType {
 
     submethod TWEAK(:$!enc = 'identity-h') {
         $!encoder = $!enc eq 'identity-h'
-                ?? PDF::Font::Enc::Identity-H.new: :$!face
-                !! PDF::Font::Enc::Type1.new: :$!enc, :$!face;
+                ?? Font::PDF::Enc::Identity-H.new: :$!face
+                !! Font::PDF::Enc::Type1.new: :$!enc, :$!face;
         @!widths[255] = 0;
     }
 

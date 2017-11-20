@@ -1,8 +1,8 @@
-class PDF::Font {
+class Font::PDF {
 
     use Font::FreeType;
     use Font::FreeType::Face;
-    use PDF::Font::TrueType;
+    use Font::PDF::TrueType;
     subset TrueTypish of Font::FreeType::Face where .font-format eq 'TrueType'|'CFF';
 
     multi method load-font(Str $font-file!, |c) is default {
@@ -13,7 +13,7 @@ class PDF::Font {
     }
 
     multi method load-font(TrueTypish $face, |c) {
-        PDF::Font::TrueType.new( :$face, |c);
+        Font::PDF::TrueType.new( :$face, |c);
     }
 
     multi method load-font(Font::FreeType::Face $face, |c) {

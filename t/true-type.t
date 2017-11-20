@@ -1,14 +1,14 @@
 use v6;
-use PDF::Font;
+use Font::PDF;
 use PDF::Lite;
 use Test;
 # ensure consistant document ID generation
 srand(123456);
 my $pdf = PDF::Lite.new;
 my $page = $pdf.add-page;
-my $deja = PDF::Font.load-font("t/fonts/DejaVuSans.ttf");
-my $deja-vu = PDF::Font.load-font("t/fonts/DejaVuSans.ttf", :enc<win>);
-my $otf-font = PDF::Font.load-font("t/fonts/Cantarell-Oblique.otf");
+my $deja = Font::PDF.load-font("t/fonts/DejaVuSans.ttf");
+my $deja-vu = Font::PDF.load-font("t/fonts/DejaVuSans.ttf", :enc<win>);
+my $otf-font = Font::PDF.load-font("t/fonts/Cantarell-Oblique.otf");
 
 $page.text: {
    .font = $deja;

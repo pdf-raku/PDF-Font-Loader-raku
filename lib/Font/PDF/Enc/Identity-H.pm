@@ -1,4 +1,4 @@
-class PDF::Font::Enc::Identity-H {
+class Font::PDF::Enc::Identity-H {
 
     use Font::FreeType::Face;
     use Font::FreeType::Native::Types;

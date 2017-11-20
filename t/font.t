@@ -2,9 +2,9 @@ use v6;
 use Test;
 plan 17;
 use PDF::Grammar::Test :is-json-equiv;
-use PDF::Font;
+use Font::PDF;
 
-my $vera = PDF::Font.load-font('t/fonts/Vera.ttf', :enc<win>);
+my $vera = Font::PDF.load-font('t/fonts/Vera.ttf', :enc<win>);
 is $vera.font-name, 'BitstreamVeraSans-Roman', 'font-name';
 
 is $vera.height.round, 1164, 'font height';
@@ -31,7 +31,7 @@ for (win => "Á®ÆØ",
      mac => "ç¨®¯",
      identity-h => "\0É\0\x[8a]\0\x[90]\0\x[91]") {
     my ($enc, $encoded) = .kv;
-    my $fnt = PDF::Font.load-font( 't/fonts/Vera.ttf', :$enc );
+    my $fnt = Font::PDF.load-font( 't/fonts/Vera.ttf', :$enc );
     my $decoded = "Á®ÆØ";
     my $re-encoded = $fnt.encode($decoded, :str);
     is $re-encoded, $encoded, "$enc encoding";
