@@ -13,6 +13,8 @@
         "Font::PDF" : "lib/Font/PDF.pm",
         "Font::PDF" : "lib/Font/PDF/Enc/Identity-H.pm",
         "Font::PDF" : "lib/Font/PDF/Enc/Type1.pm",
+        "Font::PDF" : "lib/Font/PDF/Postscript.pm",
+        "Font::PDF" : "lib/Font/PDF/Postscript/Stream.pm",
         "Font::PDF" : "lib/Font/PDF/TrueType.pm"
      }
 }

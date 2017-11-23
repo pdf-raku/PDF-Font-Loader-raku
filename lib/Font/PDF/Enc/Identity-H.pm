@@ -1,6 +1,7 @@
 class Font::PDF::Enc::Identity-H {
 
     use Font::FreeType::Face;
+    use Font::FreeType::Native;
     use Font::FreeType::Native::Types;
     use PDF::DAO;
 
@@ -24,7 +25,7 @@ class Font::PDF::Enc::Identity-H {
     }
 
       method !setup-decoding {
-          my $struct = $!face.struct;
+          my FT_Face $struct = $!face.struct;
           my FT_UInt $glyph-idx;
           my FT_ULong $char-code = $struct.FT_Get_First_Char( $glyph-idx);
           while $glyph-idx {
