@@ -2,6 +2,8 @@ class Font::PDF::Postscript::Stream {
 
     use Native::Packing :Endian;
     use Font::FreeType::Face;
+    has UInt @.length;
+    has buf8 $.decoded;
 
     constant Marker = 0x80;
     constant Ascii  = 1;
@@ -19,18 +21,19 @@ class Font::PDF::Postscript::Stream {
         has uint32 $.length;
     }
     subset PFB-Text-Section of PFB-Section where {
-        (my uint8 $ = .start-marker) == Marker && .format == Ascii
+        .start-marker == Marker|-128 && .format == Ascii
     }
     subset PFB-Binary-Section of PFB-Section where {
-        (my uint8 $ =.start-marker) == Marker && .format == Binary
+        .start-marker == Marker|-128 && .format == Binary
     }
 
-    multi method unpack(PFA-Buf $buf --> buf8) {
+    multi submethod TWEAK(PFA-Buf :$buf!) {
         ...
     }
 
-    multi method unpack(PFB-Buf $buf --> buf8) {
-        my buf8 $packed .= new;
+    multi submethod TWEAK(PFB-Buf :$buf!) {
+        $!decoded .= new;
+        @!length = [];
         my uint8 $marker = 0;
         my uint32 $offset = 0;
 
@@ -39,13 +42,13 @@ class Font::PDF::Postscript::Stream {
             my $header = PFB-Section.unpack($buf, :$offset);
             die "corrupt PFB at marker-$marker, byte offset: $offset"
                 unless $header ~~ type;
-            $packed.append: $buf.subbuf($offset + $header.bytes, $header.length);
+            $!decoded.append: $buf.subbuf($offset + $header.bytes, $header.length);
+            @!length.push: $header.length;
             $offset += $header.bytes + $header.length;
         }
-        $packed;
     }
 
-    multi method to-stream(buf8 $buf) {
+    multi submethod TWEAK(buf8 :$buf!) {
         die "unable to handle postscript buffer. Not in 'PFA' or 'PFB' format";
     }
 }
