@@ -1,4 +1,4 @@
-class Font::PDF::Postscript::Stream {
+class Font::PDF::Type1::Stream {
 
     use Native::Packing :Endian;
     use Font::FreeType::Face;

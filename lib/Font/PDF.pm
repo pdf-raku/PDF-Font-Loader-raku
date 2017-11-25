@@ -2,8 +2,10 @@ class Font::PDF {
 
     use Font::FreeType;
     use Font::FreeType::Face;
-    use Font::PDF::TrueType;
+    use Font::PDF::CFF;
+    use Font::PDF::Type1;
     subset TrueTypish of Font::FreeType::Face where .font-format eq 'TrueType'|'CFF';
+    subset Postscripty of Font::FreeType::Face where .font-format eq 'Type 1';
 
     multi method load-font(Str $font-file!, |c) is default {
         my $free-type = Font::FreeType.new;
@@ -13,7 +15,11 @@ class Font::PDF {
     }
 
     multi method load-font(TrueTypish $face, |c) {
-        Font::PDF::TrueType.new( :$face, |c);
+        Font::PDF::CFF.new( :$face, |c);
+    }
+
+    multi method load-font(Postscripty $face, |c) {
+        Font::PDF::Type1.new( :$face, |c);
     }
 
     multi method load-font(Font::FreeType::Face $face, |c) {
