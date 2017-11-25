@@ -1,6 +1,9 @@
 class Font::PDF::FreeType {
     use PDF::DAO;
     use PDF::IO::Blob;
+    use PDF::IO::Util :pack;
+    use PDF::Writer;
+    use NativeCall;
     use Font::PDF::Enc::Identity-H;
     use Font::PDF::Enc::Type1;
     use Font::FreeType;
@@ -8,8 +11,6 @@ class Font::PDF::FreeType {
     use Font::FreeType::Error;
     use Font::FreeType::Native;
     use Font::FreeType::Native::Types;
-    use PDF::Writer;
-    use NativeCall;
 
     constant Px = 64.0;
 
@@ -52,9 +53,8 @@ class Font::PDF::FreeType {
         }
 
         # 16 bit encoding. convert to bytes
-        if $encoded.of ~~ uint16 {
-            $encoded := buf8.new: flat($encoded.map({ ($_ div 256, $_ mod 256) }));
-        }
+        $encoded := pack($encoded, 16)
+            if $encoded.of ~~ uint16;
 
         $str
             ?? $encoded.decode('latin-1')
@@ -94,6 +94,8 @@ class Font::PDF::FreeType {
         };
         $font-file<Subtype> = :name<CIDFontType0C>
             unless self!font-format eq 'TrueType';
+
+        $font-file;
     }
 
     method !font-descriptor {
