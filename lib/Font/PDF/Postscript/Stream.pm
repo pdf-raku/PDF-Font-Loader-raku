@@ -28,7 +28,27 @@ class Font::PDF::Postscript::Stream {
     }
 
     multi submethod TWEAK(PFA-Buf :$buf!) {
-        ...
+        my $ascii = $buf.decode: "latin-1";
+        my $header;
+        my uint8 @body;
+        my $trailer;
+        for $ascii.lines {
+            if /^'%!'/ ff /'eexec'$/ {
+                $header ~= $_ ~ "\n";
+            }
+            elsif /^'0'+$/ ff * {
+                $trailer ~= $_ ~ "\n";
+            }
+            else {
+                @body.append: .comb.map: -> $a, $b { :16($a ~ $b) };
+            }
+        }
+        $!decoded .= new;
+        @!length = [];
+        for $header.encode("latin-1"), @body, $trailer.encode("latin-1") {
+            $!decoded.append: .list;
+            @!length.push: .elems;
+        }
     }
 
     multi submethod TWEAK(PFB-Buf :$buf!) {
