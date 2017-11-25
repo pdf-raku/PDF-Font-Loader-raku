@@ -55,21 +55,29 @@ class Font::PDF::FreeType {
             !! $encoded;
     }
 
-    my subset FontFormat of Str where 'TrueType'|'OpenType';
-    method !font-format returns FontFormat { $!face.font-format eq 'CFF' ?? 'OpenType' !! 'TrueType' };
-    method !font-file-entry {
-        self!font-format eq 'TrueType' ?? 'FontFile2' !! 'FontFile3';
+    my subset FontFormat of Str where 'TrueType'|'OpenType'|'Type1';
+    method !font-format returns FontFormat {
+        given $!face.font-format {
+            when 'CFF' { 'OpenType' }
+            when 'TrueType' { 'TrueType' }
+            when 'Type 1' { 'Type1' }
+            default { die "unsupported font format: $_" }
+        }
     }
+
+    method !font-file-entry {
+        given self!font-format {
+            when 'TrueType' { 'FontFile2' }
+            when 'OpenType' { 'FontFile3' }
+            default { 'FontFile' }
+        }
+    }
+
     method font-name {
         $!face.postscript-name
     }
 
-    method !font-descriptor {
-        my $Ascent = $!face.ascender;
-        my $Descent = $!face.descender;
-        my $FontName = PDF::DAO.coerce: :name($.font-name);
-        my $FontFamily = $!face.family-name;
-        my $FontBBox = $!face.bounding-box.Array;
+    method font-file {
         my $decoded = PDF::IO::Blob.new: $!font-stream;
         my $font-file = PDF::DAO.coerce: :stream{
             :$decoded,
@@ -80,6 +88,15 @@ class Font::PDF::FreeType {
         };
         $font-file<Subtype> = :name<CIDFontType0C>
             unless self!font-format eq 'TrueType';
+    }
+
+    method !font-descriptor {
+        my $Ascent = $!face.ascender;
+        my $Descent = $!face.descender;
+        my $FontName = PDF::DAO.coerce: :name($.font-name);
+        my $FontFamily = $!face.family-name;
+        my $FontBBox = $!face.bounding-box.Array;
+        my $font-file = self.font-file;
 
         my $dict = {
             :Type( :name<FontDescriptor> ),

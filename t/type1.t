@@ -1,27 +1,20 @@
 use v6;
 use Font::PDF;
+use PDF::Lite;
 use Test;
+# ensure consistant document ID generation
+srand(123456);
+my $pdf = PDF::Lite.new;
+my $page = $pdf.add-page;
+my $times = Font::PDF.load-font("t/fonts/TimesNewRomPS.pfb");
 
-use Font::PDF::Type1::Stream;
-
-my Blob $buf = "t/fonts/TimesNewRomPS.pfb".IO.open(:r, :bin).slurp;
-
-my Font::PDF::Type1::Stream $stream;
-lives-ok { $stream .= new: :$buf}, 'PFB unpacking';
-note $stream.length.perl;
-is $stream.length[0], 5458, 'stream.length[0]';
-is $stream.length[1], 35660, 'stream.length[1]';
-is $stream.length[2], 532, 'stream.length[2]';
-is $stream.decoded.bytes, $stream.length.sum, 'stream bytes';
-
-my Font::PDF::Type1::Stream $stream2;
-$buf = "t/fonts/TimesNewRomPS.pfa".IO.open(:r, :bin).slurp;
-lives-ok { $stream2 .= new: :$buf}, 'PFA unpacking';
-note $stream.length.perl;
-is $stream2.length[0], 5458, 'stream.length[0]';
-is $stream2.length[1], 35660, 'stream.length[1]';
-is $stream2.length[2], 532, 'stream.length[2]';
-is $stream2.decoded.bytes, $stream.length.sum, 'stream bytes';
+$page.text: {
+   .font = $times;
+   .text-position = [10, 50];
+   .say: 'Hello, world';
+   .say: 'RVX', :kern;
+}
+lives-ok { $pdf.save-as: "t/type1.pdf"; };
 
 done-testing;
 

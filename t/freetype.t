@@ -24,7 +24,7 @@ $page.text: {
    .font = $deja-vu;
    .say: 'Bye, for now';
 }
-lives-ok { $pdf.save-as: "t/true-type.pdf"; };
+lives-ok { $pdf.save-as: "t/cff.pdf"; };
 
 done-testing;
 
