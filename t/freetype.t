@@ -12,19 +12,26 @@ my $otf-font = Font::PDF.load-font("t/fonts/Cantarell-Oblique.otf");
 
 $page.text: {
    .font = $deja;
-   .text-position = [10, 50];
+   .text-position = [10, 760];
    .say: 'Hello, world';
-   .say: 'RVX', :kern;
+   .say: 'WAV', :kern;
+   my $s;
+   my $n = 0;
+   .font = $deja, 8;
+   $deja.face.forall-chars: -> $_ { $s ~= .char-code.chr;
+                             $s ~= ' ' if $n++ %% 78
+   };
+   .say: $s, :width(400);
 }
 $page = $pdf.add-page;
 $page.text: {
-   .text-position = [10, 50];
+   .text-position = [10, 500];
    .font = $otf-font;
    .say: "Sample Open Type Font";
    .font = $deja-vu;
    .say: 'Bye, for now';
 }
-lives-ok { $pdf.save-as: "t/cff.pdf"; };
+lives-ok { $pdf.save-as: "t/freetype.pdf"; };
 
 done-testing;
 

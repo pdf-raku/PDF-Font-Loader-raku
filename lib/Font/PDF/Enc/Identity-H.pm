@@ -7,31 +7,32 @@ class Font::PDF::Enc::Identity-H {
 
     has Font::FreeType::Face $.face is required;
     has uint32 @!to-unicode;
+    has UInt $.min-index;
+    has UInt $.max-index;
 
     multi method encode(Str $text, :$str! --> Str) {
         my $hex-string = self.encode($text).decode: 'latin-1';
         PDF::DAO.coerce: :$hex-string;
     }
-    multi method encode(Str $text --> buf8) is default {
-        my uint8 @codes;
+    multi method encode(Str $text) is default {
+        my uint16 @codes;
         my $face-struct = $!face.struct;
         for $text.ords {
             my uint $index = $face-struct.FT_Get_Char_Index($_);
             @!to-unicode[$index] ||= $_;
-            @codes.push: $index div 256;
-            @codes.push: $index mod 256;
+            @codes.push: $index;
         }
-        buf8.new: @codes;
+        @codes;
     }
 
-      method !setup-decoding {
-          my FT_Face $struct = $!face.struct;
-          my FT_UInt $glyph-idx;
-          my FT_ULong $char-code = $struct.FT_Get_First_Char( $glyph-idx);
-          while $glyph-idx {
-              @!to-unicode[ $glyph-idx ] = $char-code;
-              $char-code = $struct.FT_Get_Next_Char( $char-code, $glyph-idx);
-          }
+    method !setup-decoding {
+        my FT_Face $struct = $!face.struct;
+        my FT_UInt $glyph-idx;
+        my FT_ULong $char-code = $struct.FT_Get_First_Char( $glyph-idx);
+        while $glyph-idx {
+            @!to-unicode[ $glyph-idx ] = $char-code;
+            $char-code = $struct.FT_Get_Next_Char( $char-code, $glyph-idx);
+        }
     }
 
     method to-unicode {

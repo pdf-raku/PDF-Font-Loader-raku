@@ -9,6 +9,7 @@ class Font::PDF::FreeType {
     use Font::FreeType::Native;
     use Font::FreeType::Native::Types;
     use PDF::Writer;
+    use NativeCall;
 
     constant Px = 64.0;
 
@@ -40,7 +41,7 @@ class Font::PDF::FreeType {
     }
 
     method encode(Str $text, :$str) {
-        my buf8 $encoded = $!encoder.encode($text);
+        my $encoded := $!encoder.encode($text);
         my $to-unicode := $!encoder.to-unicode;
         my $min = $encoded.min;
         my $max = $encoded.max;
@@ -48,6 +49,11 @@ class Font::PDF::FreeType {
         $!last-char = $max if !$!last-char || $max > $!last-char;
         for $encoded.list {
             @!widths[$_] ||= $.stringwidth($to-unicode[$_].chr).round;
+        }
+
+        # 16 bit encoding. convert to bytes
+        if $encoded.of ~~ uint16 {
+            $encoded := buf8.new: flat($encoded.map({ ($_ div 256, $_ mod 256) }));
         }
 
         $str
@@ -242,6 +248,9 @@ class Font::PDF::FreeType {
         for $text.ords -> $char-code {
             my FT_UInt $this-idx = $struct.FT_Get_Char_Index( $char-code );
             if $this-idx {
+                CATCH {
+                    when Font::FreeType::Error { warn "error processing char $char-code: " ~ .message; }
+                }
                 ft-try({ $struct.FT_Load_Glyph( $this-idx, FT_LOAD_NO_SCALE ); });
                 $stringwidth += $glyph-slot.metrics.hori-advance * $scale;
                 if $kern && $prev-idx {
