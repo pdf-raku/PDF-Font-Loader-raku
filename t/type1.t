@@ -1,15 +1,15 @@
 use v6;
-use Font::PDF;
+use PDF::Font;
 use PDF::Lite;
 use Test;
 # ensure consistant document ID generation
 srand(123456);
 my $pdf = PDF::Lite.new;
 my $page = $pdf.add-page;
-my $times = Font::PDF.load-font("t/fonts/TimesNewRomPS.pfb");
+my $times = PDF::Font.load-font("t/fonts/TimesNewRomPS.pfb");
 # deliberate mismatch of encoding scheme and glyphs. PDF::Content
 # should build an encoding based on the differences.
-my $zapf = Font::PDF.load-font("t/fonts/ZapfDingbats.pfa", :enc<win>);
+my $zapf = PDF::Font.load-font("t/fonts/ZapfDingbats.pfa", :enc<win>);
 
 $page.text: {
    .font = $times;

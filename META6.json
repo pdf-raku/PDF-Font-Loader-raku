@@ -14,15 +14,15 @@
   ],
   "description" : "Font classes for the PDF Tool-chain",
   "license" : "Artistic-2.0",
-  "name" : "Font::PDF",
+  "name" : "PDF::Font",
   "perl" : "6.*",
   "provides" : {
-    "Font::PDF" : "lib/Font/PDF.pm",
-    "Font::PDF::Enc::Identity-H" : "lib/Font/PDF/Enc/Identity-H.pm",
-    "Font::PDF::Enc::Type1" : "lib/Font/PDF/Enc/Type1.pm",
-    "Font::PDF::FreeType" : "lib/Font/PDF/FreeType.pm",
-    "Font::PDF::Type1" : "lib/Font/PDF/Type1.pm",
-    "Font::PDF::Type1::Stream" : "lib/Font/PDF/Type1/Stream.pm"
+    "PDF::Font" : "lib/PDF/Font.pm",
+    "PDF::Font::Enc::Identity-H" : "lib/PDF/Font/Enc/Identity-H.pm",
+    "PDF::Font::Enc::Type1" : "lib/PDF/Font/Enc/Type1.pm",
+    "PDF::Font::FreeType" : "lib/PDF/Font/FreeType.pm",
+    "PDF::Font::Type1" : "lib/PDF/Font/Type1.pm",
+    "PDF::Font::Type1::Stream" : "lib/PDF/Font/Type1/Stream.pm"
   },
   "resources" : [ ],
   "source-url" : "git://github.com/p6-pdf/PDF-Font-p6.git",

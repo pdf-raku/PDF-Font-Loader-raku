@@ -1,14 +1,14 @@
 use v6;
-use Font::PDF;
+use PDF::Font;
 use PDF::Lite;
 use Test;
 # ensure consistant document ID generation
 srand(123456);
 my $pdf = PDF::Lite.new;
 my $page = $pdf.add-page;
-my $deja = Font::PDF.load-font("t/fonts/DejaVuSans.ttf");
-my $deja-vu = Font::PDF.load-font("t/fonts/DejaVuSans.ttf", :enc<win>);
-my $otf-font = Font::PDF.load-font("t/fonts/Cantarell-Oblique.otf");
+my $deja = PDF::Font.load-font("t/fonts/DejaVuSans.ttf");
+my $deja-vu = PDF::Font.load-font("t/fonts/DejaVuSans.ttf", :enc<win>);
+my $otf-font = PDF::Font.load-font("t/fonts/Cantarell-Oblique.otf");
 
 $page.text: {
    .font = $deja;
@@ -18,8 +18,9 @@ $page.text: {
    my $s;
    my $n = 0;
    .font = $deja, 8;
-   $deja.face.forall-chars: -> $_ { $s ~= .char-code.chr;
-                             $s ~= ' ' if $n++ %% 10
+   $deja.face.forall-chars: -> $_ {
+       $s ~= .char-code.chr;
+       $s ~= ' ' if $n++ %% 10
    };
    .say: $s, :width(400);
 }

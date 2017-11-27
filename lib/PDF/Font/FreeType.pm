@@ -1,11 +1,11 @@
-class Font::PDF::FreeType {
+class PDF::Font::FreeType {
     use PDF::DAO;
     use PDF::IO::Blob;
     use PDF::IO::Util :pack;
     use PDF::Writer;
     use NativeCall;
-    use Font::PDF::Enc::Identity-H;
-    use Font::PDF::Enc::Type1;
+    use PDF::Font::Enc::Identity-H;
+    use PDF::Font::Enc::Type1;
     use Font::FreeType;
     use Font::FreeType::Face;
     use Font::FreeType::Error;
@@ -22,13 +22,13 @@ class Font::PDF::FreeType {
     has UInt $!first-char;
     has UInt $!last-char;
     has uint16 @!widths;
-    my subset EncodingScheme of Str where 'mac'|'win'|'byte'|'identity-h';
+    my subset EncodingScheme of Str where 'mac'|'win'|'identity-h';
     has EncodingScheme $!enc;
 
-    submethod TWEAK(:$!enc = $!face.num-glyphs <= 255 && $!face.has-reliable-glpyhs ?? 'win' !! 'identity-h') {
+    submethod TWEAK(:$!enc = $!face.num-glyphs <= 255 && $!face.has-reliable-glyph-names ?? 'win' !! 'identity-h') {
         $!encoder = $!enc eq 'identity-h'
-                ?? Font::PDF::Enc::Identity-H.new: :$!face
-                !! Font::PDF::Enc::Type1.new: :$!enc, :$!face;
+                ?? PDF::Font::Enc::Identity-H.new: :$!face
+                !! PDF::Font::Enc::Type1.new: :$!enc, :$!face;
         @!widths[255] = 0;
     }
 
@@ -75,7 +75,6 @@ class Font::PDF::FreeType {
     }
 
       method !font-file-entry {
-          warn "format: {self!font-format} ({$!face.font-format})";
         given self!font-format {
             when 'TrueType' { 'FontFile2' }
             when 'OpenType' { 'FontFile3' }

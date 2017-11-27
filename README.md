@@ -1,16 +1,16 @@
-[![Build Status](https://travis-ci.org/p6-pdf/Font-PDF-p6.svg?branch=master)](https://travis-ci.org/p6-pdf/Font-PDF-p6)
+[![Build Status](https://travis-ci.org/p6-pdf/PDF-Font-p6.svg?branch=master)](https://travis-ci.org/p6-pdf/PDF-Font-p6)
 
 NAME
 ====
 
-Font::PDF
+PDF::Font
 
 SYNPOSIS
 ========
 
     use PDF::Lite;
     use PDF::Font;
-    my $deja = Font::PDF.load-font("t/fonts/DejaVuSans.ttf");
+    my $deja = PDF::Font.load-font("t/fonts/DejaVuSans.ttf");
 
     my PDF::Lite $pdf .= new;
     my $page = $pdf.add-page;
@@ -66,7 +66,7 @@ An eight bit `win`, or `mac` encoding can be used as long as not more than 255 d
 BUGS AND LIMITATIONS
 --------------------
 
-  * Font subsetting is not yet implemented. Fonts are always embedded in their entirety.
+  * Font subsetting is not yet implemented.
 
   * Font formats are limited to Type1 (Postscript, True-Type and Open-Type.
 

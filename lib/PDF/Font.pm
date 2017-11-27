@@ -1,9 +1,9 @@
-class Font::PDF {
+class PDF::Font {
 
     use Font::FreeType;
     use Font::FreeType::Face;
-    use Font::PDF::FreeType;
-    use Font::PDF::Type1;
+    use PDF::Font::FreeType;
+    use PDF::Font::Type1;
     subset TrueTypish of Font::FreeType::Face where .font-format eq 'TrueType'|'CFF';
     subset Type1ish of Font::FreeType::Face where .font-format eq 'Type 1';
 
@@ -15,11 +15,11 @@ class Font::PDF {
     }
 
     multi method load-font(TrueTypish $face, |c) {
-        Font::PDF::FreeType.new( :$face, |c);
+        PDF::Font::FreeType.new( :$face, |c);
     }
 
     multi method load-font(Type1ish $face, |c) {
-        Font::PDF::Type1.new( :$face, |c);
+        PDF::Font::Type1.new( :$face, |c);
     }
 
     multi method load-font(Font::FreeType::Face $face, |c) {
@@ -32,13 +32,13 @@ class Font::PDF {
 
 =head1 NAME
 
-Font::PDF
+PDF::Font
 
 =head1 SYNPOSIS
 
  use PDF::Lite;
  use PDF::Font;
- my $deja = Font::PDF.load-font("t/fonts/DejaVuSans.ttf");
+ my $deja = PDF::Font.load-font("t/fonts/DejaVuSans.ttf");
 
  my PDF::Lite $pdf .= new;
  my $page = $pdf.add-page;
@@ -94,7 +94,7 @@ Embed the font in the PDF file (default: C<True>).
 
 =head2 BUGS AND LIMITATIONS
 
-=item Font subsetting is not yet implemented. Fonts are always embedded in their entirety.
+=item Font subsetting is not yet implemented.
 
 =item Font formats are limited to Type1 (Postscript, True-Type and Open-Type.
 
