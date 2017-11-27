@@ -38,4 +38,6 @@ for (win => "Á®ÆØ",
     is $fnt.decode($encoded, :str), $decoded, "$enc decoding";
 }
 
+my $deja = Font::PDF.load-font("t/fonts/DejaVuSans.ttf");
+
 done-testing;

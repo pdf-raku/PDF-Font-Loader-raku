@@ -19,13 +19,13 @@ class Font::PDF::FreeType {
     has Blob $.font-stream is required;
     use PDF::Content::Font;
     has PDF::Content::Font $!dict;
-    has uint16 $!first-char;
-    has uint16 $!last-char;
+    has UInt $!first-char;
+    has UInt $!last-char;
     has uint16 @!widths;
-    my subset EncodingScheme of Str where 'mac'|'win'|'identity-h';
+    my subset EncodingScheme of Str where 'mac'|'win'|'byte'|'identity-h';
     has EncodingScheme $!enc;
 
-    submethod TWEAK(:$!enc = $!face.num-glyphs > 255 ?? 'identity-h' !! 'win') {
+    submethod TWEAK(:$!enc = $!face.num-glyphs <= 255 && $!face.has-reliable-glpyhs ?? 'win' !! 'identity-h') {
         $!encoder = $!enc eq 'identity-h'
                 ?? Font::PDF::Enc::Identity-H.new: :$!face
                 !! Font::PDF::Enc::Type1.new: :$!enc, :$!face;
@@ -44,8 +44,8 @@ class Font::PDF::FreeType {
     method encode(Str $text, :$str) {
         my $encoded := $!encoder.encode($text);
         my $to-unicode := $!encoder.to-unicode;
-        my $min = $encoded.min;
-        my $max = $encoded.max;
+        my uint16 $min = $encoded.min;
+        my uint16 $max = $encoded.max;
         $!first-char = $min if !$!first-char || $min < $!first-char;
         $!last-char = $max if !$!last-char || $max > $!last-char;
         for $encoded.list {
@@ -64,14 +64,18 @@ class Font::PDF::FreeType {
     my subset FontFormat of Str where 'TrueType'|'OpenType'|'Type1';
     method !font-format returns FontFormat {
         given $!face.font-format {
-            when 'CFF' { 'OpenType' }
+            when 'CFF' {
+                my constant TrueTypeCollection-Magic = 'ttcf';
+                $!font-stream.subbuf(0,4).decode('latin-1') eq TrueTypeCollection-Magic
+                  ?? 'TrueType' !! 'OpenType' }
             when 'TrueType' { 'TrueType' }
             when 'Type 1' { 'Type1' }
             default { die "unsupported font format: $_" }
         }
     }
 
-    method !font-file-entry {
+      method !font-file-entry {
+          warn "format: {self!font-format} ({$!face.font-format})";
         given self!font-format {
             when 'TrueType' { 'FontFile2' }
             when 'OpenType' { 'FontFile3' }
@@ -146,11 +150,11 @@ class Font::PDF::FreeType {
         my @cmap-char;
         my @cmap-range;
 
-        loop (my int $cid = $!first-char; $cid <= $!last-char; $cid++) {
-            my $char-code = $to-unicode[$cid]
+        loop (my uint16 $cid = $!first-char; $cid <= $!last-char; $cid++) {
+            my uint32 $char-code = $to-unicode[$cid]
               || next;
-            my $start-cid = $cid;
-            my $start-code = $char-code;
+            my uint16 $start-cid = $cid;
+            my uint32 $start-code = $char-code;
             while $cid < $!last-char && $to-unicode[$cid + 1] == $char-code+1 {
                 $cid++; $char-code++;
             }
@@ -310,10 +314,10 @@ class Font::PDF::FreeType {
         given $!enc {
             when 'identity-h' {
                 my @Widths;
-                my int $j = -2;
+                my uint $j = -2;
                 my $chars = [];
-                loop (my int $i = $!first-char; $i <= $!last-char; $i++) {
-                    my int $w = @!widths[$i];
+                loop (my uint16 $i = $!first-char; $i <= $!last-char; $i++) {
+                    my uint $w = @!widths[$i];
                     if $w {
                         if ++$j == $i {
                             $chars.push: $w;

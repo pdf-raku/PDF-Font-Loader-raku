@@ -1,20 +1,35 @@
 {
-    "perl"        : "6.*",
-    "name"        : "Font::PDF",
-    "version"     : "0.0.1",
-    "tags"        : ["pdf", "font"],
-    "license"     : "Artistic-2.0",
-    "api"         : "PDF-1.7",
-    "auth"        : "github:p6-pdf",
-    "description" : "Font classes for the PDF Tool-chain",
-    "depends"     : [ "PDF::Lite", "PDF::Content", "Font::FreeType", "PDF", "Native::Packing" ],
-    "source-url"  : "git://github.com/p6-pdf/PDF-Font-p6.git",
-    "provides"    : {
-        "Font::PDF" : "lib/Font/PDF.pm",
-        "Font::PDF" : "lib/Font/PDF/Enc/Identity-H.pm",
-        "Font::PDF" : "lib/Font/PDF/Enc/Type1.pm",
-        "Font::PDF" : "lib/Font/PDF/FreeType.pm",
-        "Font::PDF" : "lib/Font/PDF/Type1.pm",
-        "Font::PDF" : "lib/Font/PDF/Type1/Stream.pm"
-     }
+  "api" : "PDF-1.7",
+  "auth" : "github:p6-pdf",
+  "authors" : [
+    "David Warring"
+  ],
+  "build-depends" : [ ],
+  "depends" : [
+    "PDF::Lite",
+    "PDF::Content",
+    "Font::FreeType",
+    "PDF",
+    "Native::Packing"
+  ],
+  "description" : "Font classes for the PDF Tool-chain",
+  "license" : "Artistic-2.0",
+  "name" : "Font::PDF",
+  "perl" : "6.*",
+  "provides" : {
+    "Font::PDF" : "lib/Font/PDF.pm",
+    "Font::PDF::Enc::Identity-H" : "lib/Font/PDF/Enc/Identity-H.pm",
+    "Font::PDF::Enc::Type1" : "lib/Font/PDF/Enc/Type1.pm",
+    "Font::PDF::FreeType" : "lib/Font/PDF/FreeType.pm",
+    "Font::PDF::Type1" : "lib/Font/PDF/Type1.pm",
+    "Font::PDF::Type1::Stream" : "lib/Font/PDF/Type1/Stream.pm"
+  },
+  "resources" : [ ],
+  "source-url" : "git://github.com/p6-pdf/PDF-Font-p6.git",
+  "tags" : [
+    "pdf",
+    "font"
+  ],
+  "test-depends" : [ ],
+  "version" : "0.0.1"
 }

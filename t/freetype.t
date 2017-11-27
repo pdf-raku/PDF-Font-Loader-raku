@@ -19,7 +19,7 @@ $page.text: {
    my $n = 0;
    .font = $deja, 8;
    $deja.face.forall-chars: -> $_ { $s ~= .char-code.chr;
-                             $s ~= ' ' if $n++ %% 78
+                             $s ~= ' ' if $n++ %% 10
    };
    .say: $s, :width(400);
 }

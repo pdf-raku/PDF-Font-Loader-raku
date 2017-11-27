@@ -46,7 +46,7 @@ class Font::PDF::Enc::Identity-H {
     }
     multi method decode(Str $encoded --> buf32) {
         my @to-unicode := self.to-unicode;
-        buf32.new: $encoded.ords.map( -> \hi, \lo {@to-unicode[hi +< 8 + lo]}).grep: {$_};
+        buf16.new: $encoded.ords.map( -> \hi, \lo {@to-unicode[hi +< 8 + lo]}).grep: {$_};
     }
 
 }
