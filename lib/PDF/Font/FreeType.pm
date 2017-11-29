@@ -27,8 +27,8 @@ class PDF::Font::FreeType {
 
     submethod TWEAK(:$!enc = $!face.num-glyphs <= 255 && $!face.has-reliable-glyph-names ?? 'win' !! 'identity-h') {
         $!encoder = $!enc eq 'identity-h'
-                ?? PDF::Font::Enc::Identity-H.new: :$!face
-                !! PDF::Font::Enc::Type1.new: :$!enc, :$!face;
+            ?? PDF::Font::Enc::Identity-H.new: :$!face
+            !! PDF::Font::Enc::Type1.new: :$!enc, :$!face;
         @!widths[255] = 0;
     }
 
@@ -124,13 +124,13 @@ class PDF::Font::FreeType {
     }
 
     method !make-roman-dict {
-        my %enc-name = :win<WinAnsiEncoding>, :mac<MacRomanEncoding>;
         my $FontDescriptor = self!font-descriptor;
         my $BaseFont = $FontDescriptor<FontName>;
+        my $Encoding = self!encoding-name;
         {
             :Type( :name<Font> ), :Subtype( :name(self!font-format) ),
             :$BaseFont,
-            :Encoding(self!encoding-name),
+            :$Encoding,
             :$FontDescriptor,
         };
     }
