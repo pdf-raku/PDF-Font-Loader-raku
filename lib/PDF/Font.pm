@@ -70,7 +70,6 @@ parameters:
     Font file to load. Currently supported formats are:
     =item2 Open-Type (C<.otf>)
     =item2 True-Type (C<.ttf>)
-    =item2 True-Type Collections (C<.ttc>)
     =item2 Postscript (C<.pfb>, or C<.pfa>)
 
     =end item

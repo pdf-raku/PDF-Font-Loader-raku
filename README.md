@@ -44,8 +44,6 @@ parameters:
 
         * True-Type (`.ttf`)
 
-        * True-Type Collections (`.ttc`)
-
         * Postscript (`.pfb`, or `.pfa`)
 
 BUGS AND LIMITATIONS
