@@ -7,6 +7,7 @@ class PDF::Font {
 
     subset TrueTypish of Font::FreeType::Face where .font-format eq 'TrueType'|'CFF';
     subset Type1ish of Font::FreeType::Face where .font-format eq 'Type 1';
+    subset TrueTypeData of Blob where { .subbuf(0,4).decode('latin-1') ne 'ttcf' }
 
     multi method load-font(Str $font-file!, |c) is default {
         my $free-type = Font::FreeType.new;
@@ -15,12 +16,12 @@ class PDF::Font {
         self.load-font($face, :$font-stream, |c);
     }
 
-    multi method load-font(TrueTypish $face, |c) {
-        PDF::Font::FreeType.new( :$face, |c);
+    multi method load-font(TrueTypish $face, TrueTypeData :$font-stream!, |c) {
+        PDF::Font::FreeType.new( :$face, :$font-stream, |c);
     }
 
-    multi method load-font(Type1ish $face, |c) {
-        PDF::Font::Type1.new( :$face, |c);
+    multi method load-font(Type1ish $face, TrueTypeData :$font-stream!, |c) {
+        PDF::Font::Type1.new( :$face, :$font-stream, |c);
     }
 
     multi method load-font(Font::FreeType::Face $face, |c) {

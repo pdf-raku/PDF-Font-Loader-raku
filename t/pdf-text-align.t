@@ -13,8 +13,7 @@ my $width = 100;
 my $height = 80;
 my $x = 110;
 
-my $font = PDF::Font.load-font("t/fonts/DejaVuSans.ttf", :enc<win>);
-
+my $font = PDF::Font.load-font("t/fonts/DejaVuSans.ttf");
 
 $gfx.text: -> $gfx {
     $gfx.font = $font, 10;

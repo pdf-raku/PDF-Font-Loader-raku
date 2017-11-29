@@ -64,11 +64,7 @@ class PDF::Font::FreeType {
     my subset FontFormat of Str where 'TrueType'|'OpenType'|'Type1';
     method !font-format returns FontFormat {
         given $!face.font-format {
-            when 'CFF' {
-                my constant TrueTypeCollection-Magic = 'ttcf';
-                $!font-stream.subbuf(0,4).decode('latin-1') eq TrueTypeCollection-Magic
-                  ?? 'TrueType' !! 'OpenType' }
-            when 'TrueType' { 'TrueType' }
+            when 'CFF'|'TrueType' { 'TrueType' }
             when 'Type 1' { 'Type1' }
             default { die "unsupported font format: $_" }
         }
