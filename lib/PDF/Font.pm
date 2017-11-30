@@ -72,20 +72,37 @@ L<PDF::Lite>,  L<PDF::API6> and other PDF modules.
 
 =head1 METHODS
 
+
 =head3 load-font
 
- PDF::Font.load-font(Str $font-file);
+A class level method to create a new font object.
 
-A class level method to create a new font object from a font file.
+=head4 C<PDF::Font.load-font(Str :$file);>
+
+Loads a font file.
 
 parameters:
 =begin item
-C<$font-file>
+C<:$file>
 
 Font file to load. Currently supported formats are:
 =item2 Open-Type (C<.otf>)
 =item2 True-Type (C<.ttf>)
 =item2 Postscript (C<.pfb>, or C<.pfa>)
+
+=end item
+
+=head4 C<PDF::Font.load-font(Str :$name);>
+
+Loads a font by name.
+
+Note: Requires fontconfig to be installed on the system.
+
+parameters:
+=begin item
+C<:$name>
+
+Name of an installed system font to load.
 
 =end item
 

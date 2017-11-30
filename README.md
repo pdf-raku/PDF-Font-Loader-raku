@@ -33,13 +33,15 @@ METHODS
 
 ### load-font
 
-    PDF::Font.load-font(Str $font-file);
+A class level method to create a new font object.
 
-A class level method to create a new font object from a font file.
+#### `PDF::Font.load-font(Str :$file);`
+
+Loads a font file.
 
 parameters:
 
-  * `$font-file`
+  * `:$file`
 
     Font file to load. Currently supported formats are:
 
@@ -48,6 +50,18 @@ parameters:
         * True-Type (`.ttf`)
 
         * Postscript (`.pfb`, or `.pfa`)
+
+#### `PDF::Font.load-font(Str :$name);`
+
+Loads a font by name.
+
+Note: Requires fontconfig to be installed on the system.
+
+parameters:
+
+  * `:$name`
+
+    Name of an installed system font to load.
 
 BUGS AND LIMITATIONS
 ====================
