@@ -1,9 +1,9 @@
-class PDF::Font {
+class PDF::Font::Loader {
 
     use Font::FreeType;
     use Font::FreeType::Face;
-    use PDF::Font::FreeType;
-    use PDF::Font::Type1;
+    use PDF::Font::Loader::FreeType;
+    use PDF::Font::Loader::Type1;
 
     subset TrueTypish of Font::FreeType::Face where .font-format eq 'TrueType'|'CFF';
     subset Type1ish of Font::FreeType::Face where .font-format eq 'Type 1';
@@ -17,11 +17,11 @@ class PDF::Font {
     }
 
     multi method load-font(TrueTypish :$face!, TrueTypeData :$font-stream!, |c) {
-        PDF::Font::FreeType.new( :$face, :$font-stream, |c);
+        PDF::Font::Loader::FreeType.new( :$face, :$font-stream, |c);
     }
 
     multi method load-font(Type1ish :$face!, TrueTypeData :$font-stream!, |c) {
-        PDF::Font::Type1.new( :$face, :$font-stream, |c);
+        PDF::Font::Loader::Type1.new( :$face, :$font-stream, |c);
     }
 
     # resolve font name via fontconfig
@@ -57,16 +57,16 @@ class PDF::Font {
 
 =head1 NAME
 
-PDF::Font
+PDF::Font::Loader
 
 =head1 SYNPOSIS
 
  use PDF::Lite;
- use PDF::Font;
- my $deja = PDF::Font.load-font: :file<t/fonts/DejaVuSans.ttf>;
+ use PDF::Font::Loader;
+ my $deja = PDF::Font::Loader.load-font: :file<t/fonts/DejaVuSans.ttf>;
 
  # requires fontconfig
- my $deja-vu = PDF::Font.load-font: :name<DejaVuSans>;
+ my $deja-vu = PDF::Font::Loader.load-font: :name<DejaVuSans>;
 
  my PDF::Lite $pdf .= new;
  $pdf.add-page.text: {
@@ -88,7 +88,7 @@ L<PDF::Lite>,  L<PDF::API6> and other PDF modules.
 
 A class level method to create a new font object.
 
-=head4 C<PDF::Font.load-font(Str :$file);>
+=head4 C<PDF::Font::Loader.load-font(Str :$file);>
 
 Loads a font file.
 
@@ -103,10 +103,10 @@ Font file to load. Currently supported formats are:
 
 =end item
 
-=head4 C<PDF::Font.load-font(Str :$name);>
+=head4 C<PDF::Font::Loader.load-font(Str :$name);>
 
- my $vera = PDF::Font.load-font('vera');
- my $deja = PDF::Font.load-font('Deja:weight=bold:width=condensed:slant=italic');
+ my $vera = PDF::Font::Loader.load-font('vera');
+ my $deja = PDF::Font::Loader.load-font('Deja:weight=bold:width=condensed:slant=italic');
 
 Loads a font by a fontconfig name.
 
@@ -130,9 +130,9 @@ Name of an installed system font to load.
 
 Locates a matching font-file. Doesn't actually load it.
 
-   my $file = PDF::Font.find-font('Deja', :weight<bold>, :width<condensed>, :slant<italic>);
+   my $file = PDF::Font::Loader.find-font('Deja', :weight<bold>, :width<condensed>, :slant<italic>);
    say $file;  # /usr/share/fonts/truetype/dejavu/DejaVuSansCondensed-BoldOblique.ttf
-   my $font = PDF::Font.load-font( :$file )';
+   my $font = PDF::Font::Loader.load-font( :$file )';
 
 =head1 BUGS AND LIMITATIONS
 

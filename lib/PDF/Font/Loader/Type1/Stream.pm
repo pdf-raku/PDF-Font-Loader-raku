@@ -1,4 +1,4 @@
-class PDF::Font::Type1::Stream {
+class PDF::Font::Loader::Type1::Stream {
 
     use Native::Packing :Endian;
     use Font::FreeType::Face;

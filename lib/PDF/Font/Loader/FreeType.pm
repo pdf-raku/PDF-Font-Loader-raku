@@ -1,11 +1,11 @@
-class PDF::Font::FreeType {
+class PDF::Font::Loader::FreeType {
     use PDF::DAO;
     use PDF::IO::Blob;
     use PDF::IO::Util :pack;
     use PDF::Writer;
     use NativeCall;
-    use PDF::Font::Enc::Identity-H;
-    use PDF::Font::Enc::Type1;
+    use PDF::Font::Loader::Enc::Identity-H;
+    use PDF::Font::Loader::Enc::Type1;
     use Font::FreeType;
     use Font::FreeType::Face;
     use Font::FreeType::Error;
@@ -28,8 +28,8 @@ class PDF::Font::FreeType {
     submethod TWEAK {
         $!enc = self!font-format eq 'Type1' ?? 'win' !! 'identity-h';
         $!encoder = $!enc eq 'identity-h'
-            ?? PDF::Font::Enc::Identity-H.new: :$!face
-            !! PDF::Font::Enc::Type1.new: :$!enc, :$!face;
+            ?? PDF::Font::Loader::Enc::Identity-H.new: :$!face
+            !! PDF::Font::Loader::Enc::Type1.new: :$!enc, :$!face;
         @!widths[255] = 0;
     }
 

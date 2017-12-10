@@ -2,9 +2,9 @@ use v6;
 use Test;
 plan 15;
 use PDF::Grammar::Test :is-json-equiv;
-use PDF::Font;
+use PDF::Font::Loader;
 
-my $vera = PDF::Font.load-font: :file<t/fonts/Vera.ttf>, :enc<win>;
+my $vera = PDF::Font::Loader.load-font: :file<t/fonts/Vera.ttf>, :enc<win>;
 is $vera.font-name, 'BitstreamVeraSans-Roman', 'font-name';
 
 is $vera.height.round, 1164, 'font height';
@@ -12,7 +12,7 @@ is $vera.height(:from-baseline).round, 928, 'font height from baseline';
 is $vera.height(:hanging).round, 1164, 'font height hanging';
 is-approx $vera.height(12), 13.96875, 'font height @ 12pt';
 is-approx $vera.height(12, :from-baseline), 11.138672, 'font base-height @ 12pt';
-my $times = PDF::Font.load-font: :file<t/fonts/TimesNewRomPS.pfa>;
+my $times = PDF::Font::Loader.load-font: :file<t/fonts/TimesNewRomPS.pfa>;
 # Vera defines: AB˚. Doesn't include: ♥♣✔
 is $times.encode("A♥♣✔˚B", :str), "A\x[1]B", '.encode(...) sanity';
 

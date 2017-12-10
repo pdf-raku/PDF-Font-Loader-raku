@@ -2,7 +2,7 @@ use v6;
 use Test;
 plan 1;
 use PDF::Lite;
-use PDF::Font;
+use PDF::Font::Loader;
 # ensure consistant document ID generation
 srand(123456);
 
@@ -13,7 +13,7 @@ my $width = 100;
 my $height = 80;
 my $x = 110;
 
-my $font = PDF::Font.load-font: :name<t/fonts/DejaVuSans.ttf>;
+my $font = PDF::Font::Loader.load-font: :name<t/fonts/DejaVuSans.ttf>;
 
 $gfx.text: -> $gfx {
     $gfx.font = $font, 10;

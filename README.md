@@ -3,17 +3,17 @@
 NAME
 ====
 
-PDF::Font
+PDF::Font::Loader
 
 SYNPOSIS
 ========
 
     use PDF::Lite;
-    use PDF::Font;
-    my $deja = PDF::Font.load-font: :file<t/fonts/DejaVuSans.ttf>;
+    use PDF::Font::Loader;
+    my $deja = PDF::Font::Loader.load-font: :file<t/fonts/DejaVuSans.ttf>;
 
     # requires fontconfig
-    my $deja-vu = PDF::Font.load-font: :name<DejaVuSans>;
+    my $deja-vu = PDF::Font::Loader.load-font: :name<DejaVuSans>;
 
     my PDF::Lite $pdf .= new;
     $pdf.add-page.text: {
@@ -35,7 +35,7 @@ METHODS
 
 A class level method to create a new font object.
 
-#### `PDF::Font.load-font(Str :$file);`
+#### `PDF::Font::Loader.load-font(Str :$file);`
 
 Loads a font file.
 
@@ -51,10 +51,10 @@ parameters:
 
         * Postscript (`.pfb`, or `.pfa`)
 
-#### `PDF::Font.load-font(Str :$name);`
+#### `PDF::Font::Loader.load-font(Str :$name);`
 
-    my $vera = PDF::Font.load-font('vera');
-    my $deja = PDF::Font.load-font('Deja:weight=bold:width=condensed:slant=italic');
+    my $vera = PDF::Font::Loader.load-font('vera');
+    my $deja = PDF::Font::Loader.load-font('Deja:weight=bold:width=condensed:slant=italic');
 
 Loads a font by a fontconfig name.
 
@@ -76,9 +76,9 @@ parameters:
 
 Locates a matching font-file. Doesn't actually load it.
 
-    my $file = PDF::Font.find-font('Deja', :weight<bold>, :width<condensed>, :slant<italic>);
+    my $file = PDF::Font::Loader.find-font('Deja', :weight<bold>, :width<condensed>, :slant<italic>);
     say $file;  # /usr/share/fonts/truetype/dejavu/DejaVuSansCondensed-BoldOblique.ttf
-    my $font = PDF::Font.load-font( :$file )';
+    my $font = PDF::Font::Loader.load-font( :$file )';
 
 BUGS AND LIMITATIONS
 ====================
