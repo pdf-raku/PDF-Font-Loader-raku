@@ -14,7 +14,7 @@ class PDF::Font::Loader::FreeType {
 
     constant Px = 64.0;
 
-    has Font::FreeType::Face $.face;
+    has Font::FreeType::Face $.face is required;
     has $!encoder handles <decode>;
     has Blob $.font-stream is required;
     use PDF::Content::Font;
@@ -25,11 +25,13 @@ class PDF::Font::Loader::FreeType {
     my subset EncodingScheme of Str where 'mac'|'win'|'identity-h';
     has EncodingScheme $!enc;
 
-    submethod TWEAK {
+    submethod TWEAK(:@differences) {
         $!enc = self!font-format eq 'Type1' ?? 'win' !! 'identity-h';
         $!encoder = $!enc eq 'identity-h'
             ?? PDF::Font::Loader::Enc::Identity-H.new: :$!face
             !! PDF::Font::Loader::Enc::Type1.new: :$!enc, :$!face;
+        $!encoder.differences = @differences
+            if @differences;
         @!widths[255] = 0;
     }
 
@@ -335,12 +337,12 @@ class PDF::Font::Loader::FreeType {
                     .<FirstChar> = $!first-char;
                     .<LastChar> = $!last-char;
                     .<Widths> = @!widths[$!first-char .. $!last-char];
-                    my @Differences = $!encoder.differences;
-                    if @Differences {
+                    my $Differences = $!encoder.differences;
+                    if $Differences {
                         .<Encoding> = %(
                             :Type( :name<Encoding> ),
                             :BaseEncoding(self!encoding-name),
-                            :@Differences,
+                            :$Differences,
                            );
                     }
                 }
