@@ -9,6 +9,10 @@ class PDF::Font::Loader {
     subset Type1ish of Font::FreeType::Face where .font-format eq 'Type 1';
     subset TrueTypeData of Blob where { .subbuf(0,4).decode('latin-1') ne 'ttcf' }
 
+    sub load-font(|c) is export(:load-font) {
+        $?CLASS.load-font(|c);
+    }
+
     multi method load-font(Str :$file!, |c) is default {
         my $free-type = Font::FreeType.new;
         my $font-stream = $file.IO.open(:r, :bin).slurp: :bin;
