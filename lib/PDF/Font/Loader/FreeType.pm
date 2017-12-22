@@ -26,7 +26,10 @@ class PDF::Font::Loader::FreeType {
     has EncodingScheme $!enc;
     has Bool $.embed = True;
 
-    submethod TWEAK(:@differences, :$!enc = self!font-format eq 'Type1' ?? 'win' !! 'identity-h') {
+    submethod TWEAK(:@differences) {
+        $!enc = self!font-format eq 'Type1' || ! $!embed
+            ?? 'win'
+            !! 'identity-h';
         $!encoder = $!enc eq 'identity-h'
             ?? PDF::Font::Loader::Enc::Identity-H.new: :$!face
             !! PDF::Font::Loader::Enc::Type1.new: :$!enc, :$!face;
