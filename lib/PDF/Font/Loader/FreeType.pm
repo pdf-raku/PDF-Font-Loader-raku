@@ -24,9 +24,9 @@ class PDF::Font::Loader::FreeType {
     has uint16 @!widths;
     my subset EncodingScheme of Str where 'mac'|'win'|'identity-h';
     has EncodingScheme $!enc;
+    has Bool $.embed = True;
 
-    submethod TWEAK(:@differences) {
-        $!enc = self!font-format eq 'Type1' ?? 'win' !! 'identity-h';
+    submethod TWEAK(:@differences, :$!enc = self!font-format eq 'Type1' ?? 'win' !! 'identity-h') {
         $!encoder = $!enc eq 'identity-h'
             ?? PDF::Font::Loader::Enc::Identity-H.new: :$!face
             !! PDF::Font::Loader::Enc::Type1.new: :$!enc, :$!face;
@@ -46,13 +46,15 @@ class PDF::Font::Loader::FreeType {
 
     method encode(Str $text, :$str) {
         my $encoded := $!encoder.encode($text);
-        my $to-unicode := $!encoder.to-unicode;
-        my uint16 $min = $encoded.min;
-        my uint16 $max = $encoded.max;
-        $!first-char = $min if !$!first-char || $min < $!first-char;
-        $!last-char = $max if !$!last-char || $max > $!last-char;
-        for $encoded.list {
-            @!widths[$_] ||= $.stringwidth($to-unicode[$_].chr).round;
+        if $encoded {
+            my $to-unicode := $!encoder.to-unicode;
+            my uint16 $min = $encoded.min;
+            my uint16 $max = $encoded.max;
+            $!first-char = $min if !$!first-char || $min < $!first-char;
+            $!last-char = $max if !$!last-char || $max > $!last-char;
+            for $encoded.list {
+                @!widths[$_] ||= $.stringwidth($to-unicode[$_].chr).round;
+            }
         }
 
         # 16 bit encoding. convert to bytes
@@ -85,7 +87,7 @@ class PDF::Font::Loader::FreeType {
         $!face.postscript-name
     }
 
-    method font-file {
+    method !font-file {
         my $decoded = PDF::IO::Blob.new: $!font-stream;
         my $font-file = PDF::DAO.coerce: :stream{
             :$decoded,
@@ -100,19 +102,37 @@ class PDF::Font::Loader::FreeType {
         $font-file;
     }
 
+    sub bit(\n) { 1 +< (n-1) }
+    my enum Flags «
+        :FixedPitch(bit(1))
+        :Serif(bit(2))
+        :Symbolic(bit(3))
+        :Script(bit(4))
+        :Nonsymbolic(bit(6))
+        :Italic(bit(7))
+        :AllCap(bit(17))
+        :SmallCap(bit(18))
+        :ForceBold(bit(19))
+        »;
+
     method !font-descriptor {
         my $Ascent = $!face.ascender;
         my $Descent = $!face.descender;
         my $FontName = PDF::DAO.coerce: :name($.font-name);
         my $FontFamily = $!face.family-name;
         my $FontBBox = $!face.bounding-box.Array;
-        my $font-file = self.font-file;
+        my $Flags;
+        $Flags +|= FixedPitch if $!face.is-fixed-width;
+        $Flags +|= Italic if $!face.is-italic;
 
         my $dict = {
             :Type( :name<FontDescriptor> ),
-            :$FontName, :$FontFamily, :$Ascent, :$Descent, :$FontBBox,
-            self!font-file-entry => $font-file,
+            :$FontName, :$FontFamily, :$Flags,
+            :$Ascent, :$Descent, :$FontBBox,
         };
+        $dict{self!font-file-entry} = self!font-file
+            if $!embed;
+        $dict;
     }
 
     method !encoding-name {
@@ -126,6 +146,7 @@ class PDF::Font::Loader::FreeType {
         my $FontDescriptor = self!font-descriptor;
         my $BaseFont = $FontDescriptor<FontName>;
         my $Encoding = self!encoding-name;
+        $FontDescriptor<Flags> +|= Nonsymbolic;
         {
             :Type( :name<Font> ), :Subtype( :name(self!font-format) ),
             :$BaseFont,
@@ -202,6 +223,7 @@ class PDF::Font::Loader::FreeType {
     method !make-index-dict {
         my $FontDescriptor = self!font-descriptor;
         my $BaseFont = $FontDescriptor<FontName>;
+        $FontDescriptor<Flags> +|= Symbolic;
         my $Subtype = :name( given self!font-format {
             when 'Type1'    {'Type1'}
             when 'TrueType' {'CIDFontType2'}
