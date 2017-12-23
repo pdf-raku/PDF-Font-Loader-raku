@@ -164,13 +164,15 @@ class PDF::Font::Loader::FreeType {
     }
 
     method !unicode-cmap {
+        my $CMapName = :name('p6-cmap-' ~ $.font-name);
         my $dict = {
             :Type( :name<CMap> ),
-              :CIDSystemInfo{
-                  :Ordering<Identity>,
-                    :Registry($.font-name),
-                    :Supplement(0),
-                },
+            :$CMapName,
+            :CIDSystemInfo{
+                :Ordering<Identity>,
+                :Registry($.font-name),
+                :Supplement(0),
+            },
         };
 
         my $to-unicode := $!encoder.to-unicode;
@@ -204,7 +206,7 @@ class PDF::Font::Loader::FreeType {
         }
 
         my $writer = PDF::Writer.new;
-        my $cmap-name = $writer.write: :name('pdf-font-p6-' ~ $.font-name);
+        my $cmap-name = $writer.write: $CMapName;
         my $postscript-name = $writer.write: :literal($.font-name);
 
         my $decoded = qq:to<--END-->.chomp;
