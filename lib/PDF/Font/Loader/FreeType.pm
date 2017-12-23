@@ -35,7 +35,6 @@ class PDF::Font::Loader::FreeType {
             !! PDF::Font::Loader::Enc::Type1.new: :$!enc, :$!face;
         $!encoder.differences = @differences
             if @differences;
-        @!widths[255] = 0;
     }
 
     method height($pointsize = 1000, Bool :$from-baseline, Bool :$hanging) {
@@ -127,11 +126,17 @@ class PDF::Font::Loader::FreeType {
         my $Flags;
         $Flags +|= FixedPitch if $!face.is-fixed-width;
         $Flags +|= Italic if $!face.is-italic;
+        # estimates for required fields
+        my $ItalicAngle = $!face.is-italic ?? -12 !! 0;
+        my $StemV = $!face.is-bold ?? 110 !! 80;
+        my $CapHeight = self!char-height( 'X'.ord) || ($Ascent * 0.9).round;
+        my $XHeight = self!char-height( 'x'.ord) || ($Ascent * 0.7).round;
 
         my $dict = {
             :Type( :name<FontDescriptor> ),
             :$FontName, :$FontFamily, :$Flags,
             :$Ascent, :$Descent, :$FontBBox,
+            :$ItalicAngle, :$StemV, :$CapHeight, :$XHeight,
         };
         $dict{self!font-file-entry} = self!font-file
             if $!embed;
@@ -297,10 +302,25 @@ class PDF::Font::Loader::FreeType {
         $stringwidth;
     }
 
+    method !char-height(UInt $char-code) {
+        my $face-struct = $!face.struct;
+        my $glyph-slot = $face-struct.glyph;
+        my $scale = 1000 / ($!face.units-per-EM || 1000);
+        my FT_UInt $idx =  $face-struct.FT_Get_Char_Index( $char-code );
+        if $idx {
+            ft-try({ $face-struct.FT_Load_Glyph( $idx, FT_LOAD_NO_SCALE); });
+            $glyph-slot.metrics.height * $scale;
+        }
+        else {
+            0
+        }
+    }
+
     method kern(Str $text) {
         my FT_Pos $x = 0;
         my FT_Pos $y = 0;
         my FT_UInt $prev-idx = 0;
+        my $has-kerning = $!face.has-kerning;
         my $kerning = FT_Vector.new;
         my $face-struct = $!face.struct;
         my $glyph-slot = $face-struct.glyph;
@@ -311,7 +331,7 @@ class PDF::Font::Loader::FreeType {
 
         for $text.ords -> $char-code {
             my FT_UInt $this-idx =  $face-struct.FT_Get_Char_Index( $char-code );
-            if $this-idx {
+            if $has-kerning && $this-idx {
                 ft-try({ $face-struct.FT_Load_Glyph( $this-idx, FT_LOAD_NO_SCALE); });
                 $stringwidth += $glyph-slot.metrics.hori-advance * $scale;
                 if $prev-idx {
