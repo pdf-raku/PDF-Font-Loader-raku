@@ -26,10 +26,13 @@ class PDF::Font::Loader::FreeType {
     has EncodingScheme $!enc;
     has Bool $.embed = True;
 
-    submethod TWEAK(:@differences) {
-        $!enc = self!font-format eq 'Type1' || ! $!embed
+    submethod TWEAK(:@differences, :$!enc = self!font-format eq 'Type1' || ! $!embed || $!face.num-glyphs <= 255
             ?? 'win'
-            !! 'identity-h';
+            !! 'identity-h') {
+        die "can't use identity-h encoding with type-1 fonts"
+            if self!font-format eq 'Type1' && $!enc eq 'identity-h';
+        die "can't use identity-h encoding with unembedded fonts"
+            if ! $!embed && $!enc eq 'identity-h';
         $!encoder = $!enc eq 'identity-h'
             ?? PDF::Font::Loader::Enc::Identity-H.new: :$!face
             !! PDF::Font::Loader::Enc::Type1.new: :$!enc, :$!face;
@@ -346,9 +349,9 @@ class PDF::Font::Loader::FreeType {
                         $str = '';
                     }
                 }
-                $str ~= $char-code.chr;
-                $prev-idx = $this-idx;
             }
+            $str ~= $char-code.chr;
+            $prev-idx = $this-idx;
         }
 
         @chunks.push: $str
