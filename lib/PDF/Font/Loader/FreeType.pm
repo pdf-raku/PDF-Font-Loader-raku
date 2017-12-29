@@ -322,24 +322,22 @@ class PDF::Font::Loader::FreeType {
     }
 
     method kern(Str $text) {
-        my FT_Pos $x = 0;
-        my FT_Pos $y = 0;
-        my FT_UInt $prev-idx = 0;
-        my $has-kerning = $!face.has-kerning;
-        my $kerning = FT_Vector.new;
-        my $face-struct = $!face.struct;
-        my $glyph-slot = $face-struct.glyph;
-        my $str = '';
+        my FT_UInt      $prev-idx = 0;
+        my Bool         $has-kerning = $!face.has-kerning;
+        my FT_Vector    $kerning .= new;
+        my FT_Face      $face-struct = $!face.struct;
+        my FT_GlyphSlot $glyph-slot = $face-struct.glyph;
+        my Str          $str = '';
+        my Numeric      $stringwidth = 0.0;
         my @chunks;
-        my Numeric $stringwidth = 0.0;
         my $scale = 1000 / $!face.units-per-EM;
 
         for $text.ords -> $char-code {
-            my FT_UInt $this-idx =  $face-struct.FT_Get_Char_Index( $char-code );
-            if $has-kerning && $this-idx {
+            my FT_UInt $this-idx = $face-struct.FT_Get_Char_Index( $char-code );
+            if $this-idx {
                 ft-try({ $face-struct.FT_Load_Glyph( $this-idx, FT_LOAD_NO_SCALE); });
                 $stringwidth += $glyph-slot.metrics.hori-advance * $scale;
-                if $prev-idx {
+                if $has-kerning && $prev-idx {
                     ft-try({ $face-struct.FT_Get_Kerning($prev-idx, $this-idx, FT_KERNING_UNSCALED, $kerning); });
                     my $dx = ($kerning.x * $scale).round;
                     if $dx {
@@ -349,9 +347,9 @@ class PDF::Font::Loader::FreeType {
                         $str = '';
                     }
                 }
+                $str ~= $char-code.chr;
+                $prev-idx = $this-idx;
             }
-            $str ~= $char-code.chr;
-            $prev-idx = $this-idx;
         }
 
         @chunks.push: $str
