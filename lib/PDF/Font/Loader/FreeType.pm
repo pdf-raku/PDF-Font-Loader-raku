@@ -4,6 +4,7 @@ class PDF::Font::Loader::FreeType {
     use PDF::IO::Util :pack;
     use PDF::Writer;
     use NativeCall;
+    use PDF::Font::Loader::Enc::Identity;
     use PDF::Font::Loader::Enc::Identity-H;
     use PDF::Font::Loader::Enc::Type1;
     use Font::FreeType;
@@ -15,14 +16,15 @@ class PDF::Font::Loader::FreeType {
     constant Px = 64.0;
 
     has Font::FreeType::Face $.face is required;
-    has $!encoder handles <decode>;
-    has Blob $.font-stream is required;
+    use PDF::Font::Loader::Enc;
+    has PDF::Font::Loader::Enc $!encoder handles <decode>;
+    has $.font-stream is required;
     use PDF::Content::Font;
     has PDF::Content::Font $!dict;
-    has UInt $!first-char;
-    has UInt $!last-char;
-    has uint16 @!widths;
-    my subset EncodingScheme of Str where 'mac'|'win'|'identity-h';
+    has UInt $.first-char;
+    has UInt $.last-char;
+    has uint16 @.widths;
+    my subset EncodingScheme where 'mac'|'win'|'zapf'|'sym'|'identity'|'identity-h'|PDF::Font::Loader::Enc;
     has EncodingScheme $!enc;
     has Bool $.embed = True;
 
@@ -33,9 +35,12 @@ class PDF::Font::Loader::FreeType {
             if self!font-format eq 'Type1' && $!enc eq 'identity-h';
         die "can't use identity-h encoding with unembedded fonts"
             if ! $!embed && $!enc eq 'identity-h';
-        $!encoder = $!enc eq 'identity-h'
-            ?? PDF::Font::Loader::Enc::Identity-H.new: :$!face
-            !! PDF::Font::Loader::Enc::Type1.new: :$!enc, :$!face;
+        $!encoder = do given $!enc {
+            when PDF::Font::Loader::Enc { $_ }
+            when 'identity' { PDF::Font::Loader::Enc::Identity.new: :$!face }
+            when 'identity-h' { PDF::Font::Loader::Enc::Identity-H.new: :$!face }
+            default { PDF::Font::Loader::Enc::Type1.new: :$!enc, :$!face; }
+        }
         $!encoder.differences = @differences
             if @differences;
     }
