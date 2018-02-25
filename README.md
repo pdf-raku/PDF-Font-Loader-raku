@@ -52,11 +52,11 @@ parameters:
 
     Font file to load. Currently supported formats are:
 
-        * Open-Type (`.otf`)
+    * Open-Type (`.otf`)
 
-        * True-Type (`.ttf`)
+    * True-Type (`.ttf`)
 
-        * Postscript (`.pfb`, or `.pfa`)
+    * Postscript (`.pfb`, or `.pfa`)
 
 #### `PDF::Font::Loader.load-font(Str :$name);`
 
@@ -75,7 +75,8 @@ parameters:
 
 ### find-font
 
-    find-font(Str $family-name,
+    PDF::Font::Loader.find-font(
+              Str $family-name,
               Str :$weight,     # thin|extralight|light|book|regular|medium|semibold|bold|extrabold|black|100..900
               Str :$stretch,    # normal|[ultra|extra]?[condensed|expanded]
               Str :$slant,      # normal|oblique|italic

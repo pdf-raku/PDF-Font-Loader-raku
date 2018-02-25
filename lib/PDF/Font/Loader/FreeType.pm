@@ -384,9 +384,15 @@ class PDF::Font::Loader::FreeType {
             }
             default {
                 given $.to-dict {
-                    .<FirstChar> = $!first-char;
-                    .<LastChar> = $!last-char;
-                    .<Widths> = @!widths[$!first-char .. $!last-char];
+                    if $!first-char.defined {
+                        .<FirstChar> = $!first-char;
+                        .<LastChar> = $!last-char;
+                        .<Widths> = @!widths[$!first-char .. $!last-char];
+                    }
+                    else {
+                        warn "Font embedded, but not used: $.font-name";
+                    }
+
                     my $Differences = $!encoder.differences;
                     if $Differences {
                         .<Encoding> = %(
