@@ -1,5 +1,4 @@
 Release 0.2.0
-    - fix compile warning in latest Rakudo
     - warn on Type1 Font being embedded, but not used
 Release 0.1.9
     - fix scoping issues with Identity-H encoding

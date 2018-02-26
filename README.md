@@ -52,11 +52,11 @@ parameters:
 
     Font file to load. Currently supported formats are:
 
-    * Open-Type (`.otf`)
+        * Open-Type (`.otf`)
 
-    * True-Type (`.ttf`)
+        * True-Type (`.ttf`)
 
-    * Postscript (`.pfb`, or `.pfa`)
+        * Postscript (`.pfb`, or `.pfa`)
 
 #### `PDF::Font::Loader.load-font(Str :$name);`
 
@@ -75,8 +75,7 @@ parameters:
 
 ### find-font
 
-    PDF::Font::Loader.find-font(
-              Str $family-name,
+    find-font(Str $family-name,
               Str :$weight,     # thin|extralight|light|book|regular|medium|semibold|bold|extrabold|black|100..900
               Str :$stretch,    # normal|[ultra|extra]?[condensed|expanded]
               Str :$slant,      # normal|oblique|italic
@@ -92,3 +91,4 @@ BUGS AND LIMITATIONS
 ====================
 
   * Font subsetting is not yet implemented. I.E. fonts are always fully embedded, which may result in large PDF files.
+
