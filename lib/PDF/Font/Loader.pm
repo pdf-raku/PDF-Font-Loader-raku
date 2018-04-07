@@ -15,7 +15,7 @@ class PDF::Font::Loader:ver<0.2.1> {
     }
 
     multi method load-font(Str :$file!, |c) {
-        my Blob $font-stream = $file.IO.open(:r, :bin).slurp: :bin;
+        my Blob $font-stream = $file.IO.slurp: :bin;
         self.load-font(:$font-stream, |c);
     }
 
@@ -48,7 +48,7 @@ class PDF::Font::Loader:ver<0.2.1> {
     sub find-font(|c) is export(:find-font) {
         $?CLASS.find-font(|c);
     }
-    subset Weight  of Str where /^[thin|extralight|light|book|regular|medium|semibold|bold|extrabold|black|[1..9]00]$/;
+    subset Weight  of Str where /^[thin|extralight|light|book|regular|medium|semibold|bold|extrabold|black|[0..9]00]$/;
     subset Stretch of Str where /^[[ultra|extra]?[condensed|expanded]]|normal$/;
     subset Slant   of Str where /^[normal|oblique|italic]$/;
     method find-font(Str $family-name,
@@ -66,7 +66,7 @@ class PDF::Font::Loader:ver<0.2.1> {
         $pat ~= ':width='  ~ $stretch unless $stretch eq 'normal';
         $pat ~= ':slant='  ~ $slant   unless $slant eq 'normal';
 
-        my $cmd =  run('fc-match',  '-f', '%{file}', $pat, :out, :err);
+        my $cmd =  run('fc-match', '-f', '%{file}', $pat, :out, :err);
         given $cmd.err.slurp {
             note $_ if $_;
         }
