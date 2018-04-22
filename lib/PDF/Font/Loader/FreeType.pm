@@ -23,14 +23,17 @@ class PDF::Font::Loader::FreeType {
     has PDF::Content::Font $!dict;
     has UInt $.first-char;
     has UInt $.last-char;
-    has uint16 @.widths;
+    has uint16 @!widths; method widths {@!widths}
     my subset EncodingScheme where 'mac'|'win'|'zapf'|'sym'|'identity'|'identity-h'|PDF::Font::Loader::Enc;
     has EncodingScheme $!enc;
     has Bool $.embed = True;
 
-    submethod TWEAK(:@differences, :$!enc = self!font-format eq 'Type1' || ! $!embed || $!face.num-glyphs <= 255
+    submethod TWEAK(:@differences,
+                    List :$widths,
+                    :$!enc = self!font-format eq 'Type1' || ! $!embed || $!face.num-glyphs <= 255
             ?? 'win'
             !! 'identity-h') {
+        @!widths = .List with $widths;
         die "can't use identity-h encoding with type-1 fonts"
             if self!font-format eq 'Type1' && $!enc eq 'identity-h';
         die "can't use identity-h encoding with unembedded fonts"
