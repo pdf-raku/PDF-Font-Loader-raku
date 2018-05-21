@@ -7,19 +7,17 @@ class PDF::Font::Loader:ver<0.2.1> {
     use PDF::Font::Loader::FreeType;
     use PDF::Font::Loader::Type1;
 
-    subset TrueTypish of Font::FreeType::Face where .font-format eq 'TrueType'|'CFF';
-    subset Type1ish of Font::FreeType::Face where .font-format eq 'Type 1';
+    subset TrueTypish of Font::FreeType::Face where .font-format ~~ 'TrueType'|'CFF';
+    subset Type1ish of Font::FreeType::Face where .font-format ~~'Type 1';
 
-    sub load-font(|c) is export(:load-font) {
-        $?CLASS.load-font(|c);
-    }
+    proto method load-font($?: |c) is export(:load-font) {*};
 
-    multi method load-font(Str :$file!, |c) {
+    multi method load-font($class = $?CLASS: Str :$file!, |c) {
         my Blob $font-stream = $file.IO.slurp: :bin;
-        self.load-font(:$font-stream, |c);
+        $class.load-font(:$font-stream, |c);
     }
 
-    multi method load-font(Blob :$font-stream!, |c) is default {
+    multi method load-font($?: Blob :$font-stream!, |c) is default {
         my $free-type = Font::FreeType.new;
         my $face = $free-type.face($font-stream);
         given $face {
@@ -36,25 +34,23 @@ class PDF::Font::Loader:ver<0.2.1> {
     }
 
     # resolve font name via fontconfig
-    multi method load-font(Str :$name!, |c) {
-        my $file = self.find-font($name, |c);
-        self.load-font: :$file, |c;
+    multi method load-font($class = $?CLASS: Str :$name!, |c) {
+        my $file = $class.find-font($name, |c);
+        $class.load-font: :$file, |c;
     }
 
-    multi method load-font(Font::FreeType::Face :$face!, |c) {
+    multi method load-font($?: Font::FreeType::Face :$face!, |c) {
         die "unsupported font format: {$face.font-format}";
     }
 
-    sub find-font(|c) is export(:find-font) {
-        $?CLASS.find-font(|c);
-    }
     subset Weight  of Str where /^[thin|extralight|light|book|regular|medium|semibold|bold|extrabold|black|[0..9]00]$/;
     subset Stretch of Str where /^[[ultra|extra]?[condensed|expanded]]|normal$/;
     subset Slant   of Str where /^[normal|oblique|italic]$/;
-    method find-font(Str $family-name,
+
+    method find-font($?: Str $family-name = 'Helvetica',
                      Weight :$weight is copy = 'medium',
                      Stretch :$stretch = 'normal',
-                     Slant :$slant = 'normal') {
+                     Slant :$slant = 'normal') is export(:find-font) {
         my $pat = $family-name;
         with $weight {
             # convert CSS/PDF numeric weights for fontconfig

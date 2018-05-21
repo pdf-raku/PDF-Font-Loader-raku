@@ -7,7 +7,7 @@ class PDF::Font::Loader::FreeType {
     use PDF::Font::Loader::Enc::Identity;
     use PDF::Font::Loader::Enc::Identity-H;
     use PDF::Font::Loader::Enc::Type1;
-    use Font::FreeType;
+    use Font::FreeType:ver(v0.0.9+);
     use Font::FreeType::Face;
     use Font::FreeType::Error;
     use Font::FreeType::Native;
@@ -19,6 +19,7 @@ class PDF::Font::Loader::FreeType {
     use PDF::Font::Loader::Enc;
     has PDF::Font::Loader::Enc $!encoder handles <decode>;
     has $.font-stream is required;
+    use PDF::Content:ver(v0.2.3+);
     use PDF::Content::Font;
     has PDF::Content::Font $!dict;
     has UInt $.first-char;
@@ -316,7 +317,7 @@ class PDF::Font::Loader::FreeType {
         my $face-struct = $!face.struct;
         my $glyph-slot = $face-struct.glyph;
         my $scale = 1000 / ($!face.units-per-EM || 1000);
-        my FT_UInt $idx =  $face-struct.FT_Get_Char_Index( $char-code );
+        my FT_UInt $idx = $face-struct.FT_Get_Char_Index( $char-code );
         if $idx {
             ft-try({ $face-struct.FT_Load_Glyph( $idx, FT_LOAD_NO_SCALE); });
             $glyph-slot.metrics.height * $scale;
