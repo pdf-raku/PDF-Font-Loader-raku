@@ -87,6 +87,12 @@ Locates a matching font-file. Doesn't actually load it.
     say $file;  # /usr/share/fonts/truetype/dejavu/DejaVuSansCondensed-BoldOblique.ttf
     my $font = PDF::Font::Loader.load-font( :$file )';
 
+
+INSTALL
+=======
+
+PDF::Font::Loader depends on Font::FreeType which further depends on the [freetype](https://www.freetype.org/download.html) library, so you must install that prior to installing this module.
+
 BUGS AND LIMITATIONS
 ====================
 
