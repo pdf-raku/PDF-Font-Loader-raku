@@ -16,10 +16,10 @@ SYNPOSIS
     my $deja = load-font( :file<t/fonts/DejaVuSans.ttf> );
 
     # requires fontconfig
-    use PDF::Font::Loader :load-font. :find-font;
+    use PDF::Font::Loader :load-font, :find-font;
     $deja = load-font( :family<DejaVu>, :slant<italic> );
 
-    my $file = find-font( :family<DejaVu>, :slant<italic> );
+    my Str $file = find-font( :family<DejaVu>, :slant<italic> );
     my $deja-vu = load-font: :$file;
 
     my PDF::Lite $pdf .= new;
@@ -58,7 +58,7 @@ parameters:
 
         * Postscript (`.pfb`, or `.pfa`)
 
-#### `PDF::Font::Loader.load-font(Str :$faimily);`
+#### `PDF::Font::Loader.load-font(Str :$family);`
 
     my $vera = PDF::Font::Loader.load-font: :family<vera>;
     my $deja = PDF::Font::Loader.load-font: :family<Deja>, :weight<bold>, :width<condensed> :slant<italic>);
@@ -69,9 +69,9 @@ Note: Requires fontconfig to be installed on the system.
 
 parameters:
 
-  * `:$name`
+  * `:$family`
 
-    Name of an installed system font to load.
+    Family name of an installed system font to load.
 
 ### find-font
 
@@ -86,7 +86,6 @@ Locates a matching font-file. Doesn't actually load it.
     my $file = PDF::Font::Loader.find-font(:family<Deja>, :weight<bold>, :width<condensed>, :slant<italic>);
     say $file;  # /usr/share/fonts/truetype/dejavu/DejaVuSansCondensed-BoldOblique.ttf
     my $font = PDF::Font::Loader.load-font( :$file )';
-
 
 INSTALL
 =======

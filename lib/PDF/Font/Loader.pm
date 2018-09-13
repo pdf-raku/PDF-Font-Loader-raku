@@ -90,9 +90,9 @@ PDF::Font::Loader
 
  # requires fontconfig
  use PDF::Font::Loader :load-font, :find-font;
- $deja = load-font( :name<DejaVu>, :slant<italic> );
+ $deja = load-font( :family<DejaVu>, :slant<italic> );
 
- my Str $file = find-font( :name<DejaVu>, :slant<italic> );
+ my Str $file = find-font( :family<DejaVu>, :slant<italic> );
  my $deja-vu = load-font: :$file;
 
  my PDF::Lite $pdf .= new;
@@ -129,10 +129,10 @@ Font file to load. Currently supported formats are:
 
 =end item
 
-=head4 C<PDF::Font::Loader.load-font(Str :$name);>
+=head4 C<PDF::Font::Loader.load-font(Str :$family);>
 
- my $vera = PDF::Font::Loader.load-font: :name<vera>;
- my $deja = PDF::Font::Loader.load-font: :name<Deja>, :weight<bold>, :width<condensed> :slant<italic>);
+ my $vera = PDF::Font::Loader.load-font: :family<vera>;
+ my $deja = PDF::Font::Loader.load-font: :family<Deja>, :weight<bold>, :width<condensed> :slant<italic>);
 
 Loads a font by a fontconfig name and attributes.
 
@@ -140,9 +140,9 @@ Note: Requires fontconfig to be installed on the system.
 
 parameters:
 =begin item
-C<:$name>
+C<:$family>
 
-Name of an installed system font to load.
+Family name of an installed system font to load.
 
 =end item
 
@@ -159,6 +159,12 @@ Locates a matching font-file. Doesn't actually load it.
    my $file = PDF::Font::Loader.find-font(:family<Deja>, :weight<bold>, :width<condensed>, :slant<italic>);
    say $file;  # /usr/share/fonts/truetype/dejavu/DejaVuSansCondensed-BoldOblique.ttf
    my $font = PDF::Font::Loader.load-font( :$file )';
+
+=head1 INSTALL
+
+- PDF::Font::Loader depends on Font::FreeType which further depends on the [freetype](https://www.freetype.org/download.html) library, so you must install that prior to installing this module.
+
+- Installation of the [fontconfig](https://www.freedesktop.org/wiki/Software/fontconfig/) package and command-line tools is strongly recommended.
 
 =head1 BUGS AND LIMITATIONS
 
