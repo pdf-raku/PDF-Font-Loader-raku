@@ -1,3 +1,8 @@
+Release 0.2.2
+    - replace positional with :family parameter in find-font(),
+      load-font(). For consistancy with PDF::Content.load-font
+      method.
+
 Release 0.2.1
     - renamed classes PDF::DAO -> PDF::COS in PDF v0.2.8
 

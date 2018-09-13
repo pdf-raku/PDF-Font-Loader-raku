@@ -102,7 +102,7 @@ class PDF::Font::Loader::FreeType {
     }
 
     method !font-file {
-        my $decoded = PDF::IO::Blob.new: $!font-stream;
+        my PDF::IO::Blob $decoded .= new: $!font-stream;
 
         my %dict = :Length1($!font-stream.bytes);
         %dict<Filter> = :name<FlateDecode>
@@ -214,7 +214,7 @@ class PDF::Font::Loader::FreeType {
             @cmap-range.push: 'endbfrange';
         }
 
-        my $writer = PDF::Writer.new;
+        my PDF::Writer $writer .= new;
         my $cmap-name = $writer.write: $CMapName;
         my $postscript-name = $writer.write: :literal($.font-name);
 
@@ -286,7 +286,7 @@ class PDF::Font::Loader::FreeType {
         my FT_Pos $x = 0;
         my FT_Pos $y = 0;
         my FT_UInt $prev-idx = 0;
-        my $kerning = FT_Vector.new;
+        my FT_Vector $kerning .= new;
         my $struct = $!face.struct;
         my $glyph-slot = $struct.glyph;
         my Numeric $stringwidth = 0;

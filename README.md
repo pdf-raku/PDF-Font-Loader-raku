@@ -17,9 +17,9 @@ SYNPOSIS
 
     # requires fontconfig
     use PDF::Font::Loader :load-font. :find-font;
-    $deja = load-font( :name<DejaVu>, :slant<italic> );
+    $deja = load-font( :family<DejaVu>, :slant<italic> );
 
-    my $file = find-font( :name<DejaVu>, :slant<italic> );
+    my $file = find-font( :family<DejaVu>, :slant<italic> );
     my $deja-vu = load-font: :$file;
 
     my PDF::Lite $pdf .= new;
@@ -58,10 +58,10 @@ parameters:
 
         * Postscript (`.pfb`, or `.pfa`)
 
-#### `PDF::Font::Loader.load-font(Str :$name);`
+#### `PDF::Font::Loader.load-font(Str :$faimily);`
 
-    my $vera = PDF::Font::Loader.load-font: :name<vera>;
-    my $deja = PDF::Font::Loader.load-font: :name<Deja>, :weight<bold>, :width<condensed> :slant<italic>);
+    my $vera = PDF::Font::Loader.load-font: :family<vera>;
+    my $deja = PDF::Font::Loader.load-font: :family<Deja>, :weight<bold>, :width<condensed> :slant<italic>);
 
 Loads a font by a fontconfig name and attributes.
 
@@ -75,7 +75,7 @@ parameters:
 
 ### find-font
 
-    find-font(Str $family-name,
+    find-font(Str :$family,     # e.g. :family<vera>
               Str :$weight,     # thin|extralight|light|book|regular|medium|semibold|bold|extrabold|black|100..900
               Str :$stretch,    # normal|[ultra|extra]?[condensed|expanded]
               Str :$slant,      # normal|oblique|italic
@@ -83,7 +83,7 @@ parameters:
 
 Locates a matching font-file. Doesn't actually load it.
 
-    my $file = PDF::Font::Loader.find-font('Deja', :weight<bold>, :width<condensed>, :slant<italic>);
+    my $file = PDF::Font::Loader.find-font(:family<Deja>, :weight<bold>, :width<condensed>, :slant<italic>);
     say $file;  # /usr/share/fonts/truetype/dejavu/DejaVuSansCondensed-BoldOblique.ttf
     my $font = PDF::Font::Loader.load-font( :$file )';
 
@@ -91,7 +91,9 @@ Locates a matching font-file. Doesn't actually load it.
 INSTALL
 =======
 
-PDF::Font::Loader depends on Font::FreeType which further depends on the [freetype](https://www.freetype.org/download.html) library, so you must install that prior to installing this module.
+- PDF::Font::Loader depends on Font::FreeType which further depends on the [freetype](https://www.freetype.org/download.html) library, so you must install that prior to installing this module.
+
+- Installation of the [fontconfig](https://www.freedesktop.org/wiki/Software/fontconfig/) package and command-line tools is strongly recommended.
 
 BUGS AND LIMITATIONS
 ====================

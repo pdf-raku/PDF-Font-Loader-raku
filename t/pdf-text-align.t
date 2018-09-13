@@ -2,18 +2,19 @@ use v6;
 use Test;
 plan 1;
 use PDF::Lite;
+use PDF::Content;
 use PDF::Font::Loader;
 # ensure consistant document ID generation
 srand(123456);
 
 my $pdf = PDF::Lite.new;
-my $page = $pdf.add-page;
-my $gfx = $page.gfx;
+my PDF::Lite::Page $page = $pdf.add-page;
+my PDF::Content $gfx = $page.gfx;
 my $width = 100;
 my $height = 80;
 my $x = 110;
 
-my $font = PDF::Font::Loader.load-font: :name<t/fonts/DejaVuSans.ttf>;
+my $font = PDF::Font::Loader.load-font: :file<t/fonts/DejaVuSans.ttf>;
 
 $gfx.text: -> $gfx {
     $gfx.font = $font, 10;

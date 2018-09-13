@@ -4,7 +4,7 @@ use PDF::Lite;
 use Test;
 # ensure consistant document ID generation
 srand(123456);
-my $pdf = PDF::Lite.new;
+my PDF::Lite $pdf .= new;
 my $deja = load-font( :file<t/fonts/DejaVuSans.ttf> );
 my $otf-font = load-font( :file<t/fonts/Cantarell-Oblique.otf> );
 

@@ -1,6 +1,6 @@
 use v6;
 
-class PDF::Font::Loader:ver<0.2.1> {
+class PDF::Font::Loader:ver<0.2.2> {
 
     use Font::FreeType;
     use Font::FreeType::Face;
@@ -34,8 +34,8 @@ class PDF::Font::Loader:ver<0.2.1> {
     }
 
     # resolve font name via fontconfig
-    multi method load-font($class = $?CLASS: Str :$name!, |c) {
-        my $file = $class.find-font($name, |c);
+    multi method load-font($class = $?CLASS: Str :$family!, |c) {
+        my $file = $class.find-font(:$family, |c);
         $class.load-font: :$file, |c;
     }
 
@@ -47,11 +47,11 @@ class PDF::Font::Loader:ver<0.2.1> {
     subset Stretch of Str where /^[[ultra|extra]?[condensed|expanded]]|normal$/;
     subset Slant   of Str where /^[normal|oblique|italic]$/;
 
-    method find-font($?: Str $family-name = 'Helvetica',
+    method find-font($?: Str :$family!,
                      Weight :$weight is copy = 'medium',
                      Stretch :$stretch = 'normal',
                      Slant :$slant = 'normal') is export(:find-font) {
-        my $pat = $family-name;
+        my $pat = $family;
         with $weight {
             # convert CSS/PDF numeric weights for fontconfig
             #      000  100        200   300  400     500    600      700  800       900
@@ -62,7 +62,7 @@ class PDF::Font::Loader:ver<0.2.1> {
         $pat ~= ':width='  ~ $stretch unless $stretch eq 'normal';
         $pat ~= ':slant='  ~ $slant   unless $slant eq 'normal';
 
-        my $cmd =  run('fc-match', '-f', '%{file}', $pat, :out, :err);
+        my $cmd = run('fc-match', '-f', '%{file}', $pat, :out, :err);
         given $cmd.err.slurp {
             note $_ if $_;
         }
@@ -70,6 +70,7 @@ class PDF::Font::Loader:ver<0.2.1> {
         $file
           || die "unable to resolve font: $pat"
     }
+
 }
 
 =begin pod
@@ -88,10 +89,10 @@ PDF::Font::Loader
  my $deja = load-font( :file<t/fonts/DejaVuSans.ttf> );
 
  # requires fontconfig
- use PDF::Font::Loader :load-font. :find-font;
+ use PDF::Font::Loader :load-font, :find-font;
  $deja = load-font( :name<DejaVu>, :slant<italic> );
 
- my $file = find-font( :name<DejaVu>, :slant<italic> );
+ my Str $file = find-font( :name<DejaVu>, :slant<italic> );
  my $deja-vu = load-font: :$file;
 
  my PDF::Lite $pdf .= new;
@@ -147,7 +148,7 @@ Name of an installed system font to load.
 
 =head3 find-font
 
-  find-font(Str $family-name,
+  find-font(Str :$family,     # e.g. :family<vera>
             Str :$weight,     # thin|extralight|light|book|regular|medium|semibold|bold|extrabold|black|100..900
             Str :$stretch,    # normal|[ultra|extra]?[condensed|expanded]
             Str :$slant,      # normal|oblique|italic
@@ -155,7 +156,7 @@ Name of an installed system font to load.
 
 Locates a matching font-file. Doesn't actually load it.
 
-   my $file = PDF::Font::Loader.find-font('Deja', :weight<bold>, :width<condensed>, :slant<italic>);
+   my $file = PDF::Font::Loader.find-font(:family<Deja>, :weight<bold>, :width<condensed>, :slant<italic>);
    say $file;  # /usr/share/fonts/truetype/dejavu/DejaVuSansCondensed-BoldOblique.ttf
    my $font = PDF::Font::Loader.load-font( :$file )';
 
