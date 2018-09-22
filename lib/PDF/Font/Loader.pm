@@ -1,11 +1,12 @@
 use v6;
 
-class PDF::Font::Loader:ver<0.2.2> {
+class PDF::Font::Loader:ver<0.2.3> {
 
     use Font::FreeType;
     use Font::FreeType::Face;
     use PDF::Font::Loader::FreeType;
     use PDF::Font::Loader::Type1;
+    use PDF::Font::Loader::Dict;
 
     subset TrueTypish of Font::FreeType::Face where .font-format ~~ 'TrueType'|'CFF';
     subset Type1ish of Font::FreeType::Face where .font-format ~~'Type 1';
@@ -17,33 +18,39 @@ class PDF::Font::Loader:ver<0.2.2> {
         $class.load-font(:$font-stream, |c);
     }
 
-    multi method load-font($?: Blob :$font-stream!, |c) is default {
-        my $free-type = Font::FreeType.new;
-        my $face = $free-type.face($font-stream);
-        given $face {
-            when TrueTypish {
-                die "unable to handle TrueType Collections"
-                    if $font-stream.subbuf(0,4).decode('latin-1') eq 'ttcf';
-                PDF::Font::Loader::FreeType.new( :$face, :$font-stream, |c);
-            }
-            when Type1ish {
-                PDF::Font::Loader::Type1.new( :$face, :$font-stream, |c);
-            }
-            default { die "unable to handle font of format {.font-format}"; }
-        }
-    }
-
     # resolve font name via fontconfig
     multi method load-font($class = $?CLASS: Str :$family!, |c) {
         my $file = $class.find-font(:$family, |c);
         $class.load-font: :$file, |c;
     }
 
-    multi method load-font($?: Font::FreeType::Face :$face!, |c) {
-        die "unsupported font format: {$face.font-format}";
+    multi method load-font($?: Font::FreeType::Face :$face!, Blob :$font-stream!, |c) {
+        given $face {
+            when TrueTypish {
+                fail "unable to handle TrueType Collections"
+                    if $font-stream.subbuf(0,4).decode('latin-1') eq 'ttcf';
+                PDF::Font::Loader::FreeType.new( :$face, :$font-stream, |c);
+            }
+            when Type1ish {
+                PDF::Font::Loader::Type1.new( :$face, :$font-stream, |c);
+            }
+            default { fail "unable to handle font of format {.font-format}"; }
+        }
     }
 
-    subset Weight  of Str where /^[thin|extralight|light|book|regular|medium|semibold|bold|extrabold|black|[0..9]00]$/;
+    multi method load-font($?: Blob :$font-stream!, |c) is default {
+        my Font::FreeType $free-type .= new;
+        my $face = $free-type.face($font-stream);
+        $.load-font( :$face, :$font-stream, |c);
+    }
+
+    #| experimental load from a PDF Font dictionary
+    multi method load-font($?: Hash :$dict!, |c) {
+        my %opts = PDF::Font::Loader::Dict.load-font-opts( :$dict, |c);
+        $.load-font( |%opts );
+    }
+
+    subset Weight where /^[thin|extralight|light|book|regular|medium|semibold|bold|extrabold|black|<[0..9]>**3]$/;
     subset Stretch of Str where /^[[ultra|extra]?[condensed|expanded]]|normal$/;
     subset Slant   of Str where /^[normal|oblique|italic]$/;
 
@@ -55,8 +62,8 @@ class PDF::Font::Loader:ver<0.2.2> {
         with $weight {
             # convert CSS/PDF numeric weights for fontconfig
             #      000  100        200   300  400     500    600      700  800       900
-            $_ =  <thin extralight light book regular medium semibold bold extrabold black>[$0]
-                if /^(0..9)00$/;
+            $_ =  <thin extralight light book regular medium semibold bold extrabold black>[.substr(0,1).Int]
+                if /^<[0..9]>/;
         }
         $pat ~= ':weight=' ~ $weight  unless $weight eq 'medium';
         $pat ~= ':width='  ~ $stretch unless $stretch eq 'normal';

@@ -8,20 +8,20 @@ PDF::Font::Loader
 SYNPOSIS
 ========
 
-    use PDF::Lite;
-    use PDF::Font::Loader;
-    my $deja = PDF::Font::Loader.load-font: :file<t/fonts/DejaVuSans.ttf>;
-
+    # load a font from a file
     use PDF::Font::Loader :load-font;
+
+    my $deja = PDF::Font::Loader.load-font: :file<t/fonts/DejaVuSans.ttf>;
     my $deja = load-font( :file<t/fonts/DejaVuSans.ttf> );
 
-    # requires fontconfig
+    # find/load system fonts; requires fontconfig
     use PDF::Font::Loader :load-font, :find-font;
     $deja = load-font( :family<DejaVu>, :slant<italic> );
-
     my Str $file = find-font( :family<DejaVu>, :slant<italic> );
     my $deja-vu = load-font: :$file;
 
+    # use the font to add text to a PDF
+    use PDF::Lite;
     my PDF::Lite $pdf .= new;
     $pdf.add-page.text: {
        .font = $deja;
@@ -42,7 +42,7 @@ METHODS
 
 A class level method to create a new font object.
 
-#### `PDF::Font::Loader.load-font(Str :$file);`
+#### `load-font(Str :$file);`
 
 Loads a font file.
 
@@ -58,7 +58,7 @@ parameters:
 
         * Postscript (`.pfb`, or `.pfa`)
 
-#### `PDF::Font::Loader.load-font(Str :$family);`
+#### `load-font(Str :$family);`
 
     my $vera = PDF::Font::Loader.load-font: :family<vera>;
     my $deja = PDF::Font::Loader.load-font: :family<Deja>, :weight<bold>, :width<condensed> :slant<italic>);

@@ -16,5 +16,12 @@ $page.text: {
 }
 lives-ok { $pdf.save-as: "t/type1-encoding.pdf"; };
 
+my Hash $dict = $page.resources('Font').values[0];
+
+##lives-ok {
+$times = PDF::Font::Loader.load-font( :$dict ); ## }, 'reload font from dict - lives';
+
+is-deeply $times.encode('abcdxyz'), buf8.new(97,1,2,100,120,10,11), 'differences re-encoding';
+
 done-testing;
 

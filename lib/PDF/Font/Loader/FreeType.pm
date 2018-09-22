@@ -1,9 +1,12 @@
 class PDF::Font::Loader::FreeType {
     use PDF::COS;
+    use PDF::COS::Name;
+    use PDF::COS::Stream;
     use PDF::IO::Blob;
     use PDF::IO::Util :pack;
     use PDF::Writer;
     use NativeCall;
+    use PDF::Font::Loader::Enc::CMap;
     use PDF::Font::Loader::Enc::Identity;
     use PDF::Font::Loader::Enc::Identity-H;
     use PDF::Font::Loader::Enc::Type1;
@@ -22,31 +25,34 @@ class PDF::Font::Loader::FreeType {
     use PDF::Content:ver(v0.2.3+);
     use PDF::Content::Font;
     has PDF::Content::Font $!dict;
-    has UInt $.first-char;
-    has UInt $.last-char;
-    has uint16 @!widths; method widths {@!widths}
-    my subset EncodingScheme where 'mac'|'win'|'zapf'|'sym'|'identity'|'identity-h'|PDF::Font::Loader::Enc;
+    has uint $.first-char;
+    has uint $.last-char;
+    has uint16 @!widths;
+    method widths is rw { @!widths }
+    my subset EncodingScheme where 'mac'|'win'|'zapf'|'sym'|'identity'|'identity-h'|PDF::COS::Stream;
     has EncodingScheme $!enc;
     has Bool $.embed = True;
 
     submethod TWEAK(:@differences,
-                    List :$widths,
+                    :$widths,
                     :$!enc = self!font-format eq 'Type1' || ! $!embed || $!face.num-glyphs <= 255
             ?? 'win'
             !! 'identity-h') {
-        @!widths = .List with $widths;
         die "can't use identity-h encoding with type-1 fonts"
             if self!font-format eq 'Type1' && $!enc eq 'identity-h';
         die "can't use identity-h encoding with unembedded fonts"
             if ! $!embed && $!enc eq 'identity-h';
         $!encoder = do given $!enc {
-            when PDF::Font::Loader::Enc { $_ }
-            when 'identity' { PDF::Font::Loader::Enc::Identity.new: :$!face }
+            when PDF::COS::Stream { PDF::Font::Loader::Enc::CMap.new: :cmap($_), :$!face;  }
+            when 'identity'   { PDF::Font::Loader::Enc::Identity.new: :$!face }
             when 'identity-h' { PDF::Font::Loader::Enc::Identity-H.new: :$!face }
             default { PDF::Font::Loader::Enc::Type1.new: :$!enc, :$!face; }
         }
+
         $!encoder.differences = @differences
             if @differences;
+
+        @!widths = .list with $widths;
     }
 
     method height($pointsize = 1000, Bool :$from-baseline, Bool :$hanging) {
@@ -102,7 +108,12 @@ class PDF::Font::Loader::FreeType {
     }
 
     method !font-file {
-        my PDF::IO::Blob $decoded .= new: $!font-stream;
+        my  $decoded = do with $!font-stream {
+            PDF::IO::Blob.new: $_;
+        }
+        else {
+            die "can't embed font without a font stream";
+        }
 
         my %dict = :Length1($!font-stream.bytes);
         %dict<Filter> = :name<FlateDecode>
@@ -127,24 +138,24 @@ class PDF::Font::Loader::FreeType {
         »;
 
     method !font-descriptor {
-        my $Ascent = $!face.ascender;
-        my $Descent = $!face.descender;
-        my $FontName = PDF::COS.coerce: :name($.font-name);
-        my $FontFamily = $!face.family-name;
-        my $FontBBox = $!face.bounding-box.Array;
-        my $Flags;
+        my Numeric $Ascent = $!face.ascender;
+        my Numeric $Descent = $!face.descender;
+        my PDF::COS::Name $FontName = PDF::COS.coerce: :name($.font-name);
+        my Str $FontFamily = $!face.family-name;
+        my Numeric @FontBBox[4] = $!face.bounding-box.Array;
+        my UInt $Flags;
         $Flags +|= FixedPitch if $!face.is-fixed-width;
         $Flags +|= Italic if $!face.is-italic;
-        my $CapHeight = (self!char-height( 'X'.ord) || $Ascent * 0.9).round;
-        my $XHeight   = (self!char-height( 'x'.ord) || $Ascent * 0.7).round;
+        my Numeric $CapHeight = (self!char-height( 'X'.ord) || $Ascent * 0.9).round;
+        my Numeric $XHeight   = (self!char-height( 'x'.ord) || $Ascent * 0.7).round;
         # estimates for required fields
-        my $ItalicAngle = $!face.is-italic ?? -12 !! 0;
-        my $StemV = $!face.is-bold ?? 110 !! 80;
+        my Numeric $ItalicAngle = $!face.is-italic ?? -12 !! 0;
+        my Numeric $StemV = $!face.is-bold ?? 110 !! 80;
 
         my $dict = {
             :Type( :name<FontDescriptor> ),
             :$FontName, :$FontFamily, :$Flags,
-            :$Ascent, :$Descent, :$FontBBox,
+            :$Ascent, :$Descent, :@FontBBox,
             :$ItalicAngle, :$StemV, :$CapHeight, :$XHeight,
         };
         $dict{self!font-file-entry} = self!font-file
@@ -302,7 +313,7 @@ class PDF::Font::Loader::FreeType {
                 $stringwidth += $glyph-slot.metrics.hori-advance * $scale;
                 if $kern && $prev-idx {
                     ft-try({ $struct.FT_Get_Kerning($prev-idx, $this-idx, FT_KERNING_UNSCALED, $kerning); });
-                    my $dx = ($kerning.x * $scale).round;
+                    my $dx := ($kerning.x * $scale).round;
                     $stringwidth += $dx;
                 }
             }
@@ -345,7 +356,7 @@ class PDF::Font::Loader::FreeType {
                 $stringwidth += $glyph-slot.metrics.hori-advance * $scale;
                 if $has-kerning && $prev-idx {
                     ft-try({ $face-struct.FT_Get_Kerning($prev-idx, $this-idx, FT_KERNING_UNSCALED, $kerning); });
-                    my $dx = ($kerning.x * $scale).round;
+                    my $dx := ($kerning.x * $scale).round;
                     if $dx {
                         @chunks.push: $str;
                         @chunks.push: $dx;

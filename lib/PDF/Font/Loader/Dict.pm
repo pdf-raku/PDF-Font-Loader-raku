@@ -24,7 +24,6 @@ class PDF::Font::Loader::Dict {
     }
 
     method load-font-opts(FontDict :$dict! is copy, Bool :$embed = True, |c) {
-        use PDF::Font::Loader::Enc::CMap;
         my %opt;
 
         %opt<enc> = do with $dict<Encoding> {
@@ -35,7 +34,7 @@ class PDF::Font::Loader::Dict {
             default { self!base-enc($_, :$dict); }
         }
 
-        %opt<enc> //= PDF::Font::Loader::Enc::CMap.new: :cmap($_)
+        %opt<enc> //= $_
             with $dict<ToUnicode>;
 
         %opt<first-char> = $_ with $dict<FirstChar>;
@@ -80,11 +79,11 @@ class PDF::Font::Loader::Dict {
         }
         else {
             # no font descriptor. assume core font
-            my $face = $dict<BaseFont> // 'courier';
-            %opt<weight> = 'bold' if $face ~~ s/:i ['-'|',']? bold //;
-            %opt<slant> = $0.lc if $face ~~ s/:i ['-'|',']? (italic|oblique) //;
-            %opt<family> = $face;
-            %opt<enc> //= do given $face {
+            my $family = $dict<BaseFont> // 'courier';
+            %opt<weight> = 'bold' if $family ~~ s/:i ['-'|',']? bold //;
+            %opt<slant> = $0.lc if $family ~~ s/:i ['-'|',']? (italic|oblique) //;
+            %opt<family> = $family;
+            %opt<enc> //= do given $family {
                 when /:i ^[ZapfDingbats|WebDings]/ {'zapf'}
                 when /:i ^[Symbol]/ {'sym'}
                 default {'std'}

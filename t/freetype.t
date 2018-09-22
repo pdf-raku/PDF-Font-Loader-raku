@@ -17,6 +17,7 @@ $pdf.add-page.text: {
    my $n = 0;
    .font = $deja, 8;
    $deja.face.forall-chars: -> $_ {
+       last if .char-code > 19900;
        $s ~= .char-code.chr;
        $s ~= ' ' if $n++ %% 10
    };

@@ -1,3 +1,10 @@
+Release 0.2.3
+   - added experimental loading from a PDF Font dictionary.
+
+     load-font: :$dict
+
+     Backported from [PDF::To::Cairo::]FontLoader.
+
 Release 0.2.2
     - replace positional with :family parameter in find-font(),
       load-font(). For consistancy with PDF::Content.load-font
@@ -15,7 +22,7 @@ Release 0.1.9
     - simplify load-font multi-methods
 
 Release 0.1.8
-    support for PDF::Render::Cairo font (WIP)
+    support for PDF::To::Cairo font (WIP)
 
 Release 0.1.7
     - fix kern method
