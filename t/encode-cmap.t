@@ -5,8 +5,11 @@ use PDF::IO::IndObj;
 use PDF::Grammar::PDF;
 use PDF::Grammar::PDF::Actions;
 use PDF::Font::Loader::Enc::CMap;
+use Font::FreeType;
 
-my $actions = PDF::Grammar::PDF::Actions.new;
+my PDF::Grammar::PDF::Actions $actions .= new;
+my Font::FreeType $freetype .= new;
+my $face = $freetype.face('t/fonts/TimesNewRomPS.pfb');
 
 my $input = q:to<--END-->;
 593 0 obj <<
@@ -123,8 +126,10 @@ my %ast = $/.ast;
 my $ind-obj = PDF::IO::IndObj.new( :$input, |%ast );
 my $cmap = $ind-obj.object;
 
-my $cmap-obj = PDF::Font::Loader::Enc::CMap.new: :$cmap;
+my $cmap-obj = PDF::Font::Loader::Enc::CMap.new: :$cmap, :$face;
 
 is-deeply $cmap-obj.decode("\x5\xF"), Buf[uint32].new(0x22, 0x2c), "decode";
 is $cmap-obj.decode("\x24\x25\x26", :str), 'ABC', "decode:str";
+$cmap-obj.differences = [0x42, 'C'];
+is $cmap-obj.decode("\x24\x25\x42", :str), 'ABC', "decode differences";
 done-testing;

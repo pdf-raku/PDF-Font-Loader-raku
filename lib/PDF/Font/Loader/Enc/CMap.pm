@@ -4,7 +4,10 @@ use PDF::Font::Loader::Enc;
 
 class PDF::Font::Loader::Enc::CMap
     is PDF::Font::Loader::Enc {
-    has uint32 @!to-unicode;
+    use PDF::Font::Loader::Enc::Glyphic;
+    also does PDF::Font::Loader::Enc::Glyphic;
+
+    has uint32 @.to-unicode;
 
     submethod TWEAK(PDF::COS::Stream :$cmap!) {
 
@@ -27,10 +30,17 @@ class PDF::Font::Loader::Enc::CMap
         }
     }
 
+    method set-encoding($chr-code, $idx) {
+        unless @!to-unicode[$idx] ~~ $chr-code {
+            @!to-unicode[$idx] = $chr-code;
+            $.add-glyph-diff($idx);
+        }
+    }
     multi method decode(Str $s, :$str! --> Str) {
         $s.ords.map({@!to-unicode[$_]}).grep({$_}).map({.chr}).join;
     }
     multi method decode(Str $s --> buf32) {
         buf32.new: $s.ords.map({@!to-unicode[$_]}).grep: {$_};
     }
+
 }
