@@ -42,7 +42,7 @@ METHODS
 
 A class level method to create a new font object.
 
-#### `load-font(Str :$file);`
+#### `PDF::Font::Loader.load-font(Str :$file);`
 
 Loads a font file.
 
@@ -58,7 +58,7 @@ parameters:
 
         * Postscript (`.pfb`, or `.pfa`)
 
-#### `load-font(Str :$family);`
+#### `PDF::Font::Loader.load-font(Str :$family);`
 
     my $vera = PDF::Font::Loader.load-font: :family<vera>;
     my $deja = PDF::Font::Loader.load-font: :family<Deja>, :weight<bold>, :width<condensed> :slant<italic>);
