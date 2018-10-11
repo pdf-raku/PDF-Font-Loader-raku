@@ -13,8 +13,8 @@ class PDF::Font::Loader:ver<0.2.3> {
 
     proto method load-font($?: |c) is export(:load-font) {*};
 
-    multi method load-font($class = $?CLASS: Str :$file!, |c) {
-        my Blob $font-stream = $file.IO.slurp: :bin;
+    multi method load-font($class = $?CLASS: IO() :$file!, |c) {
+        my Blob $font-stream = $file.slurp: :bin;
         $class.load-font(:$font-stream, |c);
     }
 
@@ -74,7 +74,7 @@ class PDF::Font::Loader:ver<0.2.3> {
         }
         my $file = $cmd.out.slurp;
         $file
-          || die "unable to resolve font: $pat"
+          || die "unable to resolve font: '$pat'"
     }
 
 }

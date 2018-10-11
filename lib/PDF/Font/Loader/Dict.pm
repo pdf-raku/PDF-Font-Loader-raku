@@ -26,16 +26,16 @@ class PDF::Font::Loader::Dict {
     method load-font-opts(FontDict :$dict! is copy, Bool :$embed = True, |c) {
         my %opt;
 
-        %opt<enc> = do with $dict<Encoding> {
+        %opt<enc> = $_
+            with $dict<ToUnicode>;
+
+        %opt<enc> //= do with $dict<Encoding> {
             when Hash {
                 %opt<differences> = $_ with .<Differences>;
                 self!base-enc(.<BaseEncoding>, :$dict);
             }
             default { self!base-enc($_, :$dict); }
         }
-
-        %opt<enc> //= $_
-            with $dict<ToUnicode>;
 
         %opt<first-char> = $_ with $dict<FirstChar>;
         %opt<last-char>  = $_ with $dict<LastChar>;
