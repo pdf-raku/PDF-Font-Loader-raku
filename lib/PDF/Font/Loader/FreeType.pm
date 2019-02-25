@@ -58,8 +58,8 @@ class PDF::Font::Loader::FreeType {
     method height($pointsize = 1000, Bool :$from-baseline, Bool :$hanging) {
         die "todo: height of non-scaling fonts" unless $!face.is-scalable;
         my List $bbox = $!face.bounding-box.Array;
-	my Numeric $height = $hanging ?? $!face.ascender !! $bbox[3];
-	$height -= $hanging ?? $!face.descender !! $bbox[1]
+        my Numeric $height = $hanging ?? $!face.ascender !! $bbox[3];
+        $height -= $hanging ?? $!face.descender !! $bbox[1]
             unless $from-baseline;
         $height * $pointsize / $!face.units-per-EM;
     }
@@ -388,7 +388,7 @@ class PDF::Font::Loader::FreeType {
                             $chars.push: $w;
                         }
                         else {
-                            $chars = [ $w, ];
+                            $chars = $w.Array;
                             $j = $i;
                             @Widths.append: ($i, $chars);
                         }

@@ -1,3 +1,8 @@
+Release 0.2.4
+   - [PDF::Font::Loader::Dict] Prefer toUnicode map
+     over encoding in font dictionaries
+   - Adjustments for Font::FreeType 0.1.7.
+
 Release 0.2.3
    - added experimental loading from a PDF Font dictionary.
 

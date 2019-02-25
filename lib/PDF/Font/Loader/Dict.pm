@@ -1,4 +1,5 @@
 
+#| Loads a font from a PDF font dictionary (experimental)
 class PDF::Font::Loader::Dict {
     my subset FontDict of Hash where .<Type> ~~ 'Font';
 

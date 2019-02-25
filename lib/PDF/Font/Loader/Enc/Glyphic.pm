@@ -8,8 +8,8 @@ role PDF::Font::Loader::Enc::Glyphic
   use Font::FreeType::Native::Types;
   has Font::FreeType::Face $.face is required;
 
-  method lookup-glyph($chr-code) {
-      $!face.glyph-name($chr-code);
+  method lookup-glyph(UInt $chr-code) {
+      $!face.glyph-name($chr-code.chr);
   }
 
   method glyph-map {
@@ -20,7 +20,8 @@ role PDF::Font::Loader::Enc::Glyphic
       my FT_UInt $glyph-idx;
       my FT_ULong $char-code = $struct.FT_Get_First_Char( $glyph-idx);
       while $glyph-idx {
-          %codes{ $!face.glyph-name($char-code) } = $char-code.chr;
+          my $char := $char-code.chr;
+          %codes{ $!face.glyph-name($char) } = $char;
           $char-code = $struct.FT_Get_Next_Char( $char-code, $glyph-idx);
       }
       %codes;
