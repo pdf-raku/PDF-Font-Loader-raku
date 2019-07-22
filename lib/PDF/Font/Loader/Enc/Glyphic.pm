@@ -7,6 +7,7 @@ role PDF::Font::Loader::Enc::Glyphic
   use Font::FreeType::Native;
   use Font::FreeType::Native::Types;
   has Font::FreeType::Face $.face is required;
+  has Hash $!glyph-map;
 
   method lookup-glyph(UInt $chr-code) {
       $!face.glyph-name($chr-code.chr);
@@ -15,16 +16,18 @@ role PDF::Font::Loader::Enc::Glyphic
   method glyph-map {
       return Mu
           unless $!face.has-glyph-names;
-      my %codes;
-      my FT_Face $struct = $!face.struct;  # get the native face object
-      my FT_UInt $glyph-idx;
-      my FT_ULong $char-code = $struct.FT_Get_First_Char( $glyph-idx);
-      while $glyph-idx {
-          my $char := $char-code.chr;
-          %codes{ $!face.glyph-name($char) } = $char;
-          $char-code = $struct.FT_Get_Next_Char( $char-code, $glyph-idx);
+      $!glyph-map //= do {
+          my %codes;
+          my FT_Face $struct = $!face.native;  # get the native face object
+          my FT_UInt $glyph-idx;
+          my FT_ULong $char-code = $struct.FT_Get_First_Char( $glyph-idx);
+          while $glyph-idx {
+              my $char := $char-code.chr;
+              %codes{ $!face.glyph-name($char) } = $char;
+              $char-code = $struct.FT_Get_Next_Char( $char-code, $glyph-idx);
+          }
+          %codes;
       }
-      %codes;
   }
 
 }

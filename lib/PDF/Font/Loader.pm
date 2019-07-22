@@ -1,10 +1,10 @@
 use v6;
 
-class PDF::Font::Loader:ver<0.2.4> {
+class PDF::Font::Loader:ver<0.2.5> {
 
     use Font::FreeType;
     use Font::FreeType::Face;
-    use PDF::Font::Loader::FreeType;
+    use PDF::Font::Loader::FreeType:ver(v0.2.2+);
     use PDF::Font::Loader::Type1;
     use PDF::Font::Loader::Dict;
 

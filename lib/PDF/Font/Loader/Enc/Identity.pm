@@ -11,7 +11,7 @@ class PDF::Font::Loader::Enc::Identity
   has UInt $.idx-mask;
 
   method TWEAK(Font::FreeType::Face :$face!) {
-      my FT_Face $struct = $face.struct;  # get the native face object
+      my FT_Face $struct = $face.native;  # get the native face object
       my FT_UInt $idx;
       my FT_ULong $char-code = $struct.FT_Get_First_Char( $idx);
       $!idx-mask = ($idx div 256) * 256;

@@ -21,7 +21,7 @@ $page.text: {
        my $s;
        my $n = 0;
        .font = $font;
-       $font.face.forall-chars: -> $_ {
+       $font.face.forall-chars: :!load, -> $_ {
            $s ~= .char-code.chr;
            $s ~= ' ' if $n++ %% 10
         };

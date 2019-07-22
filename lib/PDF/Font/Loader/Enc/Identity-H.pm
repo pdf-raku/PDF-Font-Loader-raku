@@ -19,7 +19,7 @@ class PDF::Font::Loader::Enc::Identity-H
     }
     multi method encode(Str $text) is default {
         my uint16 @codes;
-        my $face-struct = $!face.struct;
+        my $face-struct = $!face.native;
         for $text.ords {
             my uint $index = $face-struct.FT_Get_Char_Index($_);
             @!to-unicode[$index] ||= $_;
@@ -29,7 +29,7 @@ class PDF::Font::Loader::Enc::Identity-H
     }
 
     method !setup-decoding {
-        my FT_Face $struct = $!face.struct;
+        my FT_Face $struct = $!face.native;
         my FT_UInt $glyph-idx;
         my FT_ULong $char-code = $struct.FT_Get_First_Char( $glyph-idx);
         @!to-unicode[$!face.num-glyphs] = 0;
