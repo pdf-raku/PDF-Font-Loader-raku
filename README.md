@@ -48,7 +48,7 @@ Loads a font file.
 
 parameters:
 
-  * `:$file`
+  * `Str :$file`
 
     Font file to load. Currently supported formats are:
 
@@ -69,19 +69,23 @@ Note: Requires fontconfig to be installed on the system.
 
 parameters:
 
-  * `:$family`
+  * `Str :$family`  # font family name (case insensitive, required)
+  * `Str :$weight`  # a named font weight (e.g `thin`, `book`) or a numeric 3-digit weight (100 .. 900).
+  * `Str :$stretch` # a named stretch (e.g. `condensed`, `expanded`)
+  * `Str :$slant`   # a named slant (e.g. `oblique`, `italic`).
 
     Family name of an installed system font to load.
 
 ### find-font
 
-    find-font(Str :$family,     # e.g. :family<vera>
-              Str :$weight,     # thin|extralight|light|book|regular|medium|semibold|bold|extrabold|black|100..900
-              Str :$stretch,    # normal|[ultra|extra]?[condensed|expanded]
-              Str :$slant,      # normal|oblique|italic
+    my Str $file = find-font(
+              :$family,     # e.g. :family<vera>
+              :$weight,     # thin|extralight|light|book|regular|medium|semibold|bold|extrabold|black|100..900
+              :$stretch,    # normal|[ultra|extra]?[condensed|expanded]
+              :$slant,      # normal|oblique|italic
               );
 
-Locates a matching font-file. Doesn't actually load it.
+Locates a matching font-file. Similar to the `load-font` method, but doesn't actually load it.
 
     my $file = PDF::Font::Loader.find-font(:family<Deja>, :weight<bold>, :width<condensed>, :slant<italic>);
     say $file;  # /usr/share/fonts/truetype/dejavu/DejaVuSansCondensed-BoldOblique.ttf
