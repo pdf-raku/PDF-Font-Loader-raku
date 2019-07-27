@@ -29,7 +29,7 @@ class PDF::Font::Loader::FreeType {
     has uint $.last-char;
     has uint16 @!widths;
     method widths is rw { @!widths }
-    my subset EncodingScheme where 'mac'|'win'|'zapf'|'sym'|'identity'|'identity-h'|PDF::COS::Stream;
+    my subset EncodingScheme where 'mac'|'win'|'zapf'|'sym'|'identity'|'identity-h'|'std'|PDF::COS::Stream;
     has EncodingScheme $!enc;
     has Bool $.embed = True;
 
@@ -52,7 +52,7 @@ class PDF::Font::Loader::FreeType {
         $!encoder.differences = @differences
             if @differences;
 
-        @!widths = .list with $widths;
+        @!widths = .map(*.Int) with $widths;
     }
 
     method height($pointsize = 1000, Bool :$from-baseline, Bool :$hanging) {
