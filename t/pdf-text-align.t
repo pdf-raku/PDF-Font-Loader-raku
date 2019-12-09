@@ -1,6 +1,6 @@
 use v6;
 use Test;
-plan 1;
+plan 2;
 use PDF::Lite;
 use PDF::Content;
 use PDF::Font::Loader;
@@ -15,6 +15,8 @@ my $height = 80;
 my $x = 110;
 
 my $font = PDF::Font::Loader.load-font: :file<t/fonts/DejaVuSans.ttf>;
+
+is-deeply $font.encode("Abc"), buf8.new(0,36,0,69,0,70), 'encode (identity-h)';
 
 $gfx.text: -> $gfx {
     $gfx.font = $font, 10;

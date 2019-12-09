@@ -3,7 +3,7 @@ use Test;
 use PDF::Lite;
 use PDF::Font::Loader;
 
-plan 3;
+plan 4;
 # see if we can re-load the font that we wrote in pdf-text.align.t
 
 class FontLoader {
@@ -48,5 +48,6 @@ my ($font) = %fonts.values;
 isa-ok $font, 'PDF::Font::Loader::FreeType', 'loaded a FreeType font';
 is $font.font-name, 'DejaVuSans';
 is-approx $font.height, 1695.3125;
+is-deeply $font.encode("Abc"), buf8.new(0,36,0,69,0,70), 'encode (identity-h)';
 
 done-testing;

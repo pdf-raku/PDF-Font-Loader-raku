@@ -35,17 +35,19 @@ class PDF::Font::Loader::FreeType {
 
     submethod TWEAK(:@differences,
                     :$widths,
-                    :$!enc = self!font-format eq 'Type1' || ! $!embed || $!face.num-glyphs <= 255
+                    PDF::COS::Stream :$cmap,
+                    Str :$!enc = self!font-format eq 'Type1' || ! $!embed || $!face.num-glyphs <= 255
             ?? 'win'
             !! 'identity-h') {
         die "can't use identity-h encoding with type-1 fonts"
             if self!font-format eq 'Type1' && $!enc eq 'identity-h';
         die "can't use identity-h encoding with unembedded fonts"
             if ! $!embed && $!enc eq 'identity-h';
-        $!encoder = do given $!enc {
-            when PDF::COS::Stream { PDF::Font::Loader::Enc::CMap.new: :cmap($_), :$!face;  }
-            when 'identity'   { PDF::Font::Loader::Enc::Identity.new: :$!face }
-            when 'identity-h' { PDF::Font::Loader::Enc::Identity-H.new: :$!face }
+
+        $!encoder = do {
+            when $cmap.defined         { PDF::Font::Loader::Enc::CMap.new: :$cmap, :$!face, :$!enc;  }
+            when $!enc eq 'identity'   { PDF::Font::Loader::Enc::Identity.new: :$!face }
+            when $!enc eq 'identity-h' { PDF::Font::Loader::Enc::Identity-H.new: :$!face }
             default { PDF::Font::Loader::Enc::Type1.new: :$!enc, :$!face; }
         }
 
@@ -183,7 +185,7 @@ class PDF::Font::Loader::FreeType {
         };
     }
 
-    method !unicode-cmap {
+    method !make-unicode-cmap {
         my $CMapName = :name('p6-cmap-' ~ $.font-name);
         my $dict = {
             :Type( :name<CMap> ),
@@ -395,7 +397,7 @@ class PDF::Font::Loader::FreeType {
                     }
                 }
                 $.to-dict<DescendantFonts>[0]<W> = @Widths;
-                $.to-dict<ToUnicode> = self!unicode-cmap;
+                $.to-dict<ToUnicode> = self!make-unicode-cmap;
             }
             default {
                 given $.to-dict {
