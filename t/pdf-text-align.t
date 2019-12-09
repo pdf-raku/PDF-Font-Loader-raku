@@ -7,7 +7,7 @@ use PDF::Font::Loader;
 # ensure consistant document ID generation
 srand(123456);
 
-my $pdf = PDF::Lite.new;
+my PDF::Lite $pdf .= new();
 my PDF::Lite::Page $page = $pdf.add-page;
 my PDF::Content $gfx = $page.gfx;
 my $width = 100;
