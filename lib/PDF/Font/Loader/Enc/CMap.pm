@@ -59,20 +59,25 @@ class PDF::Font::Loader::Enc::CMap
     multi method decode(Str $s, :$str! --> Str) {
         $s.ords.map({@!to-unicode[$_]}).grep({$_}).map({.chr}).join;
     }
-    multi method decode(Str $s --> buf32) {
-        buf32.new: $s.ords.map({@!to-unicode[$_]}).grep: {$_};
+    multi method decode(Str $s --> buf32) is default {
+        # 8 bit Identity decoding
+        my &dec = $!enc ~~ 'identity-h'|'identity-v'
+            ?? -> \hi, \lo {@!to-unicode[hi +< 8 + lo]}
+            !! -> $_ { @!to-unicode[$_] };
+        buf32.new: $s.ords.map(&dec).grep: {$_};
     }
 
     multi method encode(Str $text, :$str! --> Str) {
         self.encode($text).decode: 'latin-1';
     }
-    multi method encode(Str $text where $!enc ~~ 'identity-h') {
+    multi method encode(Str $text ) is default {
         # 16 bit Identity-H encoding
-        my uint16 @ = $text.ords.map({ %!from-unicode{$_} }).grep: {$_};
+        if $!enc ~~ 'identity-h'|'identity-v' {
+            # let the caller inspect, then repack this
+            my uint16 @ = $text.ords.map({ %!from-unicode{$_} }).grep: {$_};
+        }
+        else {
+            buf8.new: $text.ords.map({ %!from-unicode{$_} }).grep: {$_};
+        }
     }
-    multi method encode(Str $text where $!enc ~~ 'identity' --> buf8) {
-        # 8 bit Identity encoding
-        buf8.new: $text.ords.map({ %!from-unicode{$_} }).grep: {$_};
-    }
-    multi method encode($) { fail "unsupported CMAP encoding: $!enc"  }
 }

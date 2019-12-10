@@ -29,7 +29,7 @@ class PDF::Font::Loader::FreeType {
     has uint $.last-char;
     has uint16 @!widths;
     method widths is rw { @!widths }
-    my subset EncodingScheme where 'mac'|'win'|'zapf'|'sym'|'identity'|'identity-h'|'std'|PDF::COS::Stream;
+    my subset EncodingScheme where 'mac'|'win'|'zapf'|'sym'|'identity'|'identity-h'|'identity-v'|'std';
     has EncodingScheme $!enc;
     has Bool $.embed = True;
 
@@ -45,10 +45,13 @@ class PDF::Font::Loader::FreeType {
             if ! $!embed && $!enc eq 'identity-h';
 
         $!encoder = do {
-            when $cmap.defined         { PDF::Font::Loader::Enc::CMap.new: :$cmap, :$!face, :$!enc;  }
-            when $!enc eq 'identity'   { PDF::Font::Loader::Enc::Identity.new: :$!face }
-            when $!enc eq 'identity-h' { PDF::Font::Loader::Enc::Identity-H.new: :$!face }
-            default { PDF::Font::Loader::Enc::Type1.new: :$!enc, :$!face; }
+            when $cmap.defined
+                        { PDF::Font::Loader::Enc::CMap.new: :$cmap, :$!face, :$!enc;  }
+            when $!enc eq 'identity'
+                        { PDF::Font::Loader::Enc::Identity.new: :$!face }
+            when $!enc ~~ 'identity-h'|'identity-v'
+                        { PDF::Font::Loader::Enc::Identity-H.new: :$!face }
+            default     { PDF::Font::Loader::Enc::Type1.new: :$!enc, :$!face; }
         }
 
         $!encoder.differences = @differences

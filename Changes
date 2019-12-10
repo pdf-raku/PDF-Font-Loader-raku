@@ -3,6 +3,7 @@ Release 0.2.7
      -- Skip obviously invalid Unicode code-points.
      -- Added .encode() method. Initial support for /Identity-H
         and /Identity schemes
+     -- Fixed identity-h decoding (16bit)
 
 Release 0.2.6
    - [PDF::Font::Loader::FreeType]

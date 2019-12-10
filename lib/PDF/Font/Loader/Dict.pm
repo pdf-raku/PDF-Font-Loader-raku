@@ -5,6 +5,7 @@ class PDF::Font::Loader::Dict {
 
     method !base-enc($_, :$dict!) {
         when 'Identity-H'       {'identity-h' }
+        when 'Identity-V'       {'identity-v' }
         when 'WinAnsiEncoding'  { 'win' }
         when 'MacRomanEncoding' { 'mac' }
         default {
