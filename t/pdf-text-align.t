@@ -16,7 +16,7 @@ my $x = 110;
 
 my $font = PDF::Font::Loader.load-font: :file<t/fonts/DejaVuSans.ttf>;
 
-is-deeply $font.encode("Abc"), buf8.new(0,36,0,69,0,70), 'encode (identity-h)';
+is-deeply $font.encode("Abc♠♥♦♣"), buf8.new(0,36, 0,69, 0,70, 15,56, 15,61, 15,62, 15,59), 'encode (identity-h)';
 
 $gfx.text: -> $gfx {
     $gfx.font = $font, 10;

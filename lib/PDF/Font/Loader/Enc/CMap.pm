@@ -56,15 +56,18 @@ class PDF::Font::Loader::Enc::CMap
             $.add-glyph-diff($idx);
         }
     }
+    method !decoder {
+        $!enc ~~ 'identity-h'|'identity-v'
+            ?? -> \hi, \lo {@!to-unicode[hi +< 8 + lo]}
+            !! -> $_ { @!to-unicode[$_] };
+    }
+
     multi method decode(Str $s, :$str! --> Str) {
-        $s.ords.map({@!to-unicode[$_]}).grep({$_}).map({.chr}).join;
+        $s.ords.map(self!decoder).grep({$_}).map({.chr}).join;
     }
     multi method decode(Str $s --> buf32) is default {
         # 8 bit Identity decoding
-        my &dec = $!enc ~~ 'identity-h'|'identity-v'
-            ?? -> \hi, \lo {@!to-unicode[hi +< 8 + lo]}
-            !! -> $_ { @!to-unicode[$_] };
-        buf32.new: $s.ords.map(&dec).grep: {$_};
+        buf32.new: $s.ords.map(self!decoder).grep: {$_};
     }
 
     multi method encode(Str $text, :$str! --> Str) {

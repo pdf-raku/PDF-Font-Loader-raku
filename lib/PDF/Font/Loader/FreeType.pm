@@ -39,10 +39,12 @@ class PDF::Font::Loader::FreeType {
                     Str :$!enc = self!font-format eq 'Type1' || ! $!embed || $!face.num-glyphs <= 255
             ?? 'win'
             !! 'identity-h') {
-        die "can't use identity-h encoding with type-1 fonts"
-            if self!font-format eq 'Type1' && $!enc eq 'identity-h';
-        die "can't use identity-h encoding with unembedded fonts"
-            if ! $!embed && $!enc eq 'identity-h';
+        if $!enc ~~ 'identity'|'identity-h'|'identity-v' {
+            die "can't use $!enc encoding with type-1 fonts"
+                if self!font-format eq 'Type1';
+            die "can't use $!enc encoding with unembedded fonts"
+                unless $!embed;
+        }
 
         $!encoder = do {
             when $cmap.defined

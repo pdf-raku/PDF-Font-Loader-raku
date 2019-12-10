@@ -2,8 +2,8 @@ Release 0.2.7
    - [PDF::Font::Loader::Enc::CMap]
      -- Skip obviously invalid Unicode code-points.
      -- Added .encode() method. Initial support for /Identity-H
-        and /Identity schemes
-     -- Fixed identity-h decoding (16bit)
+        and /Identity-V schemes
+     -- Fixed identity-h encoding and decoding (16bit)
 
 Release 0.2.6
    - [PDF::Font::Loader::FreeType]
