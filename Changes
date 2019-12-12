@@ -11,7 +11,7 @@ Release 0.2.6
      -- handle float widths (convert to Int)
 
 Release 0.2.5
-   - Make compatiblwe with Font::FreeType 0.2.2
+   - Make compatible with Font::FreeType 0.2.2
 
 Release 0.2.4
    - [PDF::Font::Loader::Dict] Prefer toUnicode map

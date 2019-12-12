@@ -152,6 +152,27 @@ Family name of an installed system font to load.
 
 =end item
 
+=begin item
+C<:$weight>
+
+Font weight, one of: C<thin>, C<extralight>, C<light>, C<book>, C<regular>, C<medium>, C<semibold>, C<bold>, C<extrabold>, C<black> or a number in the range C<100> .. C<900>.
+
+=end item
+
+=begin item
+C<:$stretch>
+
+Font stretch, one of: C<normal>, C<ultracondensed>, C<extracondensed>, C<condensed>, or C<expanded>
+
+=end item
+
+=begin item
+C<:$slant>
+
+Font slat, one of: C<normal>, C<oblique>, or C<italic>
+
+=end item
+
 =head3 find-font
 
   find-font(Str :$family,     # e.g. :family<vera>

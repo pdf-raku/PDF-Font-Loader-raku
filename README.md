@@ -48,7 +48,7 @@ Loads a font file.
 
 parameters:
 
-  * `Str :$file`
+  * `:$file`
 
     Font file to load. Currently supported formats are:
 
@@ -69,23 +69,31 @@ Note: Requires fontconfig to be installed on the system.
 
 parameters:
 
-  * `Str :$family`  # font family name (case insensitive, required)
-  * `Str :$weight`  # a named font weight (e.g `thin`, `book`) or a numeric 3-digit weight (100 .. 900).
-  * `Str :$stretch` # a named stretch (e.g. `condensed`, `expanded`)
-  * `Str :$slant`   # a named slant (e.g. `oblique`, `italic`).
+  * `:$family`
 
     Family name of an installed system font to load.
 
+  * `:$weight`
+
+    Font weight, one of: `thin`, `extralight`, `light`, `book`, `regular`, `medium`, `semibold`, `bold`, `extrabold`, `black` or a number in the range `100` .. `900`.
+
+  * `:$stretch`
+
+    Font stretch, one of: `normal`, `ultracondensed`, `extracondensed`, `condensed`, or `expanded`
+
+  * `:$slant`
+
+    Font slat, one of: `normal`, `oblique`, or `italic`
+
 ### find-font
 
-    my Str $file = find-font(
-              :$family,     # e.g. :family<vera>
-              :$weight,     # thin|extralight|light|book|regular|medium|semibold|bold|extrabold|black|100..900
-              :$stretch,    # normal|[ultra|extra]?[condensed|expanded]
-              :$slant,      # normal|oblique|italic
+    find-font(Str :$family,     # e.g. :family<vera>
+              Str :$weight,     # thin|extralight|light|book|regular|medium|semibold|bold|extrabold|black|100..900
+              Str :$stretch,    # normal|[ultra|extra]?[condensed|expanded]
+              Str :$slant,      # normal|oblique|italic
               );
 
-Locates a matching font-file. Similar to the `load-font` method, but doesn't actually load it.
+Locates a matching font-file. Doesn't actually load it.
 
     my $file = PDF::Font::Loader.find-font(:family<Deja>, :weight<bold>, :width<condensed>, :slant<italic>);
     say $file;  # /usr/share/fonts/truetype/dejavu/DejaVuSansCondensed-BoldOblique.ttf
