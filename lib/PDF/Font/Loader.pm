@@ -7,7 +7,6 @@ class PDF::Font::Loader:ver<0.2.7> {
     use PDF::Font::Loader::FreeType:ver(v0.2.2+);
     use PDF::Font::Loader::Type1;
     use PDF::Font::Loader::Dict;
-
     subset TrueTypish of Font::FreeType::Face where .font-format ~~ 'TrueType'|'CFF';
     subset Type1ish of Font::FreeType::Face where .font-format ~~'Type 1';
 
@@ -16,12 +15,6 @@ class PDF::Font::Loader:ver<0.2.7> {
     multi method load-font($class = $?CLASS: IO() :$file!, |c) {
         my Blob $font-stream = $file.slurp: :bin;
         $class.load-font(:$font-stream, |c);
-    }
-
-    # resolve font name via fontconfig
-    multi method load-font($class = $?CLASS: Str :$family!, |c) {
-        my $file = $class.find-font(:$family, |c);
-        $class.load-font: :$file, |c;
     }
 
     multi method load-font($?: Font::FreeType::Face :$face!, Blob :$font-stream!, |c) {
@@ -39,9 +32,16 @@ class PDF::Font::Loader:ver<0.2.7> {
     }
 
     multi method load-font($?: Blob :$font-stream!, |c) is default {
-        my Font::FreeType $free-type .= new;
-        my $face = $free-type.face($font-stream);
+        state Font::FreeType $free-type;
+        $free-type //= Font::FreeType.new;
+        my Font::FreeType::Face $face = $free-type.face($font-stream);
         $.load-font( :$face, :$font-stream, |c);
+    }
+
+    # resolve font name via fontconfig
+    multi method load-font($class = $?CLASS: Str :$family!, |c) {
+        my $file = $class.find-font(:$family, |c);
+        $class.load-font: :$file, |c;
     }
 
     multi method load-font($?: Hash :$dict!, |c) {
@@ -54,9 +54,9 @@ class PDF::Font::Loader:ver<0.2.7> {
     subset Slant   of Str where /^[normal|oblique|italic]$/;
 
     method find-font($?: Str :$family!,
-                     Weight :$weight is copy = 'medium',
+                     Weight  :$weight is copy = 'medium',
                      Stretch :$stretch = 'normal',
-                     Slant :$slant = 'normal') is export(:find-font) {
+                     Slant   :$slant = 'normal') is export(:find-font) {
         my $pat = $family;
         with $weight {
             # convert CSS/PDF numeric weights for fontconfig

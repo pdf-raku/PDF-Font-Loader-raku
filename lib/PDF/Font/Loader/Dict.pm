@@ -20,8 +20,8 @@ class PDF::Font::Loader::Dict {
     }
 
     method is-embedded-font( FontDict :$dict! ) {
-        defined do with $dict<FontDescriptor> {
-            .<FontFile> // .<FontFile2> // .<FontFile3>
+        do with $dict<FontDescriptor> {
+            (.<FontFile>:exists) || (.<FontFile2>:exists) || (.<FontFile3>:exists)
         }
     }
 
@@ -41,7 +41,7 @@ class PDF::Font::Loader::Dict {
 
         %opt<first-char> = $_ with $dict<FirstChar>;
         %opt<last-char>  = $_ with $dict<LastChar>;
-        %opt<widths>     = $_ with $dict<Widths>; # todo: handle in PDF::Font::Loader
+        %opt<widths>     = $_ with $dict<Widths>;
 
         constant SymbolicFlag = 1 +< 5;
         constant ItalicFlag = 1 +< 6;
@@ -68,8 +68,8 @@ class PDF::Font::Loader::Dict {
                 with .<FontFile> // .<FontFile2> // .<FontFile3> {
                     my $font-stream = .decoded;
                     $font-stream = $font-stream.encode("latin-1")
-                    unless $font-stream ~~ Blob;
-                    %opt<font-stream> = $font-stream;
+                        unless $font-stream ~~ Blob;
+                    %opt ,= :$font-stream;
                 }
             }
 
