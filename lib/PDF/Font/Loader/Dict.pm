@@ -11,7 +11,7 @@ class PDF::Font::Loader::Dict {
         default {
             warn "ignoring font encoding: $_"
                 with $_;
-            Mu;
+            Nil;
         }
     }
 

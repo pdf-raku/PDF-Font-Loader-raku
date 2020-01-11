@@ -58,7 +58,7 @@ class PDF::Font::Loader::Enc::CMap
     }
     method !decoder {
         $!enc ~~ 'identity-h'|'identity-v'
-            ?? -> \hi, \lo {@!to-unicode[hi +< 8 + lo]}
+            ?? -> \hi, \lo=0 {@!to-unicode[hi +< 8 + lo]}
             !! -> $_ { @!to-unicode[$_] };
     }
 

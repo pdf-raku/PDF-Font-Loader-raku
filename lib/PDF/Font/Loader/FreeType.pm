@@ -281,15 +281,16 @@ class PDF::Font::Loader::FreeType {
                   :$FontDescriptor,
             }, ];
 
+        my $name = $!enc eq 'identity-v' ?? 'Identity-V' !! 'Identity-H';
         { :Type( :name<Font> ), :Subtype( :name<Type0> ),
             :$BaseFont,
             :$DescendantFonts,
-            :Encoding( :name<Identity-H> ),
+            :Encoding( :$name ),
         };
     }
 
     method !make-dict {
-        $!enc eq 'identity-h'
+        $!enc ~~ 'identity-h'|'indentity-v'
           ?? self!make-index-dict
           !! self!make-roman-dict
       }
