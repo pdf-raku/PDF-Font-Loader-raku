@@ -1,3 +1,6 @@
+Release 0.2.8
+   - Update to Font::FreeType 0.2.1
+
 Release 0.2.7
    - [PDF::Font::Loader::Enc::CMap]
      -- Skip obviously invalid Unicode code-points.
