@@ -12,7 +12,7 @@
     "PDF",
     "Native::Packing"
   ],
-  "description" : "Font classes for the PDF Tool-chain",
+  "description" : "Font loading and embedding for the PDF tool-chain",
   "license" : "Artistic-2.0",
   "name" : "PDF::Font::Loader",
   "perl" : "6.*",

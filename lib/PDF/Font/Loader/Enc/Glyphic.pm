@@ -5,7 +5,7 @@ role PDF::Font::Loader::Enc::Glyphic
 
   use Font::FreeType::Face;
   use Font::FreeType::Native;
-  use Font::FreeType::Native::Types;
+  use Font::FreeType::Native::Defs;
   has Font::FreeType::Face $.face is required;
   has Hash $!glyph-map;
 

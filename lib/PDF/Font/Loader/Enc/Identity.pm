@@ -4,7 +4,7 @@ class PDF::Font::Loader::Enc::Identity
 
   use Font::FreeType::Face;
   use Font::FreeType::Native;
-  use Font::FreeType::Native::Types;
+  use Font::FreeType::Native::Defs;
 
   has UInt %!from-unicode;
   has uint16 @.to-unicode;
@@ -21,7 +21,6 @@ class PDF::Font::Loader::Enc::Identity
           %!from-unicode{$char-code} = $i;
           $char-code = $struct.FT_Get_Next_Char( $char-code, $idx);
       }
-      warn { :@!to-unicode, :%!from-unicode }.perl;
   }
 
   multi method encode(Str $text, :$str! --> Str) {

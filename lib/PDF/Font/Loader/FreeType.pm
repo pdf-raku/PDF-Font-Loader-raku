@@ -10,11 +10,13 @@ class PDF::Font::Loader::FreeType {
     use PDF::Font::Loader::Enc::Identity;
     use PDF::Font::Loader::Enc::Identity-H;
     use PDF::Font::Loader::Enc::Type1;
-    use Font::FreeType:ver(v0.1.9+);
+    use Font::FreeType:ver(v0.2.1+);
     use Font::FreeType::Face;
     use Font::FreeType::Error;
     use Font::FreeType::Native;
-    use Font::FreeType::Native::Types;
+    use Font::FreeType::Native::Defs;
+    use PDF::Content:ver(v0.2.3+);
+    use PDF::Content::Font;
 
     constant Px = 64.0;
 
@@ -22,8 +24,6 @@ class PDF::Font::Loader::FreeType {
     use PDF::Font::Loader::Enc;
     has PDF::Font::Loader::Enc $!encoder handles <decode>;
     has $.font-stream is required;
-    use PDF::Content:ver(v0.2.3+);
-    use PDF::Content::Font;
     has PDF::Content::Font $!dict;
     has uint $.first-char;
     has uint $.last-char;

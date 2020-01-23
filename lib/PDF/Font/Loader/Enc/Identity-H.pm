@@ -4,7 +4,7 @@ class PDF::Font::Loader::Enc::Identity-H
 
     use Font::FreeType::Face;
     use Font::FreeType::Native;
-    use Font::FreeType::Native::Types;
+    use Font::FreeType::Native::Defs;
     use PDF::COS;
 
     has Font::FreeType::Face $.face is required;
