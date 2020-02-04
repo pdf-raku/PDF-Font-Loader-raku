@@ -7,6 +7,17 @@ class PDF::Font::Loader::Enc::CMap
     use PDF::Font::Loader::Enc::Glyphic;
     also does PDF::Font::Loader::Enc::Glyphic;
 
+    constant %Ligatures = my Int %{Int} = (
+        (0x00660066)     => 0xFB00, # ff
+        (0x00660069)     => 0xFB01, # fi
+        (0x0066006c)     => 0xFB02, # fl
+        (0x006600660105) => 0xFB03, # ffi
+        (0x006600660108) => 0xFB04, # ffl
+        (0x00660074)     => 0xFB05, # ft
+        (0x00730074)     => 0xFB06, # st
+        # .. +more, see https://en.wikipedia.org/wiki/Orthographic_ligature
+    );
+
     has uint32 @.to-unicode;
     has UInt %!from-unicode;
     has Str $.enc;
@@ -25,12 +36,22 @@ class PDF::Font::Loader::Enc::CMap
                     for $from .. $to {
                         if valid-codepoint($codepoint) {
                             %!from-unicode{$codepoint} = $_;
-                            @!to-unicode[$_] = $codepoint++;
+                            @!to-unicode[$_] = $codepoint;
                         }
                         else {
-                            warn sprintf("skipping invalid codepoint(s) in CMAP: U+%X...", $codepoint);
-                            last;
+                            with %Ligatures{$codepoint} -> $lig {
+                                %!from-unicode{$lig} = $_;
+                                @!to-unicode[$_] = $lig;
+                            }
+                            elsif 0xFFFF < $codepoint < 0xFFFFFFFF {
+                                warn sprintf("skipping possible unmapped ligature: U+%X...", $codepoint);
+                            }
+                            else {
+                                warn sprintf("skipping invalid codepoint(s) in CMAP: U+%X...", $codepoint);
+                                last;
+                            }
                         }
+                        $codepoint++;
                     }
                 }
             }
@@ -42,7 +63,16 @@ class PDF::Font::Loader::Enc::CMap
                         @!to-unicode[$from] = $codepoint;
                     }
                     else {
-                        warn sprintf("skipping invalid codepoint in CMAP: U+%X", $codepoint);
+                        with %Ligatures{$codepoint} -> $lig {
+                            %!from-unicode{$lig} = $from;
+                            @!to-unicode[$from] = $lig;
+                        }
+                        elsif 0xFFFF < $codepoint < 0xFFFFFFFF {
+                            warn sprintf("skipping possible unmapped ligature: U+%X...", $codepoint);
+                        }
+                        else {
+                            warn sprintf("skipping invalid codepoint in CMAP: U+%X", $codepoint);
+                        }
                     }
                 }
             }

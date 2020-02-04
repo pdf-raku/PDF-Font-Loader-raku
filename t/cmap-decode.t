@@ -28,8 +28,9 @@ begincmap
 1 begincodespacerange
 <0000><FFFF>
 endcodespacerange
-1 beginbfchar
+2 beginbfchar
 <0005><0022>
+<005e><00660069>
 endbfchar
 79 beginbfrange
 <0003><0003><0020>
@@ -130,6 +131,7 @@ my $cmap-obj = PDF::Font::Loader::Enc::CMap.new: :$cmap, :$face;
 
 is-deeply $cmap-obj.decode("\x5\xF"), Buf[uint32].new(0x22, 0x2c), "decode";
 is $cmap-obj.decode("\x24\x25\x26", :str), 'ABC', "decode:str";
+is-deeply $cmap-obj.decode("\x5e"), Buf[uint32].new(64257), "decode ligature";
 $cmap-obj.differences = [0x42, 'C'];
 is $cmap-obj.decode("\x24\x25\x42", :str), 'ABC', "decode differences";
 done-testing;
