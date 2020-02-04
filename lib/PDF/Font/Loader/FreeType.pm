@@ -48,7 +48,7 @@ class PDF::Font::Loader::FreeType {
 
         $!encoder = do {
             when $cmap.defined
-                        { PDF::Font::Loader::Enc::CMap.new: :$cmap, :$!face, :$!enc;  }
+                        { PDF::Font::Loader::Enc::CMap.new: :$cmap, :$!face }
             when $!enc eq 'identity'
                         { PDF::Font::Loader::Enc::Identity.new: :$!face }
             when $!enc ~~ 'identity-h'|'identity-v'

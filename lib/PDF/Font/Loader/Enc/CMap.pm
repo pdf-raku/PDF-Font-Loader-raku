@@ -7,29 +7,53 @@ class PDF::Font::Loader::Enc::CMap
     use PDF::Font::Loader::Enc::Glyphic;
     also does PDF::Font::Loader::Enc::Glyphic;
 
-    constant %Ligatures = my Int %{Int} = (
-        (0x00660066)     => 0xFB00, # ff
-        (0x00660069)     => 0xFB01, # fi
-        (0x0066006c)     => 0xFB02, # fl
-        (0x006600660105) => 0xFB03, # ffi
-        (0x006600660108) => 0xFB04, # ffl
-        (0x00660074)     => 0xFB05, # ft
-        (0x00730074)     => 0xFB06, # st
-        # .. +more, see https://en.wikipedia.org/wiki/Orthographic_ligature
-    );
-
     has uint32 @.to-unicode;
     has UInt %!from-unicode;
-    has Str $.enc;
+    # todo handle multiple code-space ranges
+    has UInt $.range;
+    has UInt %!ligatures{UInt};
 
     sub valid-codepoint($_) {
         # not an exhuastive check
         $_ <= 0x10FFFF && ! (0xD800 <= $_ <= 0xDFFF);
     }
 
+    method !setup-ligatures {
+        # used in some PDF files
+        for (
+            [0x66,0x66]       => 0xFB00, # ff
+            [0x66,0x69]       => 0xFB01, # fi
+            [0x66,0x6C]       => 0xFB02, # fl
+            [0x66,0x66,0x69]  => 0xFB03, # ffi
+            [0x66,0x66,0x6C]  => 0xFB04, # ffl
+            [0x66,0x74]       => 0xFB05, # ft
+            [0x73,0x74]       => 0xFB06, # st
+            # .. +more, see https://en.wikipedia.org/wiki/Orthographic_ligature
+        ) {
+            my $v = 0;
+            for .key {
+                $v *= $!range;
+                $v += $_;
+            }
+            %!ligatures{$v} = .value;
+        }
+        warn :%!ligatures.perl;
+    }
+
     submethod TWEAK(PDF::COS::Stream :$cmap!) {
 
         for $cmap.decoded.Str.lines {
+            if /:s^ \d+ begincodespacerange/ ff /^endcodespacerange/ {
+                if /:s [ '<' $<r>=[<xdigit>+] '>' ] ** 2 / {
+                    my uint ($from, $to) = @<r>.map: { :16(.Str) };
+                    # just interested in the sample size
+                    given  $to > 0xFF ?? 0xFFFF !! 0xFF {
+                        warn "todo: handle variable encoding in CMAPs"
+                            if $!range && $!range != $_;
+                        $!range = $_;
+                    }
+                }
+            }
             if /:s^ \d+ beginbfrange/ ff /^endbfrange/ {
                 if /:s [ '<' $<r>=[<xdigit>+] '>' ] ** 3 / {
                     my uint ($from, $to, $codepoint) = @<r>.map: { :16(.Str) };
@@ -39,7 +63,7 @@ class PDF::Font::Loader::Enc::CMap
                             @!to-unicode[$_] = $codepoint;
                         }
                         else {
-                            with %Ligatures{$codepoint} -> $lig {
+                            with %!ligatures{$codepoint} -> $lig {
                                 %!from-unicode{$lig} = $_;
                                 @!to-unicode[$_] = $lig;
                             }
@@ -63,7 +87,7 @@ class PDF::Font::Loader::Enc::CMap
                         @!to-unicode[$from] = $codepoint;
                     }
                     else {
-                        with %Ligatures{$codepoint} -> $lig {
+                        with %!ligatures{$codepoint} -> $lig {
                             %!from-unicode{$lig} = $from;
                             @!to-unicode[$from] = $lig;
                         }
@@ -77,6 +101,8 @@ class PDF::Font::Loader::Enc::CMap
                 }
             }
         }
+        $!range //= 0xFF;
+        self!setup-ligatures();
     }
 
     method set-encoding($chr-code, $idx) {
@@ -87,7 +113,7 @@ class PDF::Font::Loader::Enc::CMap
         }
     }
     method !decoder {
-        $!enc ~~ 'identity-h'|'identity-v'
+        $!range > 0xFF
             ?? -> \hi, \lo=0 {@!to-unicode[hi +< 8 + lo]}
             !! -> $_ { @!to-unicode[$_] };
     }
@@ -105,7 +131,7 @@ class PDF::Font::Loader::Enc::CMap
     }
     multi method encode(Str $text ) is default {
         # 16 bit Identity-H encoding
-        if $!enc ~~ 'identity-h'|'identity-v' {
+        if $!range > 0xFF {
             # let the caller inspect, then repack this
             my uint16 @ = $text.ords.map({ %!from-unicode{$_} }).grep: {$_};
         }

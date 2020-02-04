@@ -1,5 +1,9 @@
 Release 0.2.9
-   - Added some support for CMap ligatures
+   - [PDF::Font::Loader::Enc::CMap]
+   -- Make some use of code-ranges in the CMAP file; this seems to be
+      the correct way of distinguishing 1 or2 byte encodings. More work
+      needed.
+   -- Added some support for older CMap ligature idioms
 
 Release 0.2.8
    - Update to Font::FreeType 0.2.1
