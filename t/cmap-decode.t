@@ -25,9 +25,7 @@ begincmap
 >> def
 /CMapName /TTX+0 def
 /CMapType 2 def
-1 begincodespacerange
-<00><FF>
-endcodespacerange
+1 begincodespacerange <00><FF> endcodespacerange
 2 beginbfchar
 <05><22>
 <5e><6669>
@@ -128,8 +126,6 @@ my $ind-obj = PDF::IO::IndObj.new( :$input, |%ast );
 my $cmap = $ind-obj.object;
 
 my $cmap-obj = PDF::Font::Loader::Enc::CMap.new: :$cmap, :$face;
-
-warn $cmap-obj.encode("ABC").perl;
 
 is-deeply $cmap-obj.decode("\x5\xF"), Buf[uint32].new(0x22, 0x2c), "decode";
 is $cmap-obj.decode("\x24\x25\x26", :str), 'ABC', "decode:str";

@@ -9,8 +9,8 @@ class PDF::Font::Loader::Enc::CMap
 
     has uint32 @.to-unicode;
     has UInt %!from-unicode;
-    # todo handle multiple code-space ranges
-    has UInt $.range;
+    # todo handle multiple code-space lengths
+    has UInt $.bpc;
     has UInt %!ligatures{UInt};
 
     sub valid-codepoint($_) {
@@ -20,6 +20,8 @@ class PDF::Font::Loader::Enc::CMap
 
     method !setup-ligatures {
         # used in some PDF files
+        my $w := 2 ** ($!bpc ** 8);
+
         for (
             [0x66,0x66]       => 0xFB00, # ff
             [0x66,0x69]       => 0xFB01, # fi
@@ -32,26 +34,22 @@ class PDF::Font::Loader::Enc::CMap
         ) {
             my $v = 0;
             for .key {
-                $v *= $!range;
+                $v *= $w;
                 $v += $_;
             }
             %!ligatures{$v} = .value;
         }
-        warn :%!ligatures.perl;
     }
 
     submethod TWEAK(PDF::COS::Stream :$cmap!) {
 
         for $cmap.decoded.Str.lines {
-            if /:s^ \d+ begincodespacerange/ ff /^endcodespacerange/ {
+            if /:s \d+ begincodespacerange/ ff /endcodespacerange/ {
                 if /:s [ '<' $<r>=[<xdigit>+] '>' ] ** 2 / {
-                    my uint ($from, $to) = @<r>.map: { :16(.Str) };
-                    # just interested in the sample size
-                    given  $to > 0xFF ?? 0xFFFF !! 0xFF {
-                        warn "todo: handle variable encoding in CMAPs"
-                            if $!range && $!range != $_;
-                        $!range = $_;
-                    }
+                    my $this-bpc = (@<r>[1].chars + 1) div 2;
+                    warn "todo: handle variable encoding in CMAPs (ge, $_)"
+                            if $!bpc && $!bpc != $this-bpc;
+                    $!bpc = $this-bpc;
                 }
             }
             if /:s^ \d+ beginbfrange/ ff /^endbfrange/ {
@@ -101,7 +99,7 @@ class PDF::Font::Loader::Enc::CMap
                 }
             }
         }
-        $!range //= 0xFF;
+        $!bpc //= 1;
         self!setup-ligatures();
     }
 
@@ -113,7 +111,7 @@ class PDF::Font::Loader::Enc::CMap
         }
     }
     method !decoder {
-        $!range > 0xFF
+        $!bpc > 1
             ?? -> \hi, \lo=0 {@!to-unicode[hi +< 8 + lo]}
             !! -> $_ { @!to-unicode[$_] };
     }
@@ -131,7 +129,7 @@ class PDF::Font::Loader::Enc::CMap
     }
     multi method encode(Str $text ) is default {
         # 16 bit Identity-H encoding
-        if $!range > 0xFF {
+        if $!bpc > 1 {
             # let the caller inspect, then repack this
             my uint16 @ = $text.ords.map({ %!from-unicode{$_} }).grep: {$_};
         }

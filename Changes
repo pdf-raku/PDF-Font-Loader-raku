@@ -1,7 +1,7 @@
 Release 0.2.9
-   - [PDF::Font::Loader::Enc::CMap]
+   - [PDF::Font::Loader::Enc::CMap][cmap-decode.t]
    -- Make some use of code-ranges in the CMAP file; this seems to be
-      the correct way of distinguishing 1 or2 byte encodings. More work
+      the correct way of distinguishing 1 or 2 byte encodings. More work
       needed.
    -- Added some support for older CMap ligature idioms
 
