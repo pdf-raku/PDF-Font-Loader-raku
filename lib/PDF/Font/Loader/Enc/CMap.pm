@@ -11,18 +11,14 @@ class PDF::Font::Loader::Enc::CMap
     has UInt %!from-unicode;
     # todo handle multiple code-space lengths
     has UInt $.bpc;
-    has UInt %!ligatures{UInt};
 
     sub valid-codepoint($_) {
         # not an exhuastive check
         $_ <= 0x10FFFF && ! (0xD800 <= $_ <= 0xDFFF);
     }
 
-    method !setup-ligatures {
-        # used in some PDF files
-        my $w := 2 ** ($!bpc ** 8);
-
-        for (
+    constant %Ligatures = %(do {
+        (
             [0x66,0x66]       => 0xFB00, # ff
             [0x66,0x69]       => 0xFB01, # fi
             [0x66,0x6C]       => 0xFB02, # fl
@@ -30,16 +26,16 @@ class PDF::Font::Loader::Enc::CMap
             [0x66,0x66,0x6C]  => 0xFB04, # ffl
             [0x66,0x74]       => 0xFB05, # ft
             [0x73,0x74]       => 0xFB06, # st
-            # .. +more, see https://en.wikipedia.org/wiki/Orthographic_ligature
-        ) {
-            my $v = 0;
+            # .. + more, see https://en.wikipedia.org/wiki/Orthographic_ligature
+        ).map: {
+            my $k = 0;
             for .key {
-                $v *= $w;
-                $v += $_;
+                $k +<= 16;
+                $k += $_;
             }
-            %!ligatures{$v} = .value;
+            $k => .value;
         }
-    }
+    });
 
     submethod TWEAK(PDF::COS::Stream :$cmap!) {
 
@@ -61,7 +57,7 @@ class PDF::Font::Loader::Enc::CMap
                             @!to-unicode[$_] = $codepoint;
                         }
                         else {
-                            with %!ligatures{$codepoint} -> $lig {
+                            with %Ligatures{$codepoint} -> $lig {
                                 %!from-unicode{$lig} = $_;
                                 @!to-unicode[$_] = $lig;
                             }
@@ -85,7 +81,7 @@ class PDF::Font::Loader::Enc::CMap
                         @!to-unicode[$from] = $codepoint;
                     }
                     else {
-                        with %!ligatures{$codepoint} -> $lig {
+                        with %Ligatures{$codepoint} -> $lig {
                             %!from-unicode{$lig} = $from;
                             @!to-unicode[$from] = $lig;
                         }
@@ -100,7 +96,6 @@ class PDF::Font::Loader::Enc::CMap
             }
         }
         $!bpc //= 1;
-        self!setup-ligatures();
     }
 
     method set-encoding($chr-code, $idx) {
