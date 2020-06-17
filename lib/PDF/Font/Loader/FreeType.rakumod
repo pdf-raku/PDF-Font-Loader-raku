@@ -10,11 +10,11 @@ class PDF::Font::Loader::FreeType {
     use PDF::Font::Loader::Enc::Identity;
     use PDF::Font::Loader::Enc::Identity-H;
     use PDF::Font::Loader::Enc::Type1;
-    use Font::FreeType:ver(v0.2.1+);
+    use Font::FreeType:ver(v0.3.0+);
     use Font::FreeType::Face;
     use Font::FreeType::Error;
-    use Font::FreeType::Native;
-    use Font::FreeType::Native::Defs;
+    use Font::FreeType::Raw;
+    use Font::FreeType::Raw::Defs;
     use PDF::Content:ver(v0.2.3+);
     use PDF::Content::Font;
 
@@ -306,7 +306,7 @@ class PDF::Font::Loader::FreeType {
         my FT_Pos $y = 0;
         my FT_UInt $prev-idx = 0;
         my FT_Vector $kerning .= new;
-        my $struct = $!face.native;
+        my $struct = $!face.raw;
         my $glyph-slot = $struct.glyph;
         my Numeric $stringwidth = 0;
         my $scale = 1000 / ($!face.units-per-EM || 1000);
@@ -333,7 +333,7 @@ class PDF::Font::Loader::FreeType {
     }
 
     method !char-height(UInt $char-code) {
-        my $face-struct = $!face.native;
+        my $face-struct = $!face.raw;
         my $glyph-slot = $face-struct.glyph;
         my $scale = 1000 / ($!face.units-per-EM || 1000);
         my FT_UInt $idx = $face-struct.FT_Get_Char_Index( $char-code );
@@ -350,7 +350,7 @@ class PDF::Font::Loader::FreeType {
         my FT_UInt      $prev-idx = 0;
         my Bool         $has-kerning = $!face.has-kerning;
         my FT_Vector    $kerning .= new;
-        my FT_Face      $face-struct = $!face.native;
+        my FT_Face      $face-struct = $!face.raw;
         my FT_GlyphSlot $glyph-slot = $face-struct.glyph;
         my Str          $str = '';
         my Numeric      $stringwidth = 0.0;

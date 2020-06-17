@@ -122,10 +122,10 @@ PDF::Grammar::PDF.parse($input, :$actions, :rule<ind-obj>)
     // die "parse failed: $input";
 my %ast = $/.ast;
 
-my $ind-obj = PDF::IO::IndObj.new( :$input, |%ast );
+my PDF::IO::IndObj $ind-obj .= new( :$input, |%ast );
 my $cmap = $ind-obj.object;
 
-my $cmap-obj = PDF::Font::Loader::Enc::CMap.new: :$cmap, :$face;
+my PDF::Font::Loader::Enc::CMap $cmap-obj .= new: :$cmap, :$face;
 
 is-deeply $cmap-obj.decode("\x5\xF"), Buf[uint32].new(0x22, 0x2c), "decode";
 is $cmap-obj.decode("\x24\x25\x26", :str), 'ABC', "decode:str";

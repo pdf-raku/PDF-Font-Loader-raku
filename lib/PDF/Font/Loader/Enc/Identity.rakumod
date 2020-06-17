@@ -3,8 +3,8 @@ class PDF::Font::Loader::Enc::Identity
     is PDF::Font::Loader::Enc {
 
   use Font::FreeType::Face;
-  use Font::FreeType::Native;
-  use Font::FreeType::Native::Defs;
+  use Font::FreeType::Raw;
+  use Font::FreeType::Raw::Defs;
 
   has UInt %!from-unicode;
   has uint16 @.to-unicode;

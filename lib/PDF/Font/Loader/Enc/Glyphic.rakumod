@@ -4,8 +4,8 @@ role PDF::Font::Loader::Enc::Glyphic
     does PDF::Content::Font::Enc::Glyphic {
 
   use Font::FreeType::Face;
-  use Font::FreeType::Native;
-  use Font::FreeType::Native::Defs;
+  use Font::FreeType::Raw;
+  use Font::FreeType::Raw::Defs;
   has Font::FreeType::Face $.face is required;
   has Hash $!glyph-map;
 
@@ -18,7 +18,7 @@ role PDF::Font::Loader::Enc::Glyphic
           unless $!face.has-glyph-names;
       $!glyph-map //= do {
           my %codes;
-          my FT_Face $struct = $!face.native;  # get the native face object
+          my FT_Face $struct = $!face.raw;  # get the native face object
           my FT_UInt $glyph-idx;
           my FT_ULong $char-code = $struct.FT_Get_First_Char( $glyph-idx);
           while $glyph-idx {
