@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/pdf-raku/PDF-Font-Loader-raku.svg?branch=master)](https://travis-ci.org/pdf-raku/PDF-Font-Loader-raku)
+[![Build Status](https://travis-ci.org/p6-pdf/PDF-Font-Loader-p6.svg?branch=master)](https://travis-ci.org/p6-pdf/PDF-Font-Loader-p6)
 
 NAME
 ====
@@ -87,10 +87,15 @@ parameters:
 
 ### find-font
 
+    use PDF::Font::Loader
+        :Weight  # thin|extralight|light|book|regular|medium|semibold|bold|extrabold|black|100..900
+        :Stretch # normal|[ultra|extra]?[condensed|expanded]
+        :Slant   # normal|oblique|italic
+    ;
     find-font(Str :$family,     # e.g. :family<vera>
-              Str :$weight,     # thin|extralight|light|book|regular|medium|semibold|bold|extrabold|black|100..900
-              Str :$stretch,    # normal|[ultra|extra]?[condensed|expanded]
-              Str :$slant,      # normal|oblique|italic
+              Weight  :$weight,
+              Stretch :$stretch,
+              Slant   :$slant,
               );
 
 Locates a matching font-file. Doesn't actually load it.

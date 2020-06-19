@@ -10,8 +10,8 @@ README.md : lib/PDF/Font/Loader.rakumod
         ) > README.md
 
 test :
-	@prove -e"perl6 -I ." t
+	@prove -e"raku -I ." t
 
 loudtest :
-	@prove -e"perl6 -I ." -v t
+	@prove -e"raku -I ." -v t
 

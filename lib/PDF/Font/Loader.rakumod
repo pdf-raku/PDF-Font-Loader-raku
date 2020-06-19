@@ -7,8 +7,8 @@ class PDF::Font::Loader:ver<0.3.0> {
     use PDF::Font::Loader::FreeType;
     use PDF::Font::Loader::Type1;
     use PDF::Font::Loader::Dict;
-    subset TrueTypish of Font::FreeType::Face where .font-format ~~ 'TrueType'|'CFF';
-    subset Type1ish of Font::FreeType::Face where .font-format ~~'Type 1';
+    subset TrueTypeLike of Font::FreeType::Face where .font-format ~~ 'TrueType'|'CFF';
+    subset Type1Like of Font::FreeType::Face where .font-format ~~'Type 1';
 
     proto method load-font($?: |c) is export(:load-font) {*};
 
@@ -19,12 +19,12 @@ class PDF::Font::Loader:ver<0.3.0> {
 
     multi method load-font($?: Font::FreeType::Face :$face!, Blob :$font-stream!, |c) {
         given $face {
-            when TrueTypish {
+            when TrueTypeLike {
                 fail "unable to handle TrueType Collections"
                     if $font-stream.subbuf(0,4).decode('latin-1') eq 'ttcf';
                 PDF::Font::Loader::FreeType.new( :$face, :$font-stream, |c);
             }
-            when Type1ish {
+            when Type1Like {
                 PDF::Font::Loader::Type1.new( :$face, :$font-stream, |c);
             }
             default { fail "unable to handle font of format {.font-format}"; }
@@ -49,9 +49,9 @@ class PDF::Font::Loader:ver<0.3.0> {
         $.load-font( |%opts );
     }
 
-    subset Weight where /^[thin|extralight|light|book|regular|medium|semibold|bold|extrabold|black|<[0..9]>**3]$/;
-    subset Stretch of Str where /^[[ultra|extra]?[condensed|expanded]]|normal$/;
-    subset Slant   of Str where /^[normal|oblique|italic]$/;
+    subset Weight of Str is export(:Weight) where /^[thin|extralight|light|book|regular|medium|semibold|bold|extrabold|black|<[0..9]>**3]$/;
+    subset Stretch of Str is export(:Stretch) where /^[[ultra|extra]?[condensed|expanded]]|normal$/;
+    subset Slant   of Str is export(:Slant) where /^[normal|oblique|italic]$/;
 
     method find-font($?: Str :$family!,
                      Weight  :$weight is copy = 'medium',
@@ -72,8 +72,7 @@ class PDF::Font::Loader:ver<0.3.0> {
         given $cmd.err.slurp {
             note $_ if $_;
         }
-        my $file = $cmd.out.slurp;
-        $file
+        $cmd.out.slurp
           || die "unable to resolve font: '$pat'"
     }
 
@@ -175,10 +174,15 @@ Font slat, one of: C<normal>, C<oblique>, or C<italic>
 
 =head3 find-font
 
+  use PDF::Font::Loader
+      :Weight  # thin|extralight|light|book|regular|medium|semibold|bold|extrabold|black|100..900
+      :Stretch # normal|[ultra|extra]?[condensed|expanded]
+      :Slant   # normal|oblique|italic
+  ;
   find-font(Str :$family,     # e.g. :family<vera>
-            Str :$weight,     # thin|extralight|light|book|regular|medium|semibold|bold|extrabold|black|100..900
-            Str :$stretch,    # normal|[ultra|extra]?[condensed|expanded]
-            Str :$slant,      # normal|oblique|italic
+            Weight  :$weight,
+            Stretch :$stretch,
+            Slant   :$slant,
             );
 
 Locates a matching font-file. Doesn't actually load it.
