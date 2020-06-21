@@ -1,11 +1,14 @@
 use v6;
 use Test;
-plan 18;
+plan 21;
 use PDF::Grammar::Test :is-json-equiv;
 use PDF::Font::Loader :Weight, :Stretch, :Slant;
 
 ok 'medium' ~~ Weight, 'FontWeight subset';
+ok '200' ~~ Weight, 'FontWeight subset';
+ok 200 ~~ Weight, 'FontWeight subset';
 nok 'average' ~~ Weight, 'FontWeight subset';
+nok -3 ~~ Weight, 'FontWeight subset';
 
 my $vera = PDF::Font::Loader.load-font: :file<t/fonts/Vera.ttf>;
 is $vera.font-name, 'BitstreamVeraSans-Roman', 'font-name';

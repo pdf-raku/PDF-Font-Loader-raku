@@ -49,7 +49,7 @@ class PDF::Font::Loader:ver<0.3.0> {
         $.load-font( |%opts );
     }
 
-    subset Weight of Str is export(:Weight) where /^[thin|extralight|light|book|regular|medium|semibold|bold|extrabold|black|<[0..9]>**3]$/;
+    subset Weight is export(:Weight) where /^[thin|extralight|light|book|regular|medium|semibold|bold|extrabold|black|<[0..9]>**3]$/;
     subset Stretch of Str is export(:Stretch) where /^[[ultra|extra]?[condensed|expanded]]|normal$/;
     subset Slant   of Str is export(:Slant) where /^[normal|oblique|italic]$/;
 
