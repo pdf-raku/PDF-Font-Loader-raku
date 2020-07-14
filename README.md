@@ -1,3 +1,5 @@
+[[Raku PDF Project]](https://pdf-raku.github.io)
+ / [PDF::Font::Loader](https://pdf-raku.github.io/PDF-Font-Loader-raku)
 [![Build Status](https://travis-ci.org/p6-pdf/PDF-Font-Loader-p6.svg?branch=master)](https://travis-ci.org/p6-pdf/PDF-Font-Loader-p6)
 
 NAME
@@ -33,7 +35,7 @@ SYNPOSIS
 DESCRIPTION
 ===========
 
-This module provdes font loading and handling for [PDF::Lite](PDF::Lite), [PDF::API6](PDF::API6) and other PDF modules.
+This module provdes font loading and handling for [PDF::Lite](https://pdf-raku.github.io/PDF-Lite-raku), [PDF::API6](https://pdf-raku.github.io/PDF-API6) and other PDF modules.
 
 METHODS
 =======
