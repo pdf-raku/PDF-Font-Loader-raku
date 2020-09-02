@@ -15,6 +15,7 @@ class PDF::Font::Loader::FreeType {
     use Font::FreeType::Error;
     use Font::FreeType::Raw;
     use Font::FreeType::Raw::Defs;
+    use Font::FreeType::Raw::TT_Sfnt;
     use PDF::Content:ver(v0.2.3+);
     use PDF::Content::Font;
 
@@ -145,6 +146,10 @@ class PDF::Font::Loader::FreeType {
         »;
 
     method !font-descriptor {
+	# some info can be dug out of true-type tables
+	my TT_Postscript $tt-post .= load(:$!face);
+	my TT_PCLT $tt-pclt .= load(:$!face);
+
         my Numeric $Ascent = $!face.ascender;
         my Numeric $Descent = $!face.descender;
         my PDF::COS::Name $FontName = PDF::COS.coerce: :name($.font-name);
@@ -153,11 +158,17 @@ class PDF::Font::Loader::FreeType {
         my UInt $Flags;
         $Flags +|= FixedPitch if $!face.is-fixed-width;
         $Flags +|= Italic if $!face.is-italic;
-        my Numeric $CapHeight = (self!char-height( 'X'.ord) || $Ascent * 0.9).round;
-        my Numeric $XHeight   = (self!char-height( 'x'.ord) || $Ascent * 0.7).round;
-        # estimates for required fields
-        my Numeric $ItalicAngle = $!face.is-italic ?? -12 !! 0;
-        my Numeric $StemV = $!face.is-bold ?? 110 !! 80;
+
+        # set up required fields
+        my UInt $CapHeight = .capHeight with $tt-pclt;
+        my UInt $XHeight   = .xHeight with $tt-pclt;
+	$CapHeight //= (self!char-height( 'X'.ord) || $Ascent * 0.9).round;
+	$XHeight //= (self!char-height( 'x'.ord) || $Ascent * 0.7).round;
+
+        my Int $ItalicAngle = .italicAngle with $tt-post;
+	$ItalicAngle //= $!face.is-italic ?? -12 !! 0;
+
+        my UInt $StemV = $!face.is-bold ?? 110 !! 80;
 
         my $dict = {
             :Type( :name<FontDescriptor> ),
