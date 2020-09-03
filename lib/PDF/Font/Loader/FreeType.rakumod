@@ -65,9 +65,9 @@ class PDF::Font::Loader::FreeType {
 
     method height($pointsize = 1000, Bool :$from-baseline, Bool :$hanging) {
         die "todo: height of non-scaling fonts" unless $!face.is-scalable;
-        my List $bbox = $!face.bounding-box.Array;
-        my Numeric $height = $hanging ?? $!face.ascender !! $bbox[3];
-        $height -= $hanging ?? $!face.descender !! $bbox[1]
+        my FT_BBox $bbox = $!face.bounding-box;
+        my Numeric $height = $hanging ?? $!face.ascender !! $bbox.y-max;
+        $height -= $hanging ?? $!face.descender !! $bbox.y-min
             unless $from-baseline;
         $height * $pointsize / $!face.units-per-EM;
     }
@@ -76,12 +76,15 @@ class PDF::Font::Loader::FreeType {
         my $encoded := $!encoder.encode($text);
         if $encoded {
             my $to-unicode := $!encoder.to-unicode;
-            my uint16 $min = $encoded.min;
-            my uint16 $max = $encoded.max;
-            $!first-char = $min if !$!first-char || $min < $!first-char;
-            $!last-char = $max if !$!last-char || $max > $!last-char;
+            $!first-char = $encoded[0] if ! $!first-char;
+            $!last-char  = $encoded[0] if ! $!last-char;
+
             for $encoded.list {
-                @!widths[$_] ||= $.stringwidth($to-unicode[$_].chr).round;
+                @!widths[$_] ||= do {
+                    $!first-char = $_ if $_ < $!first-char;
+                    $!last-char  = $_ if $_ > $!last-char;
+                    $.stringwidth($to-unicode[$_].chr).round;
+                }
             }
         }
 
@@ -170,12 +173,12 @@ class PDF::Font::Loader::FreeType {
 
         my UInt $StemV = $!face.is-bold ?? 110 !! 80;
 
-        my $dict = {
+        my $dict = %(
             :Type( :name<FontDescriptor> ),
             :$FontName, :$FontFamily, :$Flags,
             :$Ascent, :$Descent, :@FontBBox,
             :$ItalicAngle, :$StemV, :$CapHeight, :$XHeight,
-        };
+        );
         $dict{self!font-file-entry} = self!font-file
             if $!embed;
         $dict;
@@ -193,17 +196,17 @@ class PDF::Font::Loader::FreeType {
         my $BaseFont = $FontDescriptor<FontName>;
         my $Encoding = self!encoding-name;
         $FontDescriptor<Flags> +|= Nonsymbolic;
-        {
+        %(
             :Type( :name<Font> ), :Subtype( :name(self!font-format) ),
             :$BaseFont,
             :$Encoding,
             :$FontDescriptor,
-        };
+        );
     }
 
     method !make-unicode-cmap {
-        my $CMapName = :name('p6-cmap-' ~ $.font-name);
-        my $dict = {
+        my $CMapName = :name('raku-cmap-' ~ $.font-name);
+        my $dict = %(
             :Type( :name<CMap> ),
             :$CMapName,
             :CIDSystemInfo{
@@ -211,7 +214,7 @@ class PDF::Font::Loader::FreeType {
                 :Registry($.font-name),
                 :Supplement(0),
             },
-        };
+        );
 
         my $to-unicode := $!encoder.to-unicode;
         my @cmap-char;
@@ -293,11 +296,11 @@ class PDF::Font::Loader::FreeType {
             }, ];
 
         my $name = $!enc eq 'identity-v' ?? 'Identity-V' !! 'Identity-H';
-        { :Type( :name<Font> ), :Subtype( :name<Type0> ),
+        %( :Type( :name<Font> ), :Subtype( :name<Type0> ),
             :$BaseFont,
             :$DescendantFonts,
             :Encoding( :$name ),
-        };
+        );
     }
 
     method !make-dict {
@@ -413,8 +416,10 @@ class PDF::Font::Loader::FreeType {
                         }
                     }
                 }
-                $.to-dict<DescendantFonts>[0]<W> = @Widths;
-                $.to-dict<ToUnicode> = self!make-unicode-cmap;
+                given $.to-dict {
+                    .<DescendantFonts>[0]<W> = @Widths;
+                    .<ToUnicode> = self!make-unicode-cmap;
+                }
             }
             default {
                 given $.to-dict {
