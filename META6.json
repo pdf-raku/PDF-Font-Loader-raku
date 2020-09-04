@@ -9,7 +9,7 @@
   "depends": [
     "PDF::Lite",
     "PDF::Content",
-    "Font::FreeType:ver<0.3.3+>",
+    "Font::FreeType:ver<0.3.4+>",
     "PDF",
     "Native::Packing"
   ],
@@ -39,5 +39,5 @@
   ],
   "test-depends": [
   ],
-  "version": "0.3.0"
+  "version": "0.3.1"
 }

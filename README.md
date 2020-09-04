@@ -1,5 +1,3 @@
-[[Raku PDF Project]](https://pdf-raku.github.io)
- / [PDF::Font::Loader](https://pdf-raku.github.io/PDF-Font-Loader-raku)
 [![Build Status](https://travis-ci.org/pdf-raku/PDF-Font-Loader-raku.svg?branch=master)](https://travis-ci.org/pdf-raku/PDF-Font-Loader-raku)
 
 NAME
@@ -142,3 +140,4 @@ Changing the 'Hello, World' example to use this font:
     $pdf.save-as: "/tmp/example.pdf";
 
 Reduces the file size of `example.pdf` from 373K to 15K.
+

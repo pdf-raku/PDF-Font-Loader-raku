@@ -148,6 +148,14 @@ class PDF::Font::Loader::FreeType {
         :ForceBold(bit(19))
         »;
 
+    sub pclt-font-weight(Int $w) {
+        given ($w + 7) / 14 {
+            when * < .1 { 100 }
+            when * > .9 { 900 }
+            default { .round * 100 }
+        }
+    }
+
     method !font-descriptor {
 	# some info can be dug out of true-type tables
 	my TT_Postscript $tt-post .= load(:$!face);
@@ -168,9 +176,10 @@ class PDF::Font::Loader::FreeType {
 	$CapHeight //= (self!char-height( 'X'.ord) || $Ascent * 0.9).round;
 	$XHeight //= (self!char-height( 'x'.ord) || $Ascent * 0.7).round;
 
-        my Int $ItalicAngle = .italicAngle with $tt-post;
+        my Int $ItalicAngle = .italicAngle.round with $tt-post;
 	$ItalicAngle //= $!face.is-italic ?? -12 !! 0;
 
+        # google impoverished guess
         my UInt $StemV = $!face.is-bold ?? 110 !! 80;
 
         my $dict = %(
@@ -179,8 +188,24 @@ class PDF::Font::Loader::FreeType {
             :$Ascent, :$Descent, :@FontBBox,
             :$ItalicAngle, :$StemV, :$CapHeight, :$XHeight,
         );
+
+        # try for a few more properties
+
+        with TT_OS2.load: :$!face {
+            $dict<FontWeight> = .usWeightClass;
+            $dict<AvgWidth> = .xAvgCharWidth;
+        }
+        $dict<FontWeight> //= pclt-font-weight(.strokeWeight)
+            with $tt-pclt;
+
+        with TT_HoriHeader.load: :$!face {
+            $dict<Leading>  = .lineGap;
+            $dict<MaxWidth> = .advanceWidthMax;
+        }
+
         $dict{self!font-file-entry} = self!font-file
             if $!embed;
+
         $dict;
     }
 

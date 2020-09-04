@@ -1,6 +1,6 @@
 use v6;
 
-class PDF::Font::Loader:ver<0.3.0> {
+class PDF::Font::Loader:ver<0.3.1> {
 
     use Font::FreeType;
     use Font::FreeType::Face;
@@ -111,7 +111,7 @@ PDF::Font::Loader
 =head1 DESCRIPTION
 
 This module provdes font loading and handling for
-L<PDF::Lite>,  L<PDF::API6> and other PDF modules.
+L<PDF::Lite|https://pdf-raku.github.io/PDF-Lite-raku>,  L<PDF::API6|https://pdf-raku.github.io/PDF-API6> and other PDF modules.
 
 =head1 METHODS
 
@@ -199,7 +199,32 @@ Locates a matching font-file. Doesn't actually load it.
 
 =head1 BUGS AND LIMITATIONS
 
-=item Font subsetting is not yet implemented. I.E. fonts are always fully embedded, which may result in large PDF files.
+=item Automatic font subsetting is not yet implemented. I.E. fonts are always fully embedded, which may result in large PDF files.
+
+As a work-around, font subsetting and reduction can be done manually, using the `pyftsubset` utlity, which is included in the Debian `fonttools` package.
+
+For example, to create a latin-1 subset of the DejaVuSans font:
+
+    `$ pyftsubset t/fonts/DejaVuSans.ttf --output-file=/tmp/dejavu-latin.ttf --layout-features=\* --no-hinting --unicodes="U+0000-00FF"`
+
+Changing the 'Hello, World' example to use this font:
+
+    # load a font from a file
+    use PDF::Font::Loader :load-font;
+
+    my $deja = load-font( :file</tmp/dejavu-latin.ttf> );
+
+    # use the font to add text to a PDF
+    use PDF::Lite;
+    my PDF::Lite $pdf .= new;
+    $pdf.add-page.text: {
+       .font = $deja;
+       .text-position = [10, 600];
+       .say: 'Hello, world';
+    }
+    $pdf.save-as: "/tmp/example.pdf";
+
+Reduces the file size of `example.pdf` from 373K to 15K.
 
 =end pod
 

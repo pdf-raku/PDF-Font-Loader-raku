@@ -1,3 +1,7 @@
+Release 0.3.1
+   - Improved FontDescriptor properties using TT_Sfnt, introduced with Font::FreeType
+     v0.3.3. Improved: /ItalicAngle, added: /FontWeight /AvgWidth /Leading /MaxWidth
+
 Release 0.3.0
    - Adjust to Font::FreeType 0.3.0
 
