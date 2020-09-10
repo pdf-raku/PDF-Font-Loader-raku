@@ -171,13 +171,12 @@ class PDF::Font::Loader::FreeType {
         $Flags +|= Italic if $!face.is-italic;
 
         # set up required fields
-        my UInt $CapHeight = .capHeight with $tt-pclt;
-        my UInt $XHeight   = .xHeight with $tt-pclt;
-	$CapHeight //= (self!char-height( 'X'.ord) || $Ascent * 0.9).round;
-	$XHeight //= (self!char-height( 'x'.ord) || $Ascent * 0.7).round;
-
-        my Int $ItalicAngle = .italicAngle.round with $tt-post;
-	$ItalicAngle //= $!face.is-italic ?? -12 !! 0;
+        my UInt $CapHeight  = do with $tt-pclt { .capHeight }
+            else { (self!char-height( 'X'.ord) || $Ascent * 0.9).round };
+        my UInt $XHeight    = do with $tt-pclt { .xHeight }
+            else { (self!char-height( 'x'.ord) || $Ascent * 0.7).round };
+        my Int $ItalicAngle = do with $tt-post { .italicAngle.round }
+	    else { $!face.is-italic ?? -12 !! 0 };
 
         # google impoverished guess
         my UInt $StemV = $!face.is-bold ?? 110 !! 80;
@@ -194,6 +193,11 @@ class PDF::Font::Loader::FreeType {
         with TT_OS2.load: :$!face {
             $dict<FontWeight> = .usWeightClass;
             $dict<AvgWidth> = .xAvgCharWidth;
+
+            my $buf = .panose.Blob;
+            $buf.prepend: (.sFamilyClass div 256, .sFamilyClass mod 256);
+            my $Panose = hex-string => $buf.decode: "latin-1";
+            $dict<Style> = %( :$Panose );
         }
         $dict<FontWeight> //= pclt-font-weight(.strokeWeight)
             with $tt-pclt;
@@ -210,9 +214,15 @@ class PDF::Font::Loader::FreeType {
     }
 
     method !encoding-name {
-        my %enc-name = :win<WinAnsiEncoding>, :mac<MacRomanEncoding>, :identity-h<Identity-H>;
-        with %enc-name{$!enc} -> $name {
-            :$name;
+
+        constant %EncName = %(
+            :win<WinAnsiEncoding>,
+            :mac<MacRomanEncoding>,
+            :identity-h<Identity-H>,
+        );
+
+        with %EncName{$!enc} {
+            :name($_);
         }
     }
 

@@ -9,7 +9,7 @@
   "depends": [
     "PDF::Lite",
     "PDF::Content",
-    "Font::FreeType:ver<0.3.4+>",
+    "Font::FreeType:ver<0.3.5+>",
     "PDF",
     "Native::Packing"
   ],

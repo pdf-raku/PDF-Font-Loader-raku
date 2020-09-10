@@ -1,6 +1,8 @@
 Release 0.3.1
-   - Improved FontDescriptor properties using TT_Sfnt, introduced with Font::FreeType
-     v0.3.3. Improved: /ItalicAngle, added: /FontWeight /AvgWidth /Leading /MaxWidth
+   - Improved FontDescriptor properties using TT_Sfnt, introduced with
+     Font::FreeType  v0.3.3.
+     -- Improved: /ItalicAngle
+     -- Added: /FontWeight /AvgWidth /Leading /MaxWidth /Style << /Panose ... >>
 
 Release 0.3.0
    - Adjust to Font::FreeType 0.3.0
@@ -8,10 +10,9 @@ Release 0.3.0
 Release 0.2.9
    - Rename sources *.pm -> *.rakumod
    - [PDF::Font::Loader::Enc::CMap][cmap-decode.t]
-   -- Make some use of code-ranges in the CMAP file; this seems to be
-      the correct way of distinguishing 1 or 2 byte encodings. More work
-      needed.
-   -- Added some support for older CMap ligature idioms
+     -- Make some use of code-ranges in the CMAP file; this seems to be
+        the correct way of distinguishing 1 or 2 byte encodings.
+     -- Added some support for older CMap ligature idioms
 
 Release 0.2.8
    - Update to Font::FreeType 0.2.1
