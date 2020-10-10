@@ -1,5 +1,5 @@
 use PDF::Font::Loader::Enc;
-class PDF::Font::Loader::Enc::Identity
+class PDF::Font::Loader::Enc::Identity8
     is PDF::Font::Loader::Enc {
 
   use Font::FreeType::Face;

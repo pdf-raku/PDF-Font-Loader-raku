@@ -8,12 +8,12 @@ class PDF::Font::Loader::Enc::CMap
     also does PDF::Font::Loader::Enc::Glyphic;
 
     has uint32 @.to-unicode;
-    has UInt %!from-unicode;
+    has UInt %.charset;
     # todo handle multiple code-space lengths
     has UInt $.bpc;
 
     sub valid-codepoint($_) {
-        # not an exhuastive check
+        # not an exhaustive check
         $_ <= 0x10FFFF && ! (0xD800 <= $_ <= 0xDFFF);
     }
 
@@ -37,59 +37,61 @@ class PDF::Font::Loader::Enc::CMap
         }
     });
 
-    submethod TWEAK(PDF::COS::Stream :$cmap!) {
+    submethod TWEAK(PDF::COS::Stream :$cmap) {
 
-        for $cmap.decoded.Str.lines {
-            if /:s \d+ begincodespacerange/ ff /endcodespacerange/ {
-                if /:s [ '<' $<r>=[<xdigit>+] '>' ] ** 2 / {
-                    my $this-bpc = (@<r>[1].chars + 1) div 2;
-                    warn "todo: handle variable encoding in CMAPs (ge, $_)"
-                            if $!bpc && $!bpc != $this-bpc;
-                    $!bpc = $this-bpc;
+        with $cmap {
+            for .decoded.Str.lines {
+                if /:s \d+ begincodespacerange/ ff /endcodespacerange/ {
+                    if /:s [ '<' $<r>=[<xdigit>+] '>' ] ** 2 / {
+                        my $this-bpc = (@<r>[1].chars + 1) div 2;
+                        warn "todo: handle variable encoding in CMAPs (ge, $_)"
+                                if $!bpc && $!bpc != $this-bpc;
+                        $!bpc = $this-bpc;
+                    }
                 }
-            }
-            if /:s^ \d+ beginbfrange/ ff /^endbfrange/ {
-                if /:s [ '<' $<r>=[<xdigit>+] '>' ] ** 3 / {
-                    my uint ($from, $to, $codepoint) = @<r>.map: { :16(.Str) };
-                    for $from .. $to {
+                if /:s^ \d+ beginbfrange/ ff /^endbfrange/ {
+                    if /:s [ '<' $<r>=[<xdigit>+] '>' ] ** 3 / {
+                        my uint ($from, $to, $codepoint) = @<r>.map: { :16(.Str) };
+                        for $from .. $to {
+                            if valid-codepoint($codepoint) {
+                                %!charset{$codepoint} = $_;
+                                @!to-unicode[$_] = $codepoint;
+                            }
+                            else {
+                                with %Ligatures{$codepoint} -> $lig {
+                                    %!charset{$lig} = $_;
+                                    @!to-unicode[$_] = $lig;
+                                }
+                                elsif 0xFFFF < $codepoint < 0xFFFFFFFF {
+                                    warn sprintf("skipping possible unmapped ligature: U+%X...", $codepoint);
+                                }
+                                else {
+                                    warn sprintf("skipping invalid codepoint(s) in CMAP: U+%X...", $codepoint);
+                                    last;
+                                }
+                            }
+                            $codepoint++;
+                        }
+                    }
+                }
+                if /:s^ \d+ beginbfchar/ ff /^endbfchar/ {
+                    if /:s [ '<' $<r>=[<xdigit>+] '>' ] ** 2 / {
+                        my uint ($from, $codepoint) = @<r>.map: { :16(.Str) };
                         if valid-codepoint($codepoint) {
-                            %!from-unicode{$codepoint} = $_;
-                            @!to-unicode[$_] = $codepoint;
+                            %!charset{$codepoint} = $from;
+                            @!to-unicode[$from] = $codepoint;
                         }
                         else {
                             with %Ligatures{$codepoint} -> $lig {
-                                %!from-unicode{$lig} = $_;
-                                @!to-unicode[$_] = $lig;
+                                %!charset{$lig} = $from;
+                                @!to-unicode[$from] = $lig;
                             }
                             elsif 0xFFFF < $codepoint < 0xFFFFFFFF {
                                 warn sprintf("skipping possible unmapped ligature: U+%X...", $codepoint);
                             }
                             else {
-                                warn sprintf("skipping invalid codepoint(s) in CMAP: U+%X...", $codepoint);
-                                last;
+                                warn sprintf("skipping invalid codepoint in CMAP: U+%X", $codepoint);
                             }
-                        }
-                        $codepoint++;
-                    }
-                }
-            }
-            if /:s^ \d+ beginbfchar/ ff /^endbfchar/ {
-                if /:s [ '<' $<r>=[<xdigit>+] '>' ] ** 2 / {
-                    my uint ($from, $codepoint) = @<r>.map: { :16(.Str) };
-                    if valid-codepoint($codepoint) {
-                        %!from-unicode{$codepoint} = $from;
-                        @!to-unicode[$from] = $codepoint;
-                    }
-                    else {
-                        with %Ligatures{$codepoint} -> $lig {
-                            %!from-unicode{$lig} = $from;
-                            @!to-unicode[$from] = $lig;
-                        }
-                        elsif 0xFFFF < $codepoint < 0xFFFFFFFF {
-                            warn sprintf("skipping possible unmapped ligature: U+%X...", $codepoint);
-                        }
-                        else {
-                            warn sprintf("skipping invalid codepoint in CMAP: U+%X", $codepoint);
                         }
                     }
                 }
@@ -101,7 +103,7 @@ class PDF::Font::Loader::Enc::CMap
     method set-encoding($chr-code, $idx) {
         unless @!to-unicode[$idx] ~~ $chr-code {
             @!to-unicode[$idx] = $chr-code;
-            %!from-unicode{$chr-code} = $idx;
+            %!charset{$chr-code} = $idx;
             $.add-glyph-diff($idx);
         }
     }
@@ -115,7 +117,7 @@ class PDF::Font::Loader::Enc::CMap
         $s.ords.map(self!decoder).grep({$_}).map({.chr}).join;
     }
     multi method decode(Str $s --> buf32) is default {
-        # 8 bit Identity decoding
+        # Identity decoding
         buf32.new: $s.ords.map(self!decoder).grep: {$_};
     }
 
@@ -123,13 +125,12 @@ class PDF::Font::Loader::Enc::CMap
         self.encode($text).decode: 'latin-1';
     }
     multi method encode(Str $text ) is default {
-        # 16 bit Identity-H encoding
         if $!bpc > 1 {
-            # let the caller inspect, then repack this
-            my uint16 @ = $text.ords.map({ %!from-unicode{$_} }).grep: {$_};
+            # 2 byte encoding; let the caller inspect, then repack this
+            my uint16 @ = $text.ords.map({ %!charset{$_} }).grep: {$_};
         }
         else {
-            buf8.new: $text.ords.map({ %!from-unicode{$_} }).grep: {$_};
+            buf8.new: $text.ords.map({ %!charset{$_} }).grep: {$_};
         }
     }
 }

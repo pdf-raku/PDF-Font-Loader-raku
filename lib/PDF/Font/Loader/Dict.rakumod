@@ -26,7 +26,7 @@ class PDF::Font::Loader::Dict {
     }
 
     method load-font-opts(FontDict :$dict! is copy, Bool :$embed = True, |c) {
-        my %opt;
+        my %opt = :!subset;
 
         %opt<cmap> = $_
             with $dict<ToUnicode>;
