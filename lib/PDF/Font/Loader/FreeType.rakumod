@@ -174,7 +174,7 @@ class PDF::Font::Loader::FreeType {
         given ($w + 7) / 14 {
             when * < .1 { 100 }
             when * > .9 { 900 }
-            default { .round * 100 }
+            default { .round(.1) * 100 }
         }
     }
 
@@ -510,10 +510,13 @@ class PDF::Font::Loader::FreeType {
     }
 
     method cb-finish {
-        $!font-stream = self!make-subset()
-            if $!subset;
+        unless $!dict.defined && ($!dict<Subtype>:exists) {
+            $!font-stream = self!make-subset()
+                if $!subset;
 
-        self!make-dict();
+            self!make-dict();
+        }
+        $!dict;
     }
 }
 

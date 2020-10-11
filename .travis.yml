@@ -4,7 +4,7 @@ os:
   - linux
 perl6:
   - latest
-  - '2019.11'
+  - '2020.06'
 install:
   - rakudobrew build zef
   - git clone https://github.com/pdf-raku/CStruct-Packing-raku.git
