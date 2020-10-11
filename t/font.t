@@ -10,7 +10,7 @@ ok 200 ~~ Weight, 'FontWeight subset';
 nok 'average' ~~ Weight, 'FontWeight subset';
 nok -3 ~~ Weight, 'FontWeight subset';
 
-my $vera = PDF::Font::Loader.load-font: :file<t/fonts/Vera.ttf>;
+my $vera = PDF::Font::Loader.load-font: :file<t/fonts/Vera.ttf>, :!subset;
 is $vera.font-name, 'BitstreamVeraSans-Roman', 'font-name';
 
 is $vera.height.round, 1164, 'font height';
@@ -28,11 +28,20 @@ is-deeply $vera.kern("RVX" ), (['R', -55, 'VX'], 2064 - 55), '.kern(...)';
 is-deeply $vera.kern('ABCD' ), (['AB', -18, 'CD'], 2820), '.kern(...)';
 
 my $times-dict = $times.to-dict;
+$times-dict.cb-finish();
 my $descriptor-dict = $times-dict<FontDescriptor>:delete;
 is-json-equiv $times-dict, {
-    :Type<Font>, :Subtype<Type1>,
+    :Type<Font>,
+    :Subtype<Type1>,
     :BaseFont<TimesNewRomanPS>,
-    :Encoding<WinAnsiEncoding>,
+    :Encoding{
+        :Type("Encoding")
+        :BaseEncoding<WinAnsiEncoding>,
+        :Differences[1, "ring"],
+    },
+    :FirstChar(1),
+    :LastChar(66),
+    :Widths[flat 333,  0 xx 63,  722, 667],
 }, "to-dict";
 
 for ($times => "Á®ÆØ",
@@ -41,7 +50,7 @@ for ($times => "Á®ÆØ",
     my $decoded = "Á®ÆØ";
     my $re-encoded = $font.encode($decoded, :str);
     is $re-encoded, $encoded, "{$font.face.postscript-name} encoding";
-    is $font.decode($encoded, :str), $decoded, "{$font.face.postscript-name} decoding";
+    is-deeply $font.decode($encoded, :str), $decoded, "{$font.face.postscript-name} decoding";
 }
 
 done-testing;

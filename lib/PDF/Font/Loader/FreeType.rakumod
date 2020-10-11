@@ -20,7 +20,7 @@ class PDF::Font::Loader::FreeType {
     use Font::FreeType::Raw::TT_Sfnt;
     use PDF::Content:ver(v0.2.3+);
     use PDF::Content::Font;
-    use Font::TTF::Subset;
+    use Font::Subset;
 
     constant Px = 64.0;
 
@@ -37,8 +37,9 @@ class PDF::Font::Loader::FreeType {
     has EncodingScheme $!enc;
     has Bool $.embed = True;
     has Bool $.subset = True;
-    has Str:D $.font-name = $!face.postscript-name;
     sub prefix:</>($name) { PDF::COS.coerce(:$name) };
+    has Str:D $.font-name is rw = /($!face.postscript-name);
+    has Str:D $.font-family     = /($!face.family-name);
 
     submethod TWEAK(:@differences,
                     :$widths,
@@ -53,8 +54,15 @@ class PDF::Font::Loader::FreeType {
                 unless $!embed;
         }
 
+        # can only handle TrueType font subsetting atm
         $!subset = False
-            unless $!embed && $!face.font-format ~~ 'TrueType'|'OpenType';
+            unless $!embed && Font::Subset.can-subset: :$!face;
+
+        if $!subset {
+            $!font-name .= substr(7)
+                if $!font-name.chars > 7 && $!font-name.substr(6,1) eq '+';
+            $!font-name = /( (("A".."Z").pick xx 6).join ~ '+' ~ $!font-name );
+        }
 
         $!encoder = do {
             when $cmap.defined {
@@ -177,8 +185,6 @@ class PDF::Font::Loader::FreeType {
 
         my Numeric $Ascent = $!face.ascender;
         my Numeric $Descent = $!face.descender;
-        my PDF::COS::Name $FontName = /($.font-name);
-        my Str $FontFamily = $!face.family-name;
         my Numeric @FontBBox[4] = $!face.bounding-box.Array;
         my UInt $Flags;
         $Flags +|= FixedPitch if $!face.is-fixed-width;
@@ -190,8 +196,10 @@ class PDF::Font::Loader::FreeType {
         my UInt $XHeight    = do with $tt-pclt { .xHeight }
             else { (self!char-height( 'x'.ord) || $Ascent * 0.7).round };
         my Int $ItalicAngle = do with $tt-post { .italicAngle.round }
-	    else { $!face.is-italic ?? -12 !! 0 };
+	else { $!face.is-italic ?? -12 !! 0 };
 
+        my $FontName = $!font-name;
+        my $FontFamily = $!font-family;
         # google impoverished guess
         my UInt $StemV = $!face.is-bold ?? 110 !! 80;
 
@@ -242,24 +250,48 @@ class PDF::Font::Loader::FreeType {
 
     method !make-roman-dict {
         my $FontDescriptor = self!font-descriptor;
-        my $BaseFont = $FontDescriptor<FontName>;
+        my $BaseFont = $!font-name;
         $FontDescriptor<Flags> +|= Nonsymbolic;
+        my $Differences = $!encoder.differences;
+        my $Encoding = $Differences
+                   ?? %(
+                        Type =>         /<Encoding>,
+                        BaseEncoding => /(self!encoding-name),
+                        :$Differences,
+                       )
+                   !! /(self!encoding-name);
+
         self.to-dict.Hash ,= %(
             :Subtype( /(self!font-format) ),
             :$BaseFont,
             :$FontDescriptor,
+            :$Encoding,
         );
+
+        with $!first-char -> $FirstChar {
+            my $LastChar := $!last-char;
+            my @Widths = @!widths[$!first-char .. $!last-char];
+            self.to-dict.Hash ,= %(
+                :$FirstChar,
+                :$LastChar,
+                :@Widths,
+            );
+        }
+        else {
+            warn "Font embedded, but not used: $!font-name";
+        }
+
     }
 
     method !make-unicode-cmap {
-        my $CMapName = :name('raku-cmap-' ~ $.font-name);
+        my $CMapName = :name('raku-cmap-' ~ $!font-name);
 
         my $dict = %(
             :Type( /<CMap> ),
             :$CMapName,
             :CIDSystemInfo{
                 :Ordering<Identity>,
-                :Registry($.font-name),
+                :Registry($!font-name),
                 :Supplement(0),
             },
         );
@@ -296,7 +328,7 @@ class PDF::Font::Loader::FreeType {
 
         my PDF::Writer $writer .= new;
         my $cmap-name = $writer.write: $CMapName;
-        my $postscript-name = $writer.write: :literal($.font-name);
+        my $postscript-name = $writer.write: :literal($!font-name);
 
         my $decoded = qq:to<--END-->.chomp;
             %% Custom
@@ -321,16 +353,34 @@ class PDF::Font::Loader::FreeType {
 
     method !make-index-dict {
         my $FontDescriptor = self!font-descriptor;
-        my $BaseFont = $FontDescriptor<FontName>;
+        my $BaseFont = $!font-name;
         $FontDescriptor<Flags> +|= Symbolic;
+        my $Type = /<Font>;
         my $Subtype = PDF::COS.coerce: name => do given self!font-format {
             when 'Type1'    {'Type1'}
             when 'TrueType' {'CIDFontType2'}
             default { 'CIDFontType0' }
         };
 
+        my @W;
+        my uint $j = -2;
+        my $chars = [];
+        loop (my uint16 $i = $!first-char; $i <= $!last-char; $i++) {
+            my uint $w = @!widths[$i];
+            if $w {
+                if ++$j == $i {
+                    $chars.push: $w;
+                }
+                else {
+                    $chars = $w.Array;
+                    $j = $i;
+                    @W.append: ($i, $chars);
+                }
+            }
+        }
         my $DescendantFonts = [
             :dict{
+                :$Type,
                 :$Subtype,
                 :$BaseFont,
                 :CIDToGIDMap( /<Identity> ),
@@ -339,16 +389,20 @@ class PDF::Font::Loader::FreeType {
                       :Registry<Adobe>,
                       :Supplement(0),
                   },
-                  :$FontDescriptor,
+                :$FontDescriptor,
+                :@W,
             }, ];
 
+        my $ToUnicode = self!make-unicode-cmap;
         my $Encoding = /($!enc eq 'identity-v' ?? 'Identity-V' !! 'Identity-H');
         self.to-dict.Hash ,= %(
             :Subtype( /<Type0> ),
             :$BaseFont,
             :$DescendantFonts,
             :$Encoding,
+            :$ToUnicode,
         );
+        self.to-dict<DescendantFonts>[0].is-indirect = True;
     }
 
     method !make-dict {
@@ -445,74 +499,20 @@ class PDF::Font::Loader::FreeType {
         @chunks, $stringwidth.round;
     }
 
-    method cb-finish {
-        if $!subset {
-            # perform subsetting on the font
-            my %ords := $!encoder.charset;
-            # Order is important for CID identity encoding.
-            my @charset = %ords.pairs.sort(*.value).map: *.key;
-            my $b1 = $!font-stream.bytes;
-            my $g1 = $!face.num-glyphs;
-"/tmp/blah".IO.spurt: $!font-stream;
-my $fh = "/tmp/blah".IO.open(:r, :bin);
-warn :@charset.raku;
-            my Font::TTF::Subset $subset .= new: :$fh, :$!face, :@charset;
-            $!font-stream = $subset.apply.Blob;
-            note " size: " ~ $!font-stream.bytes;
-            note "% font reduction: X " ~ ($b1 div $!font-stream.bytes);
-"/tmp/blah.ttf".IO.spurt: $!font-stream;
-            use Font::FreeType;
-            $!face = Font::FreeType.new.face: $!font-stream;
-            warn $!face.num-glyphs;
-            note "% face reduction: X " ~ ($g1 div $!face.num-faces);
-            # todo - generate subset name
-            $!font-name = 'XXXXXX' ~ $!font-name;
-        }
-        given $!enc {
-            when 'identity-h' {
-                my @Widths;
-                my uint $j = -2;
-                my $chars = [];
-                loop (my uint16 $i = $!first-char; $i <= $!last-char; $i++) {
-                    my uint $w = @!widths[$i];
-                    if $w {
-                        if ++$j == $i {
-                            $chars.push: $w;
-                        }
-                        else {
-                            $chars = $w.Array;
-                            $j = $i;
-                            @Widths.append: ($i, $chars);
-                        }
-                    }
-                }
-                given $.to-dict {
-                    .<DescendantFonts>[0]<W> = @Widths;
-                    .<ToUnicode> = self!make-unicode-cmap;
-                }
-            }
-            default {
-                if $!first-char.defined {
-                    given $.to-dict {
-                        .<FirstChar> = $!first-char;
-                        .<LastChar> = $!last-char;
-                        .<Widths> = @!widths[$!first-char .. $!last-char];
-                    }
-                }
-                else {
-                    warn "Font embedded, but not used: $.font-name";
-                }
+    method !make-subset {
+        # perform subsetting on the font
+        my %ords := $!encoder.charset;
+        # Order is important for CID identity encoding.
+        my @charset = %ords.pairs.sort(*.value).map: *.key;
 
-                my $diffs = $!encoder.differences;
-                $.to-dict<Encoding> = $diffs
-                   ?? %(
-                        Type =>         /<Encoding>,
-                        BaseEncoding => /(self!encoding-name),
-                        Differences =>  $diffs,
-                       )
-                   !! /(self!encoding-name);
-            }
-        }
+        my Font::Subset $subset .= new: :buf($!font-stream), :$!face, :@charset;
+        $subset.Blob;
+    }
+
+    method cb-finish {
+        $!font-stream = self!make-subset()
+            if $!subset;
+
         self!make-dict();
     }
 }

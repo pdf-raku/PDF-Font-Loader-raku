@@ -51,11 +51,13 @@ class PDF::Font::Loader::Dict {
 
         with $dict<FontDescriptor> {
             # embedded font
+            %opt<font-name> = $_ with .<FontName>;
+
             %opt<width> = .lc with .<FontStretch>;
             %opt<weight> = $_ with .<FontWeight>;
             %opt<slant> = 'italic'
                 if .<ItalicAngle> // (.<Flags> +& ItalicFlag);
-            %opt<family> = .<FontFamily> // do {
+            %opt<font-family> = .<FontFamily> // do {
                 with $dict<BaseFont> {
                     # remove any subset prefix
                     .subst(/^<[A..Z]>**6'+'/,'');

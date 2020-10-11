@@ -2,8 +2,6 @@ use v6;
 use PDF::Font::Loader;
 use PDF::Lite;
 use Test;
-# ensure consistant document ID generation
-srand(123456);
 my PDF::Lite $pdf .= new;
 my PDF::Lite::Page $page = $pdf.add-page;
 my @differences = 1, 'b', 'c', 10, 'y', 'z';
@@ -14,6 +12,8 @@ $page.text: {
     .font = $times;
     .say: "encoding check: abcdxyz";;
 }
+# ensure consistant document ID generation
+srand(123456);
 lives-ok { $pdf.save-as: "t/type1-encoding.pdf"; };
 
 my Hash $dict = $page.resources('Font').values[0];

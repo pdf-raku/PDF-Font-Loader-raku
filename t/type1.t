@@ -2,8 +2,6 @@ use v6;
 use PDF::Font::Loader;
 use PDF::Lite;
 use Test;
-# ensure consistant document ID generation
-srand(123456);
 my $pdf = PDF::Lite.new;
 my $page = $pdf.add-page;
 my $times = PDF::Font::Loader.load-font: :file<t/fonts/TimesNewRomPS.pfb>;
@@ -29,6 +27,9 @@ $page.text: {
        .say: '';
    }
 }
+
+# ensure consistant document ID generation
+srand(123456);
 lives-ok { $pdf.save-as: "t/type1.pdf"; };
 
 done-testing;

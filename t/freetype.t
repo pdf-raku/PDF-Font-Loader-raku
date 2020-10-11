@@ -2,10 +2,9 @@ use v6;
 use PDF::Font::Loader :load-font;
 use PDF::Lite;
 use Test;
-# ensure consistant document ID generation
-srand(123456);
+
 my PDF::Lite $pdf .= new;
-my $deja = load-font( :file<t/fonts/DejaVuSans.ttf> );
+my $deja = load-font( :file<t/fonts/DejaVuSans.ttf>, :!subset );
 my $otf-font = load-font( :file<t/fonts/Cantarell-Oblique.otf> );
 
 $pdf.add-page.text: {
@@ -30,6 +29,9 @@ $pdf.add-page.text: {
    .say: "Sample Open Type Font";
    .say: 'Bye, for now';
 }
+
+# ensure consistant document ID generation
+srand(123456);
 lives-ok { $pdf.save-as: "t/freetype.pdf"; };
 
 done-testing;
