@@ -44,7 +44,7 @@ METHODS
 
 A class level method to create a new font object.
 
-#### `PDF::Font::Loader.load-font(Str :$file, Bool :$subset);`
+#### `PDF::Font::Loader.load-font(Str :$file, Bool :$subset, :$enc);`
 
 Loads a font file.
 
@@ -66,7 +66,21 @@ parameters:
 
     Currently implemented for TrueType fonts only.
 
-#### `PDF::Font::Loader.load-font(Str :$family, Str :$weight, Str :$stretch, Str :$slant, Bool :$subset);`
+  * `:$enc`
+
+    Selects the encoding mode: common modes are `win`, `mac` and `identity-h`.
+
+      * `mac` Macintosh platform single byte encoding
+
+      * `win` Windows platform single byte encoding
+
+      * `identity-h` a degenerative two byte encoding mode
+
+    `win` is used as the default encoding for fonts with no more than 255 glyphs. `identity-h` is used otherwise.
+
+    It is recommended that you set a single byte encoding such as `:enc<mac>` or `:enc<win>` when it known that no more that 255 distinct characters will actually be used within the PDF.
+
+#### `PDF::Font::Loader.load-font(Str :$family, Str :$weight, Str :$stretch, Str :$slant, Bool :$subset, Str :$enc);`
 
     my $vera = PDF::Font::Loader.load-font: :family<vera>;
     my $deja = PDF::Font::Loader.load-font: :family<Deja>, :weight<bold>, :stretch<condensed> :slant<italic>);
