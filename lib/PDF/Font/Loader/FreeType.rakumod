@@ -39,7 +39,7 @@ class PDF::Font::Loader::FreeType {
     has Bool $.subset = True;
     sub prefix:</>($name) { PDF::COS.coerce(:$name) };
     has Str:D $.font-name is rw = /($!face.postscript-name);
-    has Str:D $.font-family     = /($!face.family-name);
+    has Str:D $.family     = /($!face.family-name);
 
     submethod TWEAK(:@differences,
                     :$widths,
@@ -199,7 +199,7 @@ class PDF::Font::Loader::FreeType {
 	else { $!face.is-italic ?? -12 !! 0 };
 
         my $FontName = $!font-name;
-        my $FontFamily = $!font-family;
+        my $FontFamily = $!family;
         # google impoverished guess
         my UInt $StemV = $!face.is-bold ?? 110 !! 80;
 
@@ -431,7 +431,7 @@ class PDF::Font::Loader::FreeType {
             my FT_UInt $this-idx = $struct.FT_Get_Char_Index( $char-code );
             if $this-idx {
                 CATCH {
-                    when Font::FreeType::Error { warn "error processing char $char-code: " ~ .message; }
+                    when Font::FreeType::Error { warn "error processing char {$char-code.chr.raku} (code:$char-code, index:$this-idx): " ~ .message; }
                 }
                 ft-try({ $struct.FT_Load_Glyph( $this-idx, FT_LOAD_NO_SCALE ); });
                 $stringwidth += $glyph-slot.metrics.hori-advance * $scale;

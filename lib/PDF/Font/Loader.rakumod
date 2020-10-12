@@ -119,7 +119,7 @@ L<PDF::Lite|https://pdf-raku.github.io/PDF-Lite-raku>,  L<PDF::API6|https://pdf-
 
 A class level method to create a new font object.
 
-=head4 C<PDF::Font::Loader.load-font(Str :$file);>
+=head4 C<PDF::Font::Loader.load-font(Str :$file, Bool :$subset);>
 
 Loads a font file.
 
@@ -134,10 +134,20 @@ Font file to load. Currently supported formats are:
 
 =end item
 
-=head4 C<PDF::Font::Loader.load-font(Str :$family);>
+=begin item
+C<:$subset>
+
+Whether to subset the font for compaction. The font is reduced to the
+set of characters that have been actually been encoded. This can greatly
+reduce the output size of the generated PDF file.
+
+Currently implemented for TrueType fonts only.
+=end item
+
+=head4 C<PDF::Font::Loader.load-font(Str :$family, Str :$weight, Str :$stretch, Str :$slant, Bool :$subset);>
 
  my $vera = PDF::Font::Loader.load-font: :family<vera>;
- my $deja = PDF::Font::Loader.load-font: :family<Deja>, :weight<bold>, :width<condensed> :slant<italic>);
+ my $deja = PDF::Font::Loader.load-font: :family<Deja>, :weight<bold>, :stretch<condensed> :slant<italic>);
 
 Loads a font by a fontconfig name and attributes.
 
@@ -187,44 +197,15 @@ Font slat, one of: C<normal>, C<oblique>, or C<italic>
 
 Locates a matching font-file. Doesn't actually load it.
 
-   my $file = PDF::Font::Loader.find-font(:family<Deja>, :weight<bold>, :width<condensed>, :slant<italic>);
+   my $file = PDF::Font::Loader.find-font: :family<Deja>, :weight<bold>, :width<condensed>, :slant<italic>;
    say $file;  # /usr/share/fonts/truetype/dejavu/DejaVuSansCondensed-BoldOblique.ttf
-   my $font = PDF::Font::Loader.load-font( :$file )';
+   my $font = PDF::Font::Loader.load-font: :$file;
 
 =head1 INSTALL
 
 - PDF::Font::Loader depends on Font::FreeType which further depends on the [freetype](https://www.freetype.org/download.html) library, so you must install that prior to installing this module.
 
 - Installation of the [fontconfig](https://www.freedesktop.org/wiki/Software/fontconfig/) package and command-line tools is strongly recommended.
-
-=head1 BUGS AND LIMITATIONS
-
-=item Automatic font subsetting is not yet implemented. I.E. fonts are always fully embedded, which may result in large PDF files.
-
-As a work-around, font subsetting and reduction can be done manually, using the `pyftsubset` utlity, which is included in the Debian `fonttools` package.
-
-For example, to create a latin-1 subset of the DejaVuSans font:
-
-    `$ pyftsubset t/fonts/DejaVuSans.ttf --output-file=/tmp/dejavu-latin.ttf --layout-features=\* --no-hinting --unicodes="U+0000-00FF"`
-
-Changing the 'Hello, World' example to use this font:
-
-    # load a font from a file
-    use PDF::Font::Loader :load-font;
-
-    my $deja = load-font( :file</tmp/dejavu-latin.ttf> );
-
-    # use the font to add text to a PDF
-    use PDF::Lite;
-    my PDF::Lite $pdf .= new;
-    $pdf.add-page.text: {
-       .font = $deja;
-       .text-position = [10, 600];
-       .say: 'Hello, world';
-    }
-    $pdf.save-as: "/tmp/example.pdf";
-
-Reduces the file size of `example.pdf` from 373K to 15K.
 
 =end pod
 

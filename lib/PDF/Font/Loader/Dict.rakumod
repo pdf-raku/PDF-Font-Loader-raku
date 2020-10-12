@@ -57,7 +57,7 @@ class PDF::Font::Loader::Dict {
             %opt<weight> = $_ with .<FontWeight>;
             %opt<slant> = 'italic'
                 if .<ItalicAngle> // (.<Flags> +& ItalicFlag);
-            %opt<font-family> = .<FontFamily> // do {
+            %opt<family> = .<FontFamily> // do {
                 with $dict<BaseFont> {
                     # remove any subset prefix
                     .subst(/^<[A..Z]>**6'+'/,'');
@@ -93,6 +93,7 @@ class PDF::Font::Loader::Dict {
                 default {'std'}
             }
         }
+
         %opt;
     }
 
