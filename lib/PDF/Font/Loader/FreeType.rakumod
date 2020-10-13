@@ -38,8 +38,8 @@ class PDF::Font::Loader::FreeType {
     has Bool $.embed = True;
     has Bool $.subset = True;
     sub prefix:</>($name) { PDF::COS.coerce(:$name) };
-    has Str:D $.font-name is rw = /($!face.postscript-name);
-    has Str:D $.family     = /($!face.family-name);
+    has Str:D $.family          = $!face.family-name;
+    has Str:D $.font-name is rw = $!face.postscript-name;
 
     submethod TWEAK(:@differences,
                     :$widths,
@@ -203,8 +203,8 @@ class PDF::Font::Loader::FreeType {
         my Int $ItalicAngle = do with $tt-post { .italicAngle.round }
 	else { $!face.is-italic ?? -12 !! 0 };
 
-        my $FontName = $!font-name;
-        my $FontFamily = $!family;
+        my $FontName  = /($!font-name);
+        my $FontFamily = /($!family);
         # google impoverished guess
         my UInt $StemV = $!face.is-bold ?? 110 !! 80;
 
@@ -221,10 +221,13 @@ class PDF::Font::Loader::FreeType {
             $dict<FontWeight> = .usWeightClass;
             $dict<AvgWidth> = .xAvgCharWidth;
 
-            my $buf = .panose.Blob;
-            $buf.prepend: (.sFamilyClass div 256, .sFamilyClass mod 256);
-            my $Panose = hex-string => $buf.decode: "latin-1";
-            $dict<Style> = %( :$Panose );
+            if $!face.font-format ~~ 'FreeType'|'OpenType' {
+                # applicable to CID font descriptors
+                my $buf = .panose.Blob;
+                $buf.prepend: (.sFamilyClass div 256, .sFamilyClass mod 256);
+                my $Panose = hex-string => $buf.decode: "latin-1";
+                $dict<Style> = %( :$Panose );
+            }
         }
         $dict<FontWeight> //= pclt-font-weight(.strokeWeight)
             with $tt-pclt;
@@ -256,7 +259,7 @@ class PDF::Font::Loader::FreeType {
     method !make-roman-dict {
         my $Subtype = ( /(self!font-format) );
         my $FontDescriptor = self!font-descriptor;
-        my $BaseFont = $!font-name;
+        my $BaseFont = /($!font-name);
         $FontDescriptor<Flags> +|= Nonsymbolic;
         my $Differences = $!encoder.differences;
         my $Encoding = $Differences
@@ -359,7 +362,7 @@ class PDF::Font::Loader::FreeType {
 
     method !make-index-dict {
         my $FontDescriptor = self!font-descriptor;
-        my $BaseFont = $!font-name;
+        my $BaseFont = /($!font-name);
         $FontDescriptor<Flags> +|= Symbolic;
         my $Type = /<Font>;
         my $Subtype = PDF::COS.coerce: name => do given self!font-format {
