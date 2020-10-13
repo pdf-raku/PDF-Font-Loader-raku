@@ -5,7 +5,8 @@ use Test;
 
 my PDF::Lite $pdf .= new;
 my $deja = load-font( :file<t/fonts/DejaVuSans.ttf>, :!subset );
-my $otf-font = load-font( :file<t/fonts/Cantarell-Oblique.otf> );
+my $otf-font = load-font( :file<t/fonts/Cantarell-Oblique.otf>, :enc<win> );
+my $cff-font = load-font( :file<t/fonts/NimbusRoman-Regular.cff>, :enc<win> );
 
 $pdf.add-page.text: {
    .font = $deja;
@@ -24,10 +25,15 @@ $pdf.add-page.text: {
 }
 
 $pdf.add-page.text: {
-   .text-position = [10, 500];
+   .text-position = [10, 600];
    .font = $otf-font;
    .say: "Sample Open Type Font";
-   .say: 'Bye, for now';
+   .say: 'Grumpy wizards make toxic brew for the evil Queen and Jack';
+
+   .text-position = [10, 400];
+   .font = $cff-font;
+   .say: "Sample CFF Font";
+   .say: 'Grumpy wizards make toxic brew for the evil Queen and Jack';
 }
 
 # ensure consistant document ID generation

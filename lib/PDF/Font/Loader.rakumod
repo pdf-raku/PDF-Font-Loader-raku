@@ -131,6 +131,7 @@ Font file to load. Currently supported formats are:
 =item2 Open-Type (C<.otf>)
 =item2 True-Type (C<.ttf>)
 =item2 Postscript (C<.pfb>, or C<.pfa>)
+=item2 CFF (C<.cff>)
 
 =end item
 
@@ -156,7 +157,7 @@ Selects the encoding mode: common modes are `win`, `mac` and `identity-h`.
 `win` is used as the default encoding for fonts with no more than 255 glyphs. `identity-h` is used otherwise.
 
 It is recommended that you set a single byte encoding such as `:enc<mac>` or `:enc<win>` when it known that
-no more that 255 distinct characters will actually be used within the PDF.
+no more that 255 distinct characters will actually be used from the font within the PDF.
 =end item
 
 =head4 C<PDF::Font::Loader.load-font(Str :$family, Str :$weight, Str :$stretch, Str :$slant, Bool :$subset, Str :$enc);>

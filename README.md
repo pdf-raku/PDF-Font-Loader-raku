@@ -60,6 +60,8 @@ parameters:
 
         * Postscript (`.pfb`, or `.pfa`)
 
+        * CFF (`.cff`)
+
   * `:$subset`
 
     Whether to subset the font for compaction. The font is reduced to the set of characters that have been actually been encoded. This can greatly reduce the output size of the generated PDF file.
@@ -78,7 +80,7 @@ parameters:
 
     `win` is used as the default encoding for fonts with no more than 255 glyphs. `identity-h` is used otherwise.
 
-    It is recommended that you set a single byte encoding such as `:enc<mac>` or `:enc<win>` when it known that no more that 255 distinct characters will actually be used within the PDF.
+    It is recommended that you set a single byte encoding such as `:enc<mac>` or `:enc<win>` when it known that no more that 255 distinct characters will actually be used from the font within the PDF.
 
 #### `PDF::Font::Loader.load-font(Str :$family, Str :$weight, Str :$stretch, Str :$slant, Bool :$subset, Str :$enc);`
 

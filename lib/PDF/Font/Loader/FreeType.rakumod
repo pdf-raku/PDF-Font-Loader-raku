@@ -56,11 +56,9 @@ class PDF::Font::Loader::FreeType {
 
         # can only handle TrueType font subsetting atm
         $!subset = False
-            unless $!embed && Font::Subset.can-subset: :$!face;
+            unless $!embed && $!face.font-format eq 'TrueType';
 
-        if $!subset {
-            $!font-name .= substr(7)
-                if $!font-name.chars > 7 && $!font-name.substr(6,1) eq '+';
+        if $!subset && $!font-name !~~ m/^<[A..Z]>**6'+'/ {
             $!font-name = /( (("A".."Z").pick xx 6).join ~ '+' ~ $!font-name );
         }
 
@@ -123,19 +121,19 @@ class PDF::Font::Loader::FreeType {
             !! $encoded;
     }
 
-    my subset FontFormat of Str where 'TrueType'|'OpenType'|'Type1';
+    my subset FontFormat of Str where 'TrueType'|'OpenType'|'Type1'|'CFF';
     method !font-format returns FontFormat {
         given $!face.font-format {
-            when 'CFF'|'TrueType' { 'TrueType' }
-            when 'Type 1' { 'Type1' }
+            when 'CFF'|'Type 1' { 'Type1' }
+            when FontFormat { $_ }
             default { die "unsupported font format: $_" }
         }
     }
 
       method !font-file-entry {
-        given self!font-format {
+        given $!face.font-format {
             when 'TrueType' { 'FontFile2' }
-            when 'OpenType' { 'FontFile3' }
+            when 'OpenType'|'CFF' { 'FontFile3' }
             default { 'FontFile' }
         }
     }
@@ -150,9 +148,16 @@ class PDF::Font::Loader::FreeType {
 
         my %dict = :Length1($!font-stream.bytes);
         %dict<Filter> = /<FlateDecode>
-            unless self!font-format eq 'Type1';
-        %dict<Subtype> = /<CIDFontType0C>
-            unless self!font-format eq 'TrueType';
+            unless $!face.font-format eq 'Type 1';
+
+        given $!face.font-format {
+            when 'OpenType' {
+                %dict<Subtype> = /<CIDFontType0C>;
+            }
+            when 'CFF' {
+                %dict<Subtype> = /<Type1C>;
+            }
+        }
 
         PDF::COS.coerce: :stream{ :$decoded, :%dict, };
     }
@@ -249,6 +254,7 @@ class PDF::Font::Loader::FreeType {
     }
 
     method !make-roman-dict {
+        my $Subtype = ( /(self!font-format) );
         my $FontDescriptor = self!font-descriptor;
         my $BaseFont = $!font-name;
         $FontDescriptor<Flags> +|= Nonsymbolic;
@@ -262,7 +268,7 @@ class PDF::Font::Loader::FreeType {
                    !! /(self!encoding-name);
 
         self.to-dict.Hash ,= %(
-            :Subtype( /(self!font-format) ),
+            :$Subtype,
             :$BaseFont,
             :$FontDescriptor,
             :$Encoding,
@@ -357,8 +363,8 @@ class PDF::Font::Loader::FreeType {
         $FontDescriptor<Flags> +|= Symbolic;
         my $Type = /<Font>;
         my $Subtype = PDF::COS.coerce: name => do given self!font-format {
-            when 'Type1'    {'Type1'}
-            when 'TrueType' {'CIDFontType2'}
+            when 'Type1'|'CFF' {'Type1'}
+            when 'TrueType'    {'CIDFontType2'}
             default { 'CIDFontType0' }
         };
 

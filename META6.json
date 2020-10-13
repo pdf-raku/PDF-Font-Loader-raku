@@ -10,7 +10,7 @@
     "PDF::Lite",
     "PDF::Content",
     "Font::FreeType:ver<0.3.5+>",
-    "Font::Subset",  
+    "Font::Subset::TTF",
     "PDF",
     "Native::Packing"
   ],
