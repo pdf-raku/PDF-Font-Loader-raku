@@ -1,5 +1,5 @@
 use PDF::Font::Loader::Enc;
-class PDF::Font::Loader::Enc::Identity8::Subset
+class PDF::Font::Loader::Enc::Identity8::Compact
     is PDF::Font::Loader::Enc {
 
     use PDF::COS;

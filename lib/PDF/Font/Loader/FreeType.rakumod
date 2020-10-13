@@ -8,9 +8,9 @@ class PDF::Font::Loader::FreeType {
     use NativeCall;
     use PDF::Font::Loader::Enc::CMap;
     use PDF::Font::Loader::Enc::Identity8;
-    use PDF::Font::Loader::Enc::Identity8::Subset;
+    use PDF::Font::Loader::Enc::Identity8::Compact;
     use PDF::Font::Loader::Enc::Identity16;
-    use PDF::Font::Loader::Enc::Identity16::Subset;
+    use PDF::Font::Loader::Enc::Identity16::Compact;
     use PDF::Font::Loader::Enc::Type1;
     use Font::FreeType:ver(v0.3.0+);
     use Font::FreeType::Face;
@@ -39,7 +39,7 @@ class PDF::Font::Loader::FreeType {
     has Bool $.subset = True;
     sub prefix:</>($name) { PDF::COS.coerce(:$name) };
     has Str:D $.family          = $!face.family-name;
-    has Str:D $.font-name is rw = $!face.postscript-name;
+    has Str:D $.font-name is rw = $!face.postscript-name // $!family;
 
     submethod TWEAK(:@differences,
                     :$widths,
@@ -68,12 +68,12 @@ class PDF::Font::Loader::FreeType {
             }
             when $!enc eq 'identity' {
                 $!subset
-                    ?? PDF::Font::Loader::Enc::Identity8::Subset.new
+                    ?? PDF::Font::Loader::Enc::Identity8::Compact.new
                     !! PDF::Font::Loader::Enc::Identity8.new: :$!face;
             }
             when $!enc ~~ 'identity-h'|'identity-v' {
                 $!subset
-                    ?? PDF::Font::Loader::Enc::Identity16::Subset.new
+                    ?? PDF::Font::Loader::Enc::Identity16::Compact.new
                     !! PDF::Font::Loader::Enc::Identity16.new: :$!face;
             }
             default {
