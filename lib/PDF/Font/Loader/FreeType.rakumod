@@ -40,6 +40,7 @@ class PDF::Font::Loader::FreeType {
     sub prefix:</>($name) { PDF::COS.coerce(:$name) };
     has Str:D $.family          = $!face.family-name;
     has Str:D $.font-name is rw = $!face.postscript-name // $!family;
+    has Bool $!built;
 
     submethod TWEAK(:@differences,
                     :$widths,
@@ -105,6 +106,7 @@ class PDF::Font::Loader::FreeType {
 
             for $encoded.list {
                 @!widths[$_] ||= do {
+                    $!built = False;
                     $!first-char = $_ if $_ < $!first-char;
                     $!last-char  = $_ if $_ > $!last-char;
                     $.stringwidth($to-unicode[$_].chr).round;
@@ -417,7 +419,7 @@ class PDF::Font::Loader::FreeType {
     method !make-dict {
         $!enc ~~ 'identity-h'|'identity-v'
           ?? self!make-index-dict
-          !! self!make-roman-dict
+          !! self!make-roman-dict;
       }
 
     method to-dict {
@@ -519,9 +521,10 @@ class PDF::Font::Loader::FreeType {
     }
 
     method cb-finish {
-        unless $!dict.defined && ($!dict<Subtype>:exists) {
-            $!font-stream = self!make-subset()
-                if $!subset;
+        unless $!built++ {
+            temp $!font-stream = $!subset
+                ?? self!make-subset()
+                !! $!font-stream;
 
             self!make-dict();
         }
