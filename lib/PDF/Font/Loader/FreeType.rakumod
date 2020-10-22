@@ -20,7 +20,6 @@ class PDF::Font::Loader::FreeType {
     use Font::FreeType::Raw::TT_Sfnt;
     use PDF::Content:ver(v0.2.3+);
     use PDF::Content::Font;
-    use Font::Subset;
 
     constant Px = 64.0;
 
