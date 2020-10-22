@@ -38,11 +38,13 @@ my PDF::Lite $pdf .= open: "t/pdf-text-align.pdf";
 for gather FontLoader.new.render: $pdf.page(1) -> $font {
     # a few sanity checks
     isa-ok $font, 'PDF::Font::Loader::FreeType', 'loaded a FreeType font';
+    todo "font subsetting";
     like $font.font-name, /^<[A..Z]>**6'+DejaVuSans'$/, 'font name';
     is-approx $font.height, 1695.3125, 'font height';
     # first few characters in the subset
     my $text = "Abc♠♥♦♣b";
     my $enc = $font.encode($text, :str);
+    todo "font subsetting";
     is $enc, "\0\x[1]\0\x[2]\0\x[3]\0\x[4]\0\x[5]\0\x[6]\0\x[7]\0\x[2]";
     is $font.decode($enc, :str), $text, "font encode/decode round-trip";
 }

@@ -7,14 +7,6 @@ perl6:
   - '2020.06'
 install:
   - rakudobrew build zef
-  - git clone https://github.com/pdf-raku/CStruct-Packing-raku.git
-  - (cd CStruct-Packing-raku/ && zef install .)
-  - git clone https://github.com/pdf-raku/Font-FreeType-raku.git
-  - (cd Font-FreeType-raku/ && zef install .)
-  - git clone https://github.com/pdf-raku/Font-TTF-raku.git
-  - (cd Font-TTF-raku/ && zef install .)
-  - git clone https://github.com/pdf-raku/Font-Subset-raku.git
-  - (cd Font-Subset-raku/ && zef install .)
   - zef --depsonly install .
 script:
   - prove -ve "raku -I."

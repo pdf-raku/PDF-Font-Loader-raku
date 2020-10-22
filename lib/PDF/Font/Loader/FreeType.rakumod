@@ -36,7 +36,7 @@ class PDF::Font::Loader::FreeType {
     my subset EncodingScheme where 'mac'|'win'|'zapf'|'sym'|'identity'|'identity-h'|'identity-v'|'std';
     has EncodingScheme $!enc;
     has Bool $.embed = True;
-    has Bool $.subset = True;
+    has Bool $.subset = False; # nyi
     sub prefix:</>($name) { PDF::COS.coerce(:$name) };
     has Str:D $.family          = $!face.family-name;
     has Str:D $.font-name is rw = $!face.postscript-name // $!family;
@@ -55,9 +55,8 @@ class PDF::Font::Loader::FreeType {
                 unless $!embed;
         }
 
-        # can only handle TrueType font subsetting atm
         $!subset = False
-            unless $!embed && $!face.font-format eq 'TrueType';
+            unless $!embed;
 
         if $!subset && $!font-name !~~ m/^<[A..Z]>**6'+'/ {
             $!font-name = /( (("A".."Z").pick xx 6).join ~ '+' ~ $!font-name );
@@ -515,9 +514,8 @@ class PDF::Font::Loader::FreeType {
         my %ords := $!encoder.charset;
         # Order is important for CID identity encoding.
         my @charset = %ords.pairs.sort(*.value).map: *.key;
-
-        my Font::Subset $subset .= new: :buf($!font-stream), :$!face, :@charset;
-        $subset.Blob;
+        warn "Font subsetting is NYI";
+        $!font-stream;
     }
 
     method cb-finish {
