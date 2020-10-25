@@ -79,7 +79,7 @@ class PDF::Font::Loader::Dict {
                 my $embedded := %opt<font-stream>.defined;
                 my $symbolic := ?((.<Flags>//0) +& SymbolicFlag);
                 # in-case a Type 1 font has been marked as symbolic
-                my $type1 = True with .<FontFile>;
+                my $type1 = True with .<FontFile> // %opt<differences>;
                 $type1 //= .<Subtype> ~~ 'Type1C'
                     with .<FontFile3>;
 
