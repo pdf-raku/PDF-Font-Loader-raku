@@ -132,9 +132,9 @@ class PDF::Font::Loader::FreeType {
 
       method !font-file-entry {
         given $!face.font-format {
-            when 'TrueType' { 'FontFile2' }
+            when 'TrueType'       { 'FontFile2' }
             when 'OpenType'|'CFF' { 'FontFile3' }
-            default { 'FontFile' }
+            default               { 'FontFile' }
         }
     }
 

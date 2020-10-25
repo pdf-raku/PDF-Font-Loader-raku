@@ -1,14 +1,12 @@
 use v6;
 
-class PDF::Font::Loader:ver<0.4.0> {
+class PDF::Font::Loader:ver<0.4.1> {
 
     use Font::FreeType;
     use Font::FreeType::Face;
     use PDF::Font::Loader::FreeType;
     use PDF::Font::Loader::Type1;
     use PDF::Font::Loader::Dict;
-    subset TrueTypeLike of Font::FreeType::Face where .font-format ~~ 'TrueType'|'CFF';
-    subset Type1Like of Font::FreeType::Face where .font-format ~~'Type 1';
 
     proto method load-font($?: |c) is export(:load-font) {*};
 
@@ -18,16 +16,16 @@ class PDF::Font::Loader:ver<0.4.0> {
     }
 
     multi method load-font($?: Font::FreeType::Face :$face!, Blob :$font-stream!, |c) {
-        given $face {
-            when TrueTypeLike {
+        given $face.font-format {
+            when 'TrueType'|'CFF' {
                 fail "unable to handle TrueType Collections"
                     if $font-stream.subbuf(0,4).decode('latin-1') eq 'ttcf';
                 PDF::Font::Loader::FreeType.new( :$face, :$font-stream, |c);
             }
-            when Type1Like {
+            when 'Type 1' {
                 PDF::Font::Loader::Type1.new( :$face, :$font-stream, |c);
             }
-            default { fail "unable to handle font of format {.font-format}"; }
+            default { fail "unable to handle font of format: $_"; }
         }
     }
 

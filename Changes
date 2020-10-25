@@ -1,3 +1,6 @@
+Release 0.4.1
+   - Improved font descriptor encoding detection
+
 Release 0.4.0
    - Fixed handling of CFF fonts
    - Work-in-progress on font subsetting

@@ -27,7 +27,6 @@ class PDF::Font::Loader::Dict {
 
     method load-font-opts(FontDict :$dict! is copy, Bool :$embed = True, |c) {
         my %opt = :!subset;
-
         %opt<cmap> = $_
             with $dict<ToUnicode>;
 
@@ -76,10 +75,18 @@ class PDF::Font::Loader::Dict {
             }
 
             # See [PDF 32000 Table 114 - Entries in an encoding dictionary]
-            %opt<enc> //= %opt<font-stream>.defined || $dict<Flags> +& SymbolicFlag
-                ?? 'std'
-                !! 'identity';
+            %opt<enc> //= do {
+                my $embedded := %opt<font-stream>.defined;
+                my $symbolic := ?((.<Flags>//0) +& SymbolicFlag);
+                # in-case a Type 1 font has been marked as symbolic
+                my $type1 = True with .<FontFile>;
+                $type1 //= .<Subtype> ~~ 'Type1C'
+                    with .<FontFile3>;
 
+                $embedded && $symbolic && !$type1
+                    ?? 'identity'
+                    !! 'std';
+            }
         }
         else {
             # no font descriptor. assume core font
