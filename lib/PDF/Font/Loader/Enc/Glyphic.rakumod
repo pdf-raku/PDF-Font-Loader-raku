@@ -23,9 +23,12 @@ role PDF::Font::Loader::Enc::Glyphic
           my FT_ULong $char-code = $struct.FT_Get_First_Char( $glyph-idx);
           while $glyph-idx {
               my $char := $char-code.chr;
-              %codes{ $!face.glyph-name($char) } = $char;
+              %codes{ $!face.glyph-name-from-index($glyph-idx) } = $char;
               $char-code = $struct.FT_Get_Next_Char( $char-code, $glyph-idx);
           }
+          # NYI issue #4
+          warn "font " ~ $!face.postscript-name ~ " contains no encodings"
+              unless %codes;
           %codes;
       }
   }
