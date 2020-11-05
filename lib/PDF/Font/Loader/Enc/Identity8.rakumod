@@ -6,7 +6,8 @@ class PDF::Font::Loader::Enc::Identity8
   use Font::FreeType::Raw;
   use Font::FreeType::Raw::Defs;
 
-  has UInt %!from-unicode;
+  has UInt %.charset{UInt};
+  has UInt %!from-unicode{UInt};
   has uint16 @.to-unicode;
   has UInt $.idx-mask;
 
@@ -27,7 +28,11 @@ class PDF::Font::Loader::Enc::Identity8
       self.encode($text).decode: 'latin-1';
   }
   multi method encode(Str $text --> buf8) is default {
-      buf8.new: $text.ords.map({ %!from-unicode{$_} }).grep: {$_};
+      buf8.new: $text.ords.map({
+          my $idx := %!from-unicode{$_};
+          %!charset{$idx} ||= $_ if $idx;
+          $idx;
+      }).grep: {$_};
   }
 
   multi method decode(Str $encoded, :$str! --> Str) {

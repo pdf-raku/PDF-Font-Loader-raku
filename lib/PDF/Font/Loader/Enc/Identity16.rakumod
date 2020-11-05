@@ -9,6 +9,7 @@ class PDF::Font::Loader::Enc::Identity16
 
     has Font::FreeType::Face $.face is required;
     has uint32 @!to-unicode;
+    has UInt %.charset{UInt};
     has UInt $.min-index;
     has UInt $.max-index;
     has Bool $!init;
@@ -23,6 +24,7 @@ class PDF::Font::Loader::Enc::Identity16
         for $text.ords {
             my uint $index = $face-struct.FT_Get_Char_Index($_);
             @!to-unicode[$index] ||= $_;
+            %!charset{$index} ||= $_;
             @codes.push: $index;
         }
         @codes;

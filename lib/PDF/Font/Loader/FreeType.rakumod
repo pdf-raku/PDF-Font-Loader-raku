@@ -8,9 +8,7 @@ class PDF::Font::Loader::FreeType {
     use NativeCall;
     use PDF::Font::Loader::Enc::CMap;
     use PDF::Font::Loader::Enc::Identity8;
-    use PDF::Font::Loader::Enc::Identity8::Compact;
     use PDF::Font::Loader::Enc::Identity16;
-    use PDF::Font::Loader::Enc::Identity16::Compact;
     use PDF::Font::Loader::Enc::Type1;
     use Font::FreeType:ver(v0.3.0+);
     use Font::FreeType::Face;
@@ -41,6 +39,10 @@ class PDF::Font::Loader::FreeType {
     has Str:D $.font-name is rw = $!face.postscript-name // $!family;
     has Bool $!built;
 
+    sub subsetter {
+        require ::("HarfBuzz::Subset")
+    }
+
     submethod TWEAK(:@differences,
                     :$widths,
                     PDF::COS::Stream :$cmap,
@@ -55,10 +57,15 @@ class PDF::Font::Loader::FreeType {
         }
 
         $!subset = False
-            unless $!embed;
+            unless $!embed && self!font-format ~~ 'TrueType'|'OpenType';
 
-        if $!subset && $!font-name !~~ m/^<[A..Z]>**6'+'/ {
-            $!font-name = /( (("A".."Z").pick xx 6).join ~ '+' ~ $!font-name );
+        if $!subset && (try subsetter()) === Nil {
+            warn "HarfBuzz::Subset is required for font subsetting";
+            $!subset = False;
+        }
+
+        if $!subset {
+            $!font-name ~~ s/^[<[A..Z]>**6"+"]?/{(("A".."Z").pick xx 6).join ~ "+"}/;
         }
 
         $!encoder = do {
@@ -66,14 +73,10 @@ class PDF::Font::Loader::FreeType {
                 PDF::Font::Loader::Enc::CMap.new: :$cmap, :$!face;
             }
             when $!enc eq 'identity' {
-                $!subset
-                    ?? PDF::Font::Loader::Enc::Identity8::Compact.new
-                    !! PDF::Font::Loader::Enc::Identity8.new: :$!face;
+                PDF::Font::Loader::Enc::Identity8.new: :$!face;
             }
             when $!enc ~~ 'identity-h'|'identity-v' {
-                $!subset
-                    ?? PDF::Font::Loader::Enc::Identity16::Compact.new
-                    !! PDF::Font::Loader::Enc::Identity16.new: :$!face;
+                PDF::Font::Loader::Enc::Identity16.new: :$!face;
             }
             default {
                 PDF::Font::Loader::Enc::Type1.new: :$!enc, :$!face;
@@ -511,10 +514,12 @@ class PDF::Font::Loader::FreeType {
     method !make-subset {
         # perform subsetting on the font
         my %ords := $!encoder.charset;
-        # Order is important for CID identity encoding.
-        my @charset = %ords.pairs.sort(*.value).map: *.key;
-        warn "Font subsetting is NYI";
-        $!font-stream;
+        my @unicode = %ords.values;
+        # need to retain gids for identity based encodings
+        my $retain-gids = $!enc.starts-with: 'identity';
+        my $subsetter = subsetter().new: :@unicode, :$retain-gids, :buf($!font-stream);
+        my $buf = $subsetter.subset-face.Blob;
+        $buf;
     }
 
     method cb-finish {

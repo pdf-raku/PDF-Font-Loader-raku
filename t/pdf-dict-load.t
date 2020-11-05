@@ -44,9 +44,7 @@ for gather FontLoader.new.render: $pdf.page(1) -> $font {
     # first few characters in the subset
     my $text = "Abc♠♥♦♣b";
     my $enc = $font.encode($text, :str);
-    todo "font subsetting";
-    is $enc, "\0\x[1]\0\x[2]\0\x[3]\0\x[4]\0\x[5]\0\x[6]\0\x[7]\0\x[2]";
+    is-deeply $enc, ("\0\x[24]" ~ "\0\x[45]"~ "\0\x[46]" ~ "\x[F]\x[38]" ~ "\x[F]\x[3d]" ~ "\x[F]\x[3e]" ~ "\x[F]\x[3b]" ~ "\0\x[45]");
     is $font.decode($enc, :str), $text, "font encode/decode round-trip";
 }
-
 done-testing;

@@ -20,7 +20,7 @@ is-approx $vera.height(12), 13.96875, 'font height @ 12pt';
 is-approx $vera.height(12, :from-baseline), 11.138672, 'font base-height @ 12pt';
 my $times = PDF::Font::Loader.load-font: :file<t/fonts/TimesNewRomPS.pfa>;
 # Vera defines: AB˚. Doesn't include: ♥♣✔
-is $times.encode("A♥♣✔˚B", :str), "A\x[1]B", '.encode(...) sanity';
+is-deeply $times.encode("A♥♣✔˚B", :str), "A\x[1]B", '.encode(...) sanity';
 
 is $vera.stringwidth("RVX", :!kern), 2064, 'stringwidth :!kern';
 is $vera.stringwidth("RVX", :kern), 2064 - 55, 'stringwidth :kern';
@@ -49,7 +49,7 @@ for ($times => "Á®ÆØ",
     my ($font, $encoded) = .kv;
     my $decoded = "Á®ÆØ";
     my $re-encoded = $font.encode($decoded, :str);
-    is $re-encoded, $encoded, "{$font.face.postscript-name} encoding";
+    is-deeply $re-encoded, $encoded, "{$font.face.postscript-name} encoding";
     is-deeply $font.decode($encoded, :str), $decoded, "{$font.face.postscript-name} decoding";
 }
 

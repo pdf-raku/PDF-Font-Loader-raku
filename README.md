@@ -1,4 +1,4 @@
-[[Raku PDF Project]](https://pdf-raku.github.io)
+[Raku PDF Project]](https://pdf-raku.github.io)
 / [[PDF-Font-Loader]](https://pdf-raku.github.io/PDF-Font-Loader-raku/)
 [![Build Status](https://travis-ci.org/pdf-raku/PDF-Font-Loader-raku.svg?branch=master)](https://travis-ci.org/pdf-raku/PDF-Font-Loader-raku)
 
@@ -64,9 +64,9 @@ parameters:
 
   * `:$subset`
 
+    *Experimental*
     Whether to subset the font for compaction. The font is reduced to the set of characters that have been actually been encoded. This can greatly reduce the output size of the generated PDF file.
-
-    Currently implemented for TrueType fonts only.
+    Font subsetting is applicable to TrueType (`.ttf`) or OpenType (`.otf`) fonts only. It also requires installation of the optional [HarfBuzz::Subset](https://pdf-raku.github.io/HarfBuzz-Subset-raku/) Raku module.
 
   * `:$enc`
 
