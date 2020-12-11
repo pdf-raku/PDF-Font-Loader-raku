@@ -33,7 +33,7 @@ class PDF::Font::Loader::FreeType {
     my subset EncodingScheme where 'mac'|'win'|'zapf'|'sym'|'identity'|'identity-h'|'identity-v'|'std';
     has EncodingScheme $!enc;
     has Bool $.embed = True;
-    has Bool $.subset = False; # nyi
+    has Bool $.subset = False;
     sub prefix:</>($name) { PDF::COS.coerce(:$name) };
     has Str:D $.family          = $!face.family-name;
     has Str:D $.font-name is rw = $!face.postscript-name // $!family;
@@ -49,7 +49,7 @@ class PDF::Font::Loader::FreeType {
                     Str :$!enc = self!font-format eq 'Type1' || ! $!embed || $!face.num-glyphs <= 255
             ?? 'win'
             !! 'identity-h') {
-        if $!enc ~~ 'identity'|'identity-h'|'identity-v' {
+        if $!enc.starts-with('identity') {
             die "can't use $!enc encoding with type-1 fonts"
                 if self!font-format eq 'Type1';
             die "can't use $!enc encoding with unembedded fonts"
@@ -514,10 +514,10 @@ class PDF::Font::Loader::FreeType {
     method !make-subset {
         # perform subsetting on the font
         my %ords := $!encoder.charset;
-        my @unicode = %ords.values;
+        my @unicodes = %ords.values;
         # need to retain gids for identity based encodings
         my $retain-gids = $!enc.starts-with: 'identity';
-        my $subsetter = subsetter().new: :@unicode, :$retain-gids, :buf($!font-stream);
+        my $subsetter = subsetter().new: :@unicodes, :$retain-gids, :buf($!font-stream);
         my $buf = $subsetter.subset-face.Blob;
         $buf;
     }

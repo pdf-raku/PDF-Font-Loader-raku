@@ -1,4 +1,4 @@
-[Raku PDF Project]](https://pdf-raku.github.io)
+[[Raku PDF Project]](https://pdf-raku.github.io)
 / [[PDF-Font-Loader]](https://pdf-raku.github.io/PDF-Font-Loader-raku/)
 [![Build Status](https://travis-ci.org/pdf-raku/PDF-Font-Loader-raku.svg?branch=master)](https://travis-ci.org/pdf-raku/PDF-Font-Loader-raku)
 
@@ -44,7 +44,7 @@ METHODS
 
 A class level method to create a new font object.
 
-#### `PDF::Font::Loader.load-font(Str :$file, Bool :$subset, :$enc);`
+#### `PDF::Font::Loader.load-font(Str :$file, Bool :$subset, :$enc, $lang);`
 
 Loads a font file.
 
@@ -64,9 +64,9 @@ parameters:
 
   * `:$subset`
 
-    *Experimental*
     Whether to subset the font for compaction. The font is reduced to the set of characters that have been actually been encoded. This can greatly reduce the output size of the generated PDF file.
-    Font subsetting is applicable to TrueType (`.ttf`) or OpenType (`.otf`) fonts only. It also requires installation of the optional [HarfBuzz::Subset](https://pdf-raku.github.io/HarfBuzz-Subset-raku/) Raku module.
+
+    Currently implemented for TrueType fonts only.
 
   * `:$enc`
 
@@ -82,7 +82,7 @@ parameters:
 
     It is recommended that you set a single byte encoding such as `:enc<mac>` or `:enc<win>` when it known that no more that 255 distinct characters will actually be used from the font within the PDF.
 
-#### `PDF::Font::Loader.load-font(Str :$family, Str :$weight, Str :$stretch, Str :$slant, Bool :$subset, Str :$enc);`
+#### `PDF::Font::Loader.load-font(Str :$family, Str :$weight, Str :$stretch, Str :$slant, Bool :$subset, Str :$enc, Str :$lang);`
 
     my $vera = PDF::Font::Loader.load-font: :family<vera>;
     my $deja = PDF::Font::Loader.load-font: :family<Deja>, :weight<bold>, :stretch<condensed> :slant<italic>);
@@ -109,6 +109,10 @@ parameters:
 
     Font slat, one of: `normal`, `oblique`, or `italic`
 
+  * `:$lang`
+
+    A RFC-3066-style language tag. `fontconfig` will select only fonts whose character set matches the preferred lang. See also [I18N::LangTags](https://modules.raku.org/dist/I18N::LangTags:cpan:UFOBAT).
+
 ### find-font
 
     use PDF::Font::Loader
@@ -120,11 +124,12 @@ parameters:
               Weight  :$weight,
               Stretch :$stretch,
               Slant   :$slant,
+              Str     :$lang,   # e.g. :lang<jp>
               );
 
 Locates a matching font-file. Doesn't actually load it.
 
-    my $file = PDF::Font::Loader.find-font: :family<Deja>, :weight<bold>, :width<condensed>, :slant<italic>;
+    my $file = PDF::Font::Loader.find-font: :family<Deja>, :weight<bold>, :width<condensed>, :slant<italic>, :lang<en>;
     say $file;  # /usr/share/fonts/truetype/dejavu/DejaVuSansCondensed-BoldOblique.ttf
     my $font = PDF::Font::Loader.load-font: :$file;
 

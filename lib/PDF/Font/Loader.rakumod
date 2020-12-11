@@ -51,11 +51,14 @@ class PDF::Font::Loader:ver<0.4.1> {
     subset Stretch of Str is export(:Stretch) where /^[[ultra|extra]?[condensed|expanded]]|normal$/;
     subset Slant   of Str is export(:Slant) where /^[normal|oblique|italic]$/;
 
-    method find-font($?: Str :$family!,
+    method find-font($?: Str :$family,
                      Weight  :$weight is copy = 'medium',
                      Stretch :$stretch = 'normal',
-                     Slant   :$slant = 'normal') is export(:find-font) {
-        my $pat = $family;
+                     Slant   :$slant = 'normal',
+                     Str     :$lang,
+                    ) is export(:find-font) {
+        my $pat = '';
+        $pat ~= $_ with $family;
         with $weight {
             # convert CSS/PDF numeric weights for fontconfig
             #      000  100        200   300  400     500    600      700  800       900
@@ -65,6 +68,7 @@ class PDF::Font::Loader:ver<0.4.1> {
         $pat ~= ':weight=' ~ $weight  unless $weight eq 'medium';
         $pat ~= ':width='  ~ $stretch unless $stretch eq 'normal';
         $pat ~= ':slant='  ~ $slant   unless $slant eq 'normal';
+        $pat ~= ':lang=' ~ $_ with $lang;
 
         my $cmd = run('fc-match', '-f', '%{file}', $pat, :out, :err);
         given $cmd.err.slurp {
@@ -117,7 +121,7 @@ L<PDF::Lite|https://pdf-raku.github.io/PDF-Lite-raku>,  L<PDF::API6|https://pdf-
 
 A class level method to create a new font object.
 
-=head4 C<PDF::Font::Loader.load-font(Str :$file, Bool :$subset, :$enc);>
+=head4 C<PDF::Font::Loader.load-font(Str :$file, Bool :$subset, :$enc, $lang);>
 
 Loads a font file.
 
@@ -158,7 +162,7 @@ It is recommended that you set a single byte encoding such as `:enc<mac>` or `:e
 no more that 255 distinct characters will actually be used from the font within the PDF.
 =end item
 
-=head4 C<PDF::Font::Loader.load-font(Str :$family, Str :$weight, Str :$stretch, Str :$slant, Bool :$subset, Str :$enc);>
+=head4 C<PDF::Font::Loader.load-font(Str :$family, Str :$weight, Str :$stretch, Str :$slant, Bool :$subset, Str :$enc, Str :$lang);>
 
  my $vera = PDF::Font::Loader.load-font: :family<vera>;
  my $deja = PDF::Font::Loader.load-font: :family<Deja>, :weight<bold>, :stretch<condensed> :slant<italic>);
@@ -196,6 +200,13 @@ Font slat, one of: C<normal>, C<oblique>, or C<italic>
 
 =end item
 
+=begin item
+C<:$lang>
+
+A RFC-3066-style language tag. `fontconfig` will select only fonts whose character set matches the preferred lang. See also L<I18N::LangTags|https://modules.raku.org/dist/I18N::LangTags:cpan:UFOBAT>.
+
+=end item
+
 =head3 find-font
 
   use PDF::Font::Loader
@@ -207,11 +218,12 @@ Font slat, one of: C<normal>, C<oblique>, or C<italic>
             Weight  :$weight,
             Stretch :$stretch,
             Slant   :$slant,
+            Str     :$lang,   # e.g. :lang<jp>
             );
 
 Locates a matching font-file. Doesn't actually load it.
 
-   my $file = PDF::Font::Loader.find-font: :family<Deja>, :weight<bold>, :width<condensed>, :slant<italic>;
+   my $file = PDF::Font::Loader.find-font: :family<Deja>, :weight<bold>, :width<condensed>, :slant<italic>, :lang<en>;
    say $file;  # /usr/share/fonts/truetype/dejavu/DejaVuSansCondensed-BoldOblique.ttf
    my $font = PDF::Font::Loader.load-font: :$file;
 
