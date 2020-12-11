@@ -1,4 +1,5 @@
 Release 0.4.1
+   - Add find-font(:$lang) option
    - Improved font descriptor encoding detection
    - Add experimental font subsetting; disabled by default (may
      change in a later release).
