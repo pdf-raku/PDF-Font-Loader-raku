@@ -308,7 +308,7 @@ class PDF::Font::Loader::FreeType {
             },
         );
 
-        my $to-unicode := $!encoder.to-unicode;
+        my $to-unicode := $!encoder.to-unicode: :$!subset;
         my @cmap-char;
         my @cmap-range;
 
@@ -514,12 +514,17 @@ class PDF::Font::Loader::FreeType {
     method !make-subset {
         # perform subsetting on the font
         my %ords := $!encoder.charset;
-        my @unicodes = %ords.values;
         # need to retain gids for identity based encodings
         my $retain-gids = $!enc.starts-with: 'identity';
-        my $subsetter = subsetter().new: :@unicodes, :$retain-gids, :buf($!font-stream);
-        my $buf = $subsetter.subset-face.Blob;
-        $buf;
+        my $subsetter = do if $!enc.starts-with: 'identity' {
+            my @glyphs = %ords.keys;
+            subsetter().new: :@glyphs, :retain-gids, :buf($!font-stream);
+        }
+        else {
+            my @unicodes = %ords.values;
+            subsetter().new: :@unicodes, :buf($!font-stream);
+        }
+        my Blob() $ = $subsetter.subset-face;
     }
 
     method cb-finish {

@@ -41,7 +41,16 @@ class PDF::Font::Loader::Enc::Identity16
         }
     }
 
-    method to-unicode {
+    multi method to-unicode(:subset($) where .so) {
+        if $!init {
+            @!to-unicode = ();
+            @!to-unicode[.key] = .value
+                for %!charset.pairs;
+            $!init = False;
+        }
+        @!to-unicode;
+    }
+    multi method to-unicode {
         $!init //= do { self!setup-decoding; True }
         @!to-unicode;
     }
