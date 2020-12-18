@@ -524,7 +524,7 @@ class PDF::Font::Loader::FreeType {
             my @unicodes = %ords.values;
             subsetter().new: :@unicodes, :buf($!font-stream);
         }
-        my Blob() $ = $subsetter.subset-face;
+        $subsetter.subset-face.Blob;
     }
 
     method cb-finish {
