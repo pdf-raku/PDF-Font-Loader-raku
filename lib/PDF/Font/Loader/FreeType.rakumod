@@ -514,17 +514,18 @@ class PDF::Font::Loader::FreeType {
     method !make-subset {
         # perform subsetting on the font
         my %ords := $!encoder.charset;
-        # need to retain gids for identity based encodings
-        my $retain-gids = $!enc.starts-with: 'identity';
-        my $subsetter = do if $!enc.starts-with: 'identity' {
+        my $buf := $!font-stream;
+        my %input = do if $!enc.starts-with: 'identity' {
+            # need to retain gids for identity based encodings
             my @glyphs = %ords.keys;
-            subsetter().new: :@glyphs, :retain-gids, :buf($!font-stream);
+            %( :@glyphs, :retain-gids)
         }
         else {
             my @unicodes = %ords.values;
-            subsetter().new: :@unicodes, :buf($!font-stream);
+            %( :@unicodes );
         }
-        $subsetter.subset-face.Blob;
+        my $subset = subsetter().new: :%input, :face{ :$buf };
+        $subset.Blob;
     }
 
     method cb-finish {
