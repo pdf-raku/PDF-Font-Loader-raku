@@ -1,6 +1,7 @@
-[[Raku PDF Project]](https://pdf-raku.github.io)
-/ [[PDF-Font-Loader]](https://pdf-raku.github.io/PDF-Font-Loader-raku/)
 [![Build Status](https://travis-ci.org/pdf-raku/PDF-Font-Loader-raku.svg?branch=master)](https://travis-ci.org/pdf-raku/PDF-Font-Loader-raku)
+
+[[Raku PDF Project]](https://pdf-raku.github.io)
+ / [[PDF-Font-Loader Module]](https://pdf-raku.github.io/PDF-Font-Loader-raku)
 
 NAME
 ====
@@ -62,11 +63,11 @@ parameters:
 
         * CFF (`.cff`)
 
-  * `:$subset`
+  * `:$subset` *(experimental)*
 
     Whether to subset the font for compaction. The font is reduced to the set of characters that have been actually been encoded. This can greatly reduce the output size of the generated PDF file.
 
-    Currently implemented for TrueType fonts only.
+    This feature currently works on OpenType or TrueType fonts and requires installation of the experimental [HarfBuzz::Subset](https://pdf-raku.github.io/HarfBuzz-raku/HarfBuzz/Subset) module.
 
   * `:$enc`
 

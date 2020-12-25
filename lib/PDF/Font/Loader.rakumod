@@ -113,7 +113,7 @@ PDF::Font::Loader
 =head1 DESCRIPTION
 
 This module provdes font loading and handling for
-L<PDF::Lite|https://pdf-raku.github.io/PDF-Lite-raku>,  L<PDF::API6|https://pdf-raku.github.io/PDF-API6> and other PDF modules.
+L<PDF::Lite>,  L<PDF::API6> and other PDF modules.
 
 =head1 METHODS
 
@@ -138,13 +138,14 @@ Font file to load. Currently supported formats are:
 =end item
 
 =begin item
-C<:$subset>
+C<:$subset> *(experimental)*
 
 Whether to subset the font for compaction. The font is reduced to the
 set of characters that have been actually been encoded. This can greatly
 reduce the output size of the generated PDF file.
 
-Currently implemented for TrueType fonts only.
+This feature currently works on OpenType or TrueType fonts and requires
+installation of the experimental L<HarfBuzz::Subset> module.
 =end item
 
 =begin item
