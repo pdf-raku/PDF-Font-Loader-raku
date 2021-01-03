@@ -1,8 +1,11 @@
+Release 0.4.2
+   - Adjust to PDF 0.4.5+ (renamed PDF::Writer -> PDF::IO::Writer)
+
 Release 0.4.1
    - Add find-font(:$lang) option
    - Improved font descriptor encoding detection
-   - Add experimental font subsetting; disabled by default (may
-     change in a later release).
+   - Add experimental font subsetting via new HarfBuzz::Subset module;
+     disabled by default (may change in a later release).
 
 Release 0.4.0
    - Fixed handling of CFF fonts

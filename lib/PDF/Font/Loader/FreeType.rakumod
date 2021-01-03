@@ -4,7 +4,7 @@ class PDF::Font::Loader::FreeType {
     use PDF::COS::Stream;
     use PDF::IO::Blob;
     use PDF::IO::Util :pack;
-    use PDF::Writer;
+    use PDF::IO::Writer;
     use NativeCall;
     use PDF::Font::Loader::Enc::CMap;
     use PDF::Font::Loader::Enc::Identity8;
@@ -338,7 +338,7 @@ class PDF::Font::Loader::FreeType {
             @cmap-range.push: 'endbfrange';
         }
 
-        my PDF::Writer $writer .= new;
+        my PDF::IO::Writer $writer .= new;
         my $cmap-name = $writer.write: $CMapName;
         my $postscript-name = $writer.write: :literal($!font-name);
 
