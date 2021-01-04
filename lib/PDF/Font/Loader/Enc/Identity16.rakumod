@@ -14,6 +14,8 @@ class PDF::Font::Loader::Enc::Identity16
     has UInt $.max-index;
     has Bool $!init;
 
+    method bpc { 2 }
+
     multi method encode(Str $text, :$str! --> Str) {
         my $hex-string = self.encode($text).decode: 'latin-1';
         PDF::COS.coerce: :$hex-string;
@@ -41,16 +43,7 @@ class PDF::Font::Loader::Enc::Identity16
         }
     }
 
-    multi method to-unicode(:subset($) where .so) {
-        if $!init {
-            @!to-unicode = ();
-            @!to-unicode[.key] = .value
-                for %!charset.pairs;
-            $!init = False;
-        }
-        @!to-unicode;
-    }
-    multi method to-unicode {
+    method to-unicode {
         $!init //= do { self!setup-decoding; True }
         @!to-unicode;
     }

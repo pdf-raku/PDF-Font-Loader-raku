@@ -16,7 +16,7 @@ class PDF::Font::Loader::FreeType {
     use Font::FreeType::Raw;
     use Font::FreeType::Raw::Defs;
     use Font::FreeType::Raw::TT_Sfnt;
-    use PDF::Content:ver(v0.2.3+);
+    use PDF::Content:ver(v0.4.8+);
     use PDF::Content::Font;
 
     constant Px = 64.0;
@@ -295,6 +295,13 @@ class PDF::Font::Loader::FreeType {
 
     }
 
+    sub charset-to-unicode(%charset) {
+        my uint32 @to-unicode;
+        @to-unicode[.value] = .key
+            for %charset.pairs;
+        @to-unicode;
+
+    }
     method !make-unicode-cmap {
         my $CMapName = :name('raku-cmap-' ~ $!font-name);
 
@@ -308,9 +315,14 @@ class PDF::Font::Loader::FreeType {
             },
         );
 
-        my $to-unicode := $!encoder.to-unicode: :$!subset;
+        my $to-unicode := $!subset
+            ?? charset-to-unicode($!encoder.charset)
+            !! $!encoder.to-unicode;
         my @cmap-char;
         my @cmap-range;
+        my \cid-fmt = $!encoder.bpc == 1 ?? '<%02X>' !! '<%04X>';
+        my \char-fmt := $!encoder.bpc == 1 ?? '<%02X> <%04X>' !! '<%04X> <%04X>';
+        my \range-fmt := $!encoder.bpc == 1 ?? '<%02X> <%02X> <%04X>' !! '<%04X> <%04X> <%04X>';
 
         loop (my uint16 $cid = $!first-char; $cid <= $!last-char; $cid++) {
             my uint32 $char-code = $to-unicode[$cid]
@@ -321,10 +333,10 @@ class PDF::Font::Loader::FreeType {
                 $cid++; $char-code++;
             }
             if $start-cid == $cid {
-                @cmap-char.push: '<%04X> <%04X>'.sprintf($cid, $start-code);
+                @cmap-char.push: char-fmt.sprintf($cid, $start-code);
             }
             else {
-                @cmap-range.push: '<%04X> <%04X> <%04X>'.sprintf($start-cid, $cid, $start-code);
+                @cmap-range.push: range-fmt.sprintf($start-cid, $cid, $start-code);
             }
         }
 
@@ -354,7 +366,7 @@ class PDF::Font::Loader::FreeType {
                /Supplement 0
             >> def
             /CMapName $cmap-name def
-            1 begincodespacerange <{$!first-char.fmt("%04x")}> <{$!last-char.fmt("%04x")}> endcodespacerange
+            1 begincodespacerange {$!first-char.fmt(cid-fmt)} {$!last-char.fmt(cid-fmt)} endcodespacerange
             {@cmap-char.join: "\n"}
             {@cmap-range.join: "\n"}
             endcmap CMapName currendict /CMap defineresource pop end end

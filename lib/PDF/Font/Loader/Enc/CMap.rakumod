@@ -8,7 +8,7 @@ class PDF::Font::Loader::Enc::CMap
     also does PDF::Font::Loader::Enc::Glyphic;
 
     has uint32 @.to-unicode;
-    has UInt %.charset;
+    has Int %.charset{Int};
     # todo handle multiple code-space lengths
     has UInt $.bpc;
 
@@ -106,11 +106,40 @@ class PDF::Font::Loader::Enc::CMap
             %!charset{$chr-code} = $idx;
             $.add-glyph-diff($idx);
         }
+        $idx;
     }
     method !decoder {
         $!bpc > 1
             ?? -> \hi, \lo=0 {@!to-unicode[hi +< 8 + lo]}
             !! -> $_ { @!to-unicode[$_] };
+    }
+
+    my constant %PreferredEnc = do {
+        use PDF::Content::Font::Encodings :$win-encoding;
+        my Int %win{Int};
+        %win{.value} = .key
+            for $win-encoding.pairs;
+        %win;
+    }
+    has UInt $!next-sid = 0;
+    method !allocate($chr-code) {
+        my $idx := %PreferredEnc{$chr-code};
+        if $idx && !@!to-unicode[$idx] {
+            self.set-encoding($chr-code, $idx);
+        }
+        else {
+            # sequential allocation
+            repeat {
+            } while @!to-unicode[++$!next-sid];
+            $idx := $!next-sid;
+            if $!bpc > 1 || $idx < 256 {
+                self.set-encoding($chr-code, $idx);
+            }
+            else {
+                $idx := Int;
+            }
+        }
+        $idx;
     }
 
     multi method decode(Str $s, :$str! --> Str) {
@@ -127,10 +156,10 @@ class PDF::Font::Loader::Enc::CMap
     multi method encode(Str $text ) is default {
         if $!bpc > 1 {
             # 2 byte encoding; let the caller inspect, then repack this
-            my uint16 @ = $text.ords.map({ %!charset{$_} }).grep: {$_};
+            my uint16 @ = $text.ords.map({ %!charset{$_} // self!allocate: $_ }).grep: {$_};
         }
         else {
-            buf8.new: $text.ords.map({ %!charset{$_} }).grep: {$_};
+            buf8.new: $text.ords.map({ %!charset{$_} // self!allocate: $_ }).grep: {$_};
         }
     }
 }

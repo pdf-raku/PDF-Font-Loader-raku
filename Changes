@@ -1,5 +1,8 @@
 Release 0.4.2
    - Adjust to PDF 0.4.5+ (renamed PDF::Writer -> PDF::IO::Writer)
+   - Make CMAP encoding adaptive. An unknown character is mapped to
+     win encoding. If that fails, unallocated sids are allocated
+     sequentially as unknown characters are encountered.
 
 Release 0.4.1
    - Add find-font(:$lang) option
