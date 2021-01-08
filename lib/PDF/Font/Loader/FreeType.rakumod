@@ -29,7 +29,7 @@ class PDF::Font::Loader::FreeType {
     has uint $.last-char;
     has uint16 @!widths;
     method widths is rw { @!widths }
-    my subset EncodingScheme where 'mac'|'win'|'zapf'|'sym'|'identity'|'identity-h'|'identity-v'|'std';
+    my subset EncodingScheme where 'mac'|'win|'zapf'|'sym'|'identity'|'identity-h'|'identity-v'|'std'|'mac-extra';
     has EncodingScheme $!enc;
     has Bool $.embed = True;
     has Bool $.subset = False;
@@ -250,6 +250,7 @@ class PDF::Font::Loader::FreeType {
         constant %EncName = %(
             :win<WinAnsiEncoding>,
             :mac<MacRomanEncoding>,
+            :mac-extra<MacExpertEncoding>,
             :identity-h<Identity-H>,
         );
 

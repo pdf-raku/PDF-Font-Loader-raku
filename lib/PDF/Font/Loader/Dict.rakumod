@@ -4,12 +4,13 @@ class PDF::Font::Loader::Dict {
     my subset FontDict of Hash where .<Type> ~~ 'Font';
 
     method !base-enc($_, :$dict!) {
-        when 'Identity-H'       {'identity-h' }
-        when 'Identity-V'       {'identity-v' }
-        when 'WinAnsiEncoding'  { 'win' }
-        when 'MacRomanEncoding' { 'mac' }
+        when 'Identity-H'        {'identity-h' }
+        when 'Identity-V'        {'identity-v' }
+        when 'WinAnsiEncoding'   { 'win' }
+        when 'MacRomanEncoding'  { 'mac' }
+        when 'MacExpertEncoding' { 'mac-extra' }
         default {
-            warn "ignoring font encoding: $_"
+            warn "unimplemented font encoding: $_"
                 with $_;
             Nil;
         }
