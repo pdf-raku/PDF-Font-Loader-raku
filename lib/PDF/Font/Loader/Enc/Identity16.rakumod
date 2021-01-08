@@ -14,7 +14,7 @@ class PDF::Font::Loader::Enc::Identity16
     has UInt $.max-index;
     has Bool $!init;
 
-    method bpc { 2 }
+    method bytes-per-char { 2 }
 
     multi method encode(Str $text, :$str! --> Str) {
         my $hex-string = self.encode($text).decode: 'latin-1';

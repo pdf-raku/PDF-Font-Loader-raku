@@ -3,6 +3,7 @@ class PDF::Font::Loader::FreeType {
     use PDF::COS::Name;
     use PDF::COS::Stream;
     use PDF::IO::Blob;
+    use PDF::IO::Writer;
     use PDF::IO::Util :pack;
     use NativeCall;
     use PDF::Font::Loader::Enc::CMap;
@@ -29,7 +30,7 @@ class PDF::Font::Loader::FreeType {
     has uint $.last-char;
     has uint16 @!widths;
     method widths is rw { @!widths }
-    my subset EncodingScheme where 'mac'|'win|'zapf'|'sym'|'identity'|'identity-h'|'identity-v'|'std'|'mac-extra';
+    my subset EncodingScheme where 'mac'|'win'|'zapf'|'sym'|'identity'|'identity-h'|'identity-v'|'std'|'mac-extra';
     has EncodingScheme $!enc;
     has Bool $.embed = True;
     has Bool $.subset = False;
@@ -295,6 +296,88 @@ class PDF::Font::Loader::FreeType {
 
     }
 
+    sub charset-to-unicode(%charset) {
+        my uint32 @to-unicode;
+        @to-unicode[.value] = .key
+            for %charset.pairs;
+        @to-unicode;
+
+    }
+
+    method !make-cmap-stream {
+        my PDF::COS::Name $CMapName .= COERCE: 'raku-cmap-' ~ $!font-name;
+        my PDF::COS::Name $Type .= COERCE: 'CMap';
+
+        my $dict = %(
+            :$Type,
+            :$CMapName,
+            :CIDSystemInfo{
+                :Ordering<Identity>,
+                :Registry($!font-name),
+                :Supplement(0),
+            },
+        );
+
+        my $to-unicode := $!subset
+            ?? charset-to-unicode($!encoder.charset)
+            !! $!encoder.to-unicode;
+        my @cmap-char;
+        my @cmap-range;
+        my \cid-fmt = $!encoder.bytes-per-char == 1 ?? '<%02X>' !! '<%04X>';
+        my \char-fmt := $!encoder.bytes-per-char == 1 ?? '<%02X> <%04X>' !! '<%04X> <%04X>';
+        my \range-fmt := $!encoder.bytes-per-char == 1 ?? '<%02X> <%02X> <%04X>' !! '<%04X> <%04X> <%04X>';
+
+        loop (my uint16 $cid = $!first-char; $cid <= $!last-char; $cid++) {
+            my uint32 $char-code = $to-unicode[$cid]
+              || next;
+            my uint16 $start-cid = $cid;
+            my uint32 $start-code = $char-code;
+            while $cid < $!last-char && $to-unicode[$cid + 1] == $char-code+1 {
+                $cid++; $char-code++;
+            }
+            if $start-cid == $cid {
+                @cmap-char.push: char-fmt.sprintf($cid, $start-code);
+            }
+            else {
+                @cmap-range.push: range-fmt.sprintf($start-cid, $cid, $start-code);
+            }
+        }
+
+        if @cmap-char {
+            @cmap-char.unshift: "{+@cmap-char} beginbfchar";
+            @cmap-char.push: 'endbfchar';
+        }
+
+        if @cmap-range {
+            @cmap-range.unshift: "{+@cmap-range} beginbfrange";
+            @cmap-range.push: 'endbfrange';
+        }
+
+        my PDF::IO::Writer $writer .= new;
+        my $cmap-name = $writer.write: $CMapName.content;
+        my $postscript-name = $writer.write: :literal($!font-name);
+
+        my $decoded = qq:to<--END-->.chomp;
+            %% Custom
+            %% CMap
+            %%
+            /CIDInit /ProcSet findresource begin
+            12 dict begin begincmap
+            /CIDSystemInfo <<
+               /Registry $postscript-name
+               /Ordering (XYZ)
+               /Supplement 0
+            >> def
+            /CMapName $cmap-name def
+            1 begincodespacerange {$!first-char.fmt(cid-fmt)} {$!last-char.fmt(cid-fmt)} endcodespacerange
+            {@cmap-char.join: "\n"}
+            {@cmap-range.join: "\n"}
+            endcmap CMapName currendict /CMap defineresource pop end end
+            --END--
+
+        PDF::COS::Stream.COERCE: { :$dict, :$decoded };
+    }
+
     method !make-index-dict {
         my $FontDescriptor = self!font-descriptor;
         my $BaseFont = /($!font-name);
@@ -337,7 +420,7 @@ class PDF::Font::Loader::FreeType {
                 :@W,
             }, ];
 
-        my $ToUnicode = $!encoder.cmap-stream: :$!font-name, :$!subset;
+        my $ToUnicode = self!make-cmap-stream;
         my $Encoding = /($!enc eq 'identity-v' ?? 'Identity-V' !! 'Identity-H');
         self.to-dict.Hash ,= %(
             :Subtype( /<Type0> ),

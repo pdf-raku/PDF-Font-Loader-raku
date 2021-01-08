@@ -10,7 +10,7 @@ class PDF::Font::Loader::Enc::CMap
     has uint32 @.to-unicode;
     has Int %.charset{Int};
     # todo handle multiple code-space lengths
-    has UInt $.bpc;
+    has UInt $.bytes-per-char;
 
     sub valid-codepoint($_) {
         # not an exhaustive check
@@ -43,10 +43,10 @@ class PDF::Font::Loader::Enc::CMap
             for .decoded.Str.lines {
                 if /:s \d+ begincodespacerange/ ff /endcodespacerange/ {
                     if /:s [ '<' $<r>=[<xdigit>+] '>' ] ** 2 / {
-                        my $this-bpc = (@<r>[1].chars + 1) div 2;
+                        my $this-bytes-per-char = (@<r>[1].chars + 1) div 2;
                         warn "todo: handle variable encoding in CMAPs (ge, $_)"
-                                if $!bpc && $!bpc != $this-bpc;
-                        $!bpc = $this-bpc;
+                                if $!bytes-per-char && $!bytes-per-char != $this-bytes-per-char;
+                        $!bytes-per-char = $this-bytes-per-char;
                     }
                 }
                 if /:s^ \d+ beginbfrange/ ff /^endbfrange/ {
@@ -97,7 +97,7 @@ class PDF::Font::Loader::Enc::CMap
                 }
             }
         }
-        $!bpc //= 1;
+        $!bytes-per-char //= 1;
     }
 
     method set-encoding($chr-code, $idx) {
@@ -109,7 +109,7 @@ class PDF::Font::Loader::Enc::CMap
         $idx;
     }
     method !decoder {
-        $!bpc > 1
+        $!bytes-per-char > 1
             ?? -> \hi, \lo=0 {@!to-unicode[hi +< 8 + lo]}
             !! -> $_ { @!to-unicode[$_] };
     }
@@ -132,7 +132,7 @@ class PDF::Font::Loader::Enc::CMap
             repeat {
             } while @!to-unicode[++$!next-sid];
             $idx := $!next-sid;
-            if $!bpc > 1 || $idx < 256 {
+            if $!bytes-per-char > 1 || $idx < 256 {
                 self.set-encoding($chr-code, $idx);
             }
             else {
@@ -154,7 +154,7 @@ class PDF::Font::Loader::Enc::CMap
         self.encode($text).decode: 'latin-1';
     }
     multi method encode(Str $text ) is default {
-        if $!bpc > 1 {
+        if $!bytes-per-char > 1 {
             # 2 byte encoding; let the caller inspect, then repack this
             my uint16 @ = $text.ords.map({ %!charset{$_} // self!allocate: $_ }).grep: {$_};
         }
