@@ -55,19 +55,19 @@ parameters:
 
     Font file to load. Currently supported formats are:
 
-        * Open-Type (`.otf`)
+      * Open-Type (`.otf`)
 
-        * True-Type (`.ttf`)
+      * True-Type (`.ttf`)
 
-        * Postscript (`.pfb`, or `.pfa`)
+      * Postscript (`.pfb`, or `.pfa`)
 
-        * CFF (`.cff`)
+      * CFF (`.cff`)
 
   * `:$subset` *(experimental)*
 
     Whether to subset the font for compaction. The font is reduced to the set of characters that have been actually been encoded. This can greatly reduce the output size of the generated PDF file.
 
-    This feature currently works on OpenType or TrueType fonts and requires installation of the experimental [HarfBuzz::Subset](https://pdf-raku.github.io/HarfBuzz-raku/HarfBuzz/Subset) module.
+    This feature currently works on OpenType or TrueType fonts and requires installation of the experimental [HarfBuzz::Subset](https://pdf-raku.github.io/HarfBuzz-Subset-raku/HarfBuzz/Subset) module.
 
   * `:$enc`
 

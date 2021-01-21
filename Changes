@@ -1,3 +1,9 @@
+{{$NEXT}}
+
+0.4.3  2021-01-21T14:09:43+13:00
+   - put cmap handling back into main freetype class; fix identity
+     fonts.
+
 Release 0.4.2
    - Adjust to PDF 0.4.5+ (renamed PDF::Writer -> PDF::IO::Writer)
    - Make CMAP encoding adaptive. An unknown character is mapped to

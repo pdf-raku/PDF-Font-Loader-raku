@@ -1,6 +1,6 @@
 use v6;
 
-class PDF::Font::Loader:ver<0.4.2> {
+class PDF::Font::Loader:ver<0.4.3> {
 
     use Font::FreeType;
     use Font::FreeType::Face;
@@ -130,10 +130,10 @@ parameters:
 C<:$file>
 
 Font file to load. Currently supported formats are:
-=item2 Open-Type (C<.otf>)
-=item2 True-Type (C<.ttf>)
-=item2 Postscript (C<.pfb>, or C<.pfa>)
-=item2 CFF (C<.cff>)
+=item Open-Type (C<.otf>)
+=item True-Type (C<.ttf>)
+=item Postscript (C<.pfb>, or C<.pfa>)
+=item CFF (C<.cff>)
 
 =end item
 

@@ -23,8 +23,8 @@
     "PDF::Font::Loader::Enc": "lib/PDF/Font/Loader/Enc.rakumod",
     "PDF::Font::Loader::Enc::CMap": "lib/PDF/Font/Loader/Enc/CMap.rakumod",
     "PDF::Font::Loader::Enc::Glyphic": "lib/PDF/Font/Loader/Enc/Glyphic.rakumod",
-    "PDF::Font::Loader::Enc::Identity8": "lib/PDF/Font/Loader/Enc/Identity8.rakumod",
     "PDF::Font::Loader::Enc::Identity16": "lib/PDF/Font/Loader/Enc/Identity16.rakumod",
+    "PDF::Font::Loader::Enc::Identity8": "lib/PDF/Font/Loader/Enc/Identity8.rakumod",
     "PDF::Font::Loader::Enc::Type1": "lib/PDF/Font/Loader/Enc/Type1.rakumod",
     "PDF::Font::Loader::FreeType": "lib/PDF/Font/Loader/FreeType.rakumod",
     "PDF::Font::Loader::Type1": "lib/PDF/Font/Loader/Type1.rakumod",
@@ -39,5 +39,5 @@
   ],
   "test-depends": [
   ],
-  "version": "0.4.2"
+  "version": "0.4.3"
 }
