@@ -1,4 +1,7 @@
-class PDF::Font::Loader::FreeType {
+use PDF::Content::FontObj;
+
+class PDF::Font::Loader::FreeType
+    does PDF::Content::FontObj {
     use PDF::COS;
     use PDF::COS::Name;
     use PDF::COS::Stream;
@@ -34,7 +37,7 @@ class PDF::Font::Loader::FreeType {
     has EncodingScheme $!enc;
     has Bool $.embed = True;
     has Bool $.subset = False;
-    sub prefix:</>($name) { PDF::COS.coerce(:$name) };
+    sub prefix:</>($name) { PDF::COS::Name.COERCE($name) };
     has Str:D $.family          = $!face.family-name;
     has Str:D $.font-name is rw = $!face.postscript-name // $!family;
     has Bool $!built;
@@ -162,7 +165,7 @@ class PDF::Font::Loader::FreeType {
             }
         }
 
-        PDF::COS.coerce: :stream{ :$decoded, :%dict, };
+        PDF::COS::Stream.COERCE: { :$decoded, :%dict, };
     }
 
     sub bit(\n) { 1 +< (n-1) }
@@ -383,7 +386,7 @@ class PDF::Font::Loader::FreeType {
         my $BaseFont = /($!font-name);
         $FontDescriptor<Flags> +|= Symbolic;
         my $Type = /<Font>;
-        my $Subtype = PDF::COS.coerce: name => do given self!font-format {
+        my $Subtype = PDF::COS::Name.COERCE: do given self!font-format {
             when 'Type1'|'CFF' {'Type1'}
             when 'TrueType'    {'CIDFontType2'}
             default { 'CIDFontType0' }
@@ -440,7 +443,7 @@ class PDF::Font::Loader::FreeType {
 
     method to-dict {
         $!dict //= PDF::Content::Font.make-font(
-            PDF::COS::Dict.coerce({ :Type( /<Font> ),  }),
+            PDF::COS::Dict.COERCE({ :Type( /<Font> ),  }),
             self);
     }
 

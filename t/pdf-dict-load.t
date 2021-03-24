@@ -2,6 +2,7 @@ use v6;
 use Test;
 use PDF::Lite;
 use PDF::Font::Loader;
+use PDF::Content::FontObj;
 
 plan 5;
 # see if we can re-load the font that we wrote in pdf-text.align.t
@@ -34,8 +35,9 @@ class FontLoader {
 }
 
 my PDF::Lite $pdf .= open: "t/pdf-text-align.pdf";
-
-for gather FontLoader.new.render: $pdf.page(1) -> $font {
+my PDF::Content::FontObj $f;
+for gather FontLoader.new.render: $pdf.page(1) -> PDF::Content::FontObj $font {
+    $f = $font;
     # a few sanity checks
     isa-ok $font, 'PDF::Font::Loader::FreeType', 'loaded a FreeType font';
     like $font.font-name, /^[<[A..Z]>**6'+']?'DejaVuSans'$/, 'font name';
@@ -46,4 +48,9 @@ for gather FontLoader.new.render: $pdf.page(1) -> $font {
     is-deeply $enc, [~]("\0\x[24]", "\0\x[45]", "\0\x[46]", "\x[F]\x[38]", "\x[F]\x[3d]", "\x[F]\x[3e]", "\x[F]\x[3b]", "\0\x[45]");
     is $font.decode($enc, :str), $text, "font encode/decode round-trip";
 }
+$pdf.add-page.graphics: {
+    .font = $f;
+    .say: "here goes nothing", :position[10,20];
+}
+$pdf.save-as: "/tmp/out.pdf";
 done-testing;

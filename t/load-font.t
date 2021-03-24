@@ -3,6 +3,7 @@ use Test;
 plan 21;
 use PDF::Grammar::Test :is-json-equiv;
 use PDF::Font::Loader :Weight, :Stretch, :Slant;
+use PDF::Content::FontObj;
 
 ok 'medium' ~~ Weight, 'FontWeight subset';
 ok '200' ~~ Weight, 'FontWeight subset';
@@ -10,7 +11,7 @@ ok 200 ~~ Weight, 'FontWeight subset';
 nok 'average' ~~ Weight, 'FontWeight subset';
 nok -3 ~~ Weight, 'FontWeight subset';
 
-my $vera = PDF::Font::Loader.load-font: :file<t/fonts/Vera.ttf>, :!subset;
+my PDF::Content::FontObj $vera = PDF::Font::Loader.load-font: :file<t/fonts/Vera.ttf>, :!subset;
 is $vera.font-name, 'BitstreamVeraSans-Roman', 'font-name';
 
 is $vera.height.round, 1164, 'font height';
@@ -27,8 +28,7 @@ is $vera.stringwidth("RVX", :kern), 2064 - 55, 'stringwidth :kern';
 is-deeply $vera.kern("RVX" ), (['R', -55, 'VX'], 2064 - 55), '.kern(...)';
 is-deeply $vera.kern('ABCD' ), (['AB', -18, 'CD'], 2820), '.kern(...)';
 
-my $times-dict = $times.to-dict;
-$times-dict.cb-finish();
+my Hash $times-dict = $times.cb-finish();
 my $descriptor-dict = $times-dict<FontDescriptor>:delete;
 is-json-equiv $times-dict, {
     :Type<Font>,

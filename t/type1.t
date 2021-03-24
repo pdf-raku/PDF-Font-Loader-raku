@@ -1,10 +1,11 @@
 use v6;
 use PDF::Font::Loader;
 use PDF::Lite;
+use PDF::Content::FontObj;
 use Test;
-my $pdf = PDF::Lite.new;
+my PDF::Lite $pdf .= new;
 my $page = $pdf.add-page;
-my $times = PDF::Font::Loader.load-font: :file<t/fonts/TimesNewRomPS.pfb>;
+my PDF::Content::FontObj $times = PDF::Font::Loader.load-font: :file<t/fonts/TimesNewRomPS.pfb>;
 # deliberate mismatch of encoding scheme and glyphs. PDF::Content
 # should build an encoding based on the differences.
 my $zapf = PDF::Font::Loader.load-font: :file<t/fonts/ZapfDingbats.pfa>, :!embed;

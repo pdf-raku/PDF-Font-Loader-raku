@@ -140,9 +140,9 @@ Font file to load. Currently supported formats are:
 =begin item
 C<:$subset> *(experimental)*
 
-Whether to subset the font for compaction. The font is reduced to the
-set of characters that have been actually been encoded. This can greatly
-reduce the output size of the generated PDF file.
+Subset the font for compaction. The font is reduced to the set
+of characters that have been actually been encoded. This can greatly
+reduce the output size when the font is embedded in a PDF file.
 
 This feature currently works on OpenType or TrueType fonts and requires
 installation of the experimental L<HarfBuzz::Subset> module.

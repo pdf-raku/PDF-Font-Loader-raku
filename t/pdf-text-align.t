@@ -3,6 +3,7 @@ use Test;
 plan 2;
 use PDF::Lite;
 use PDF::Content;
+use PDF::Content::FontObj;
 use PDF::Font::Loader;
 
 my PDF::Lite $pdf .= new();
@@ -12,7 +13,7 @@ my $width = 100;
 my $height = 80;
 my $x = 110;
 
-my $font = PDF::Font::Loader.load-font: :file<t/fonts/DejaVuSans.ttf>, :!subset;
+my PDF::Content::FontObj $font = PDF::Font::Loader.load-font: :file<t/fonts/DejaVuSans.ttf>, :!subset;
 
 # unrandomize so that saved PDF doesn't change
 $font.font-name ~~ s/^<[A..Z]>**6'+'/ABCDEF+/;
