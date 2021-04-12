@@ -45,7 +45,8 @@ $gfx.text: -> $gfx {
 }
 
 # ensure consistant document ID generation
-srand(123456);
+$pdf.id =  $*PROGRAM-NAME.fmt('%-16s').substr(0,16);
+
 lives-ok {$pdf.save-as('t/pdf-text-align.pdf')};
 
 done-testing;

@@ -14,7 +14,6 @@ SYNPOSIS
     # load a font from a file
     use PDF::Font::Loader :load-font;
     use PDF::Content::FontObj;
-    constant FontObj = PDF::Content::FontObj;
 
     my PDF::Content::FontObj $deja;
     $deja = PDF::Font::Loader.load-font: :file<t/fonts/DejaVuSans.ttf>;
