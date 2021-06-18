@@ -52,7 +52,8 @@ class PDF::Font::Loader::FreeType
         PDF::COS::Stream :$cmap,
         Str :$!enc = self!font-format eq 'Type1' || ! $!embed || $!face.num-glyphs <= 255
             ?? 'win'
-            !! 'identity-h') {
+            !! 'identity-h',
+    ) is hidden-from-backtrace {
 
         my @missing-atts = <bounding-box ascender descender>.grep: {!$!face."$_"().defined };
         die "font $!font-name (format {self!font-format}) lacks {@missing-atts.join: ', '} attributes; unable to proceed"
