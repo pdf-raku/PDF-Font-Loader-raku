@@ -3,9 +3,10 @@
    - Added support for TrueType Collections, which must be embedded.
    - Change font validation to accept any FreeType font, but check
      basic characteristic are present, and only restrict embedding
-     to permitted font formats
+     to permitted font formats.
    - Warn and disable embedding, rather that aborting, if the font
      doesn't meet embedding critera.
+   - Changed default option for loading from PDF dictionary :!embed
 
 0.4.4  2021-03-26T08:13:56+13:00
    - Add PDF::Content::FontObj role to PDF::Font::Loader::FreeType

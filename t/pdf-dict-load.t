@@ -41,7 +41,8 @@ for gather FontLoader.new.render: $pdf.page(1) -> PDF::Content::FontObj $font {
     # a few sanity checks
     isa-ok $font, 'PDF::Font::Loader::FreeType', 'loaded a FreeType font';
     like $font.font-name, /^[<[A..Z]>**6'+']?'DejaVuSans'$/, 'font name';
-    is-approx $font.height, 1695.3125, 'font height';
+    ok( 1100 < $font.height < 1900, 'font height')
+        or diag "unexpected font height: {$font.height}";
     # first few characters in the subset
     my $text = "Abc♠♥♦♣b";
     my $enc = $font.encode($text, :str);
