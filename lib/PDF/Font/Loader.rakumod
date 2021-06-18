@@ -1,6 +1,6 @@
 use v6;
 
-class PDF::Font::Loader:ver<0.4.4> {
+class PDF::Font::Loader:ver<0.5.0> {
 
     use Font::FreeType;
     use Font::FreeType::Face;
@@ -82,15 +82,18 @@ PDF::Font::Loader
 
  # load a font from a file
  use PDF::Font::Loader :load-font;
+ use PDF::Content::FontObj;
 
- my $deja = PDF::Font::Loader.load-font: :file<t/fonts/DejaVuSans.ttf>;
- my $deja = load-font( :file<t/fonts/DejaVuSans.ttf> );
+ my PDF::Content::FontObj $deja;
+ $deja = PDF::Font::Loader.load-font: :file<t/fonts/DejaVuSans.ttf>;
+ -- or --
+ $deja = load-font( :file<t/fonts/DejaVuSans.ttf> );
 
  # find/load system fonts; requires fontconfig
  use PDF::Font::Loader :load-font, :find-font;
  $deja = load-font( :family<DejaVu>, :slant<italic> );
  my Str $file = find-font( :family<DejaVu>, :slant<italic> );
- my $deja-vu = load-font: :$file;
+ my PDF::Content::FontObj $deja-vu = load-font: :$file;
 
  # use the font to add text to a PDF
  use PDF::Lite;
@@ -136,7 +139,7 @@ if they are being embedded.
 C<:$subset> *(experimental)*
 
 Subset the font for compaction. The font is reduced to the set
-of characters that have been actually been encoded. This can greatly
+of characters that have actually been encoded. This can greatly
 reduce the output size when the font is embedded in a PDF file.
 
 This feature currently works on OpenType or TrueType fonts and requires

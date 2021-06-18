@@ -13,15 +13,18 @@ SYNPOSIS
 
     # load a font from a file
     use PDF::Font::Loader :load-font;
+    use PDF::Content::FontObj;
 
-    my $deja = PDF::Font::Loader.load-font: :file<t/fonts/DejaVuSans.ttf>;
-    my $deja = load-font( :file<t/fonts/DejaVuSans.ttf> );
+    my PDF::Content::FontObj $deja;
+    $deja = PDF::Font::Loader.load-font: :file<t/fonts/DejaVuSans.ttf>;
+    -- or --
+    $deja = load-font( :file<t/fonts/DejaVuSans.ttf> );
 
     # find/load system fonts; requires fontconfig
     use PDF::Font::Loader :load-font, :find-font;
     $deja = load-font( :family<DejaVu>, :slant<italic> );
     my Str $file = find-font( :family<DejaVu>, :slant<italic> );
-    my $deja-vu = load-font: :$file;
+    my PDF::Content::FontObj $deja-vu = load-font: :$file;
 
     # use the font to add text to a PDF
     use PDF::Lite;
@@ -67,7 +70,7 @@ parameters:
 
   * `:$subset` *(experimental)*
 
-    Subset the font for compaction. The font is reduced to the set of characters that have been actually been encoded. This can greatly reduce the output size when the font is embedded in a PDF file.
+    Subset the font for compaction. The font is reduced to the set of characters that have actually been encoded. This can greatly reduce the output size when the font is embedded in a PDF file.
 
     This feature currently works on OpenType or TrueType fonts and requires installation of the experimental [HarfBuzz::Subset](HarfBuzz::Subset) module.
 
