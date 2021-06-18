@@ -28,7 +28,7 @@ class FontLoader {
     }
     method SetFont(Str $font-key, Numeric $font-size) {
         with $*gfx.resource-entry('Font', $font-key) -> $dict {
-            take PDF::Font::Loader.load-font: :$dict
+            take PDF::Font::Loader.load-font: :$dict, :embed
                unless %!seen{$dict}++;
         }
     }

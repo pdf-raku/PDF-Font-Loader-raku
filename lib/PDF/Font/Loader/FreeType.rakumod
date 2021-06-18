@@ -55,17 +55,6 @@ class PDF::Font::Loader::FreeType
             !! 'identity-h',
     ) is hidden-from-backtrace {
 
-        my @missing-atts = <bounding-box ascender descender>.grep: {!$!face."$_"().defined };
-        die "font $!font-name (format {self!font-format}) lacks {@missing-atts.join: ', '} attributes; unable to proceed"
-            if @missing-atts;
-
-        if $!enc.starts-with('identity') {
-            die "can't use $!enc encoding with type-1 fonts"
-                if self!font-format eq 'Type1';
-            die "can't use $!enc encoding with unembedded fonts"
-                unless $!embed;
-        }
-
         $!subset = False
             unless $!embed && self!font-format ~~ 'TrueType'|'OpenType'|'CFF';
 
@@ -459,6 +448,18 @@ class PDF::Font::Loader::FreeType
     }
 
     method !make-dict {
+
+        my @missing-atts = <bounding-box ascender descender>.grep: {!$!face."$_"().defined };
+        die "font $!font-name (format {self!font-format}) lacks {@missing-atts.join: ', '} attributes; unable to proceed"
+            if @missing-atts;
+
+        if $!enc.starts-with('identity') {
+            die "can't use $!enc encoding with type-1 fonts"
+                if self!font-format eq 'Type1';
+            die "can't use $!enc encoding with unembedded fonts"
+                unless $!embed;
+        }
+
         $!enc ~~ 'identity-h'|'identity-v'
           ?? self!make-index-dict
           !! self!make-roman-dict;
