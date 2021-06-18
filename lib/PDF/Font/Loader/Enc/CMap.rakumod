@@ -143,7 +143,7 @@ class PDF::Font::Loader::Enc::CMap
     }
 
     multi method decode(Str $s, :$str! --> Str) {
-        $s.ords.map(self!decoder).grep({$_}).map({.chr}).join;
+        $s.ords.map(self!decoder).grep({$_})».chr.join;
     }
     multi method decode(Str $s --> buf32) is default {
         # Identity decoding

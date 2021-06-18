@@ -50,7 +50,7 @@ class PDF::Font::Loader::Enc::Identity8
     }
 
     multi method decode(Str $encoded, :$str! --> Str) {
-        $encoded.ords.map({@!to-unicode[$_]}).grep({$_}).map({.chr}).join;
+        $encoded.ords.map({@!to-unicode[$_]}).grep({$_})».chr.join;
     }
     multi method decode(Str $encoded --> buf8) {
         buf8.new: $encoded.ords.map({@!to-unicode[$_]}).grep: {$_};

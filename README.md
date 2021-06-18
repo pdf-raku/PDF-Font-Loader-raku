@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/pdf-raku/PDF-Font-Loader-raku.svg?branch=master)](https://travis-ci.org/pdf-raku/PDF-Font-Loader-raku)
+[![Actions Status](https://github.com/pdf-raku/PDF-Font-Loader-raku/workflows/test/badge.svg)](https://github.com/pdf-raku/PDF-Font-Loader-raku/actions)
 
 [[Raku PDF Project]](https://pdf-raku.github.io)
  / [[PDF-Font-Loader Module]](https://pdf-raku.github.io/PDF-Font-Loader-raku)
@@ -13,18 +13,15 @@ SYNPOSIS
 
     # load a font from a file
     use PDF::Font::Loader :load-font;
-    use PDF::Content::FontObj;
 
-    my PDF::Content::FontObj $deja;
-    $deja = PDF::Font::Loader.load-font: :file<t/fonts/DejaVuSans.ttf>;
-    -- or --
-    $deja = load-font( :file<t/fonts/DejaVuSans.ttf> );
+    my $deja = PDF::Font::Loader.load-font: :file<t/fonts/DejaVuSans.ttf>;
+    my $deja = load-font( :file<t/fonts/DejaVuSans.ttf> );
 
     # find/load system fonts; requires fontconfig
     use PDF::Font::Loader :load-font, :find-font;
     $deja = load-font( :family<DejaVu>, :slant<italic> );
     my Str $file = find-font( :family<DejaVu>, :slant<italic> );
-    my PDF::Content::FontObj $deja-vu = load-font: :$file;
+    my $deja-vu = load-font: :$file;
 
     # use the font to add text to a PDF
     use PDF::Lite;
@@ -58,19 +55,21 @@ parameters:
 
     Font file to load. Currently supported formats are:
 
-      * Open-Type (`.otf`)
+      * OpenType (`.otf`)
 
-      * True-Type (`.ttf`)
+      * TrueType (`.ttf`)
 
       * Postscript (`.pfb`, or `.pfa`)
 
       * CFF (`.cff`)
 
+    TrueType Collections (`.ttc`) are also accepted, but must be subsetted, if they are being embedded.
+
   * `:$subset` *(experimental)*
 
-    Whether to subset the font for compaction. The font is reduced to the set of characters that have been actually been encoded. This can greatly reduce the output size of the generated PDF file.
+    Subset the font for compaction. The font is reduced to the set of characters that have been actually been encoded. This can greatly reduce the output size when the font is embedded in a PDF file.
 
-    This feature currently works on OpenType or TrueType fonts and requires installation of the experimental [HarfBuzz::Subset](https://pdf-raku.github.io/HarfBuzz-Subset-raku/HarfBuzz/Subset) module.
+    This feature currently works on OpenType or TrueType fonts and requires installation of the experimental [HarfBuzz::Subset](HarfBuzz::Subset) module.
 
   * `:$enc`
 
@@ -124,7 +123,7 @@ parameters:
         :Stretch # normal|[ultra|extra]?[condensed|expanded]
         :Slant   # normal|oblique|italic
     ;
-    method find-font(Str :$family,     # e.g. :family<vera>
+    find-font(Str :$family,     # e.g. :family<vera>
               Weight  :$weight,
               Stretch :$stretch,
               Slant   :$slant,

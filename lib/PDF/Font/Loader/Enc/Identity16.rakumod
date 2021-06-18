@@ -49,7 +49,7 @@ class PDF::Font::Loader::Enc::Identity16
     }
 
     multi method decode(Str $encoded, :$str! --> Str) {
-        $.decode($encoded).map({.chr}).join;
+        $.decode($encoded)».chr.join;
     }
     multi method decode(Str $encoded --> buf32) {
         my @to-unicode := self.to-unicode;

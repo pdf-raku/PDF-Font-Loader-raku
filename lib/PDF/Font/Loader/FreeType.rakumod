@@ -46,12 +46,18 @@ class PDF::Font::Loader::FreeType
         require ::("HarfBuzz::Subset")
     }
 
-    submethod TWEAK(:@differences,
-                    :$widths,
-                    PDF::COS::Stream :$cmap,
-                    Str :$!enc = self!font-format eq 'Type1' || ! $!embed || $!face.num-glyphs <= 255
+    submethod TWEAK(
+        :@differences,
+        :$widths,
+        PDF::COS::Stream :$cmap,
+        Str :$!enc = self!font-format eq 'Type1' || ! $!embed || $!face.num-glyphs <= 255
             ?? 'win'
             !! 'identity-h') {
+
+        my @missing-atts = <bounding-box ascender descender>.grep: {!$!face."$_"().defined };
+        die "font $!font-name (format {self!font-format}) lacks {@missing-atts.join: ', '} attributes; unable to proceed"
+            if @missing-atts;
+
         if $!enc.starts-with('identity') {
             die "can't use $!enc encoding with type-1 fonts"
                 if self!font-format eq 'Type1';
@@ -60,11 +66,29 @@ class PDF::Font::Loader::FreeType
         }
 
         $!subset = False
-            unless $!embed && self!font-format ~~ 'TrueType'|'OpenType';
+            unless $!embed && self!font-format ~~ 'TrueType'|'OpenType'|'CFF';
 
         if $!subset && (try subsetter()) === Nil {
             warn "HarfBuzz::Subset is required for font subsetting";
             $!subset = False;
+        }
+
+        if $!embed {
+            # See if we can actually embed
+            given self!font-format {
+                when 'Type1' {}
+                when 'OpenType'|'TrueType' {
+                    if $!font-stream.subbuf(0,4).decode('latin-1') eq 'ttcf' {
+                        # Its a TrueType collection which is not directly supported as a format
+                        # HarfBuzz subsetting will convert it for us.
+                        unless $!subset {
+                            warn "unable to embed TrueType Collections font $!font-name without subsetting";
+                            $!embed = False;
+                        }
+                    }
+                }
+                default {  warn "unable to embed font $!font-name of format: " ~ self!font-format; }
+            }
         }
 
         if $!subset {
@@ -127,12 +151,10 @@ class PDF::Font::Loader::FreeType
             !! $encoded;
     }
 
-    my subset FontFormat of Str where 'TrueType'|'OpenType'|'Type1'|'CFF';
-    method !font-format returns FontFormat {
+    method !font-format returns Str {
         given $!face.font-format {
             when 'CFF'|'Type 1' { 'Type1' }
-            when FontFormat { $_ }
-            default { die "unsupported font format: $_" }
+            default { $_ }
         }
     }
 

@@ -8,7 +8,7 @@ doc : $(DocLinker) README.md
 
 README.md : lib/PDF/Font/Loader.rakumod
 	(\
-	    echo '[![Build Status](https://travis-ci.org/pdf-raku/PDF-Font-Loader-raku.svg?branch=master)](https://travis-ci.org/pdf-raku/PDF-Font-Loader-raku)'; \
+            echo '[![Actions Status](https://github.com/pdf-raku/PDF-Font-Loader-raku/workflows/test/badge.svg)](https://github.com/pdf-raku/PDF-Font-Loader-raku/actions)' ;\
             echo '';\
             raku -I . --doc=Markdown lib/PDF/Font/Loader.rakumod\
             | TRAIL=PDF/Font/Loader raku -p -n $(DocLinker)\

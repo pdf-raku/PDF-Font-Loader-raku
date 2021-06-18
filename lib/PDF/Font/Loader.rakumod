@@ -16,17 +16,9 @@ class PDF::Font::Loader:ver<0.4.4> {
     }
 
     multi method load-font($?: Font::FreeType::Face :$face!, Blob :$font-stream!, |c) {
-        given $face.font-format {
-            when 'TrueType'|'CFF' {
-                fail "unable to handle TrueType Collections"
-                    if $font-stream.subbuf(0,4).decode('latin-1') eq 'ttcf';
-                PDF::Font::Loader::FreeType.new( :$face, :$font-stream, |c);
-            }
-            when 'Type 1' {
-                PDF::Font::Loader::Type1.new( :$face, :$font-stream, |c);
-            }
-            default { fail "unable to handle font of format: $_"; }
-        }
+        $face.font-format eq 'Type 1'
+            ?? PDF::Font::Loader::Type1.new( :$face, :$font-stream, |c)
+            !! PDF::Font::Loader::FreeType.new( :$face, :$font-stream, |c);
     }
 
     multi method load-font($?: Blob :$font-stream!, |c) is default {
@@ -130,10 +122,13 @@ parameters:
 C<:$file>
 
 Font file to load. Currently supported formats are:
-=item Open-Type (C<.otf>)
-=item True-Type (C<.ttf>)
+=item OpenType (C<.otf>)
+=item TrueType (C<.ttf>)
 =item Postscript (C<.pfb>, or C<.pfa>)
 =item CFF (C<.cff>)
+
+TrueType Collections (C<.ttc>) are also accepted, but must be subsetted,
+if they are being embedded.
 
 =end item
 

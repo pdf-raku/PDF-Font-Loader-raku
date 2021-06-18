@@ -8,6 +8,8 @@ my PDF::Lite $pdf .= new;
 my PDF::Content::FontObj $deja = load-font( :file<t/fonts/DejaVuSans.ttf>, :!subset );
 my PDF::Content::FontObj $otf-font = load-font( :file<t/fonts/Cantarell-Oblique.otf>, :enc<win> );
 my PDF::Content::FontObj $cff-font = load-font( :file<t/fonts/NimbusRoman-Regular.cff>, :enc<win> );
+# True collections don't embed without subsetting
+my PDF::Content::FontObj $ttc-font = load-font( :file<t/fonts/wqy-microhei.ttc>, :!embed, :!subset );
 
 $pdf.add-page.text: {
    .font = $deja;
@@ -26,14 +28,19 @@ $pdf.add-page.text: {
 }
 
 $pdf.add-page.text: {
-   .text-position = [10, 600];
+   .text-position = [10, 700];
    .font = $otf-font;
    .say: "Sample Open Type Font";
    .say: 'Grumpy wizards make toxic brew for the evil Queen and Jack';
 
-   .text-position = [10, 400];
+   .text-position = [10, 550];
    .font = $cff-font;
    .say: "Sample CFF Font";
+   .say: 'Grumpy wizards make toxic brew for the evil Queen and Jack';
+
+   .text-position = [10, 400];
+   .font = $ttc-font;
+   .say: "Sample TTC (TrueType collection) Font - not embedded";
    .say: 'Grumpy wizards make toxic brew for the evil Queen and Jack';
 }
 
