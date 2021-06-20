@@ -27,7 +27,7 @@ class PDF::Font::Loader::FreeType
     has Font::FreeType::Face $.face is required;
     use PDF::Font::Loader::Enc;
     has PDF::Font::Loader::Enc $!encoder handles <decode>;
-    has $.font-stream is required;
+    has $.font-buf is required;
     has PDF::Content::Font $!dict;
     has uint $.first-char;
     has uint $.last-char;
@@ -68,7 +68,7 @@ class PDF::Font::Loader::FreeType
             given self!font-format {
                 when 'Type1' {}
                 when 'OpenType'|'TrueType' {
-                    if $!font-stream.subbuf(0,4).decode('latin-1') eq 'ttcf' {
+                    if $!font-buf.subbuf(0,4).decode('latin-1') eq 'ttcf' {
                         # Its a TrueType collection which is not directly supported as a format
                         # HarfBuzz subsetting will convert it for us.
                         unless $!subset {
@@ -157,14 +157,14 @@ class PDF::Font::Loader::FreeType
     }
 
     method !font-file {
-        my  $decoded = do with $!font-stream {
+        my  $decoded = do with $!font-buf {
             PDF::IO::Blob.new: $_;
         }
         else {
             die "can't embed font without a font stream";
         }
 
-        my %dict = :Length1($!font-stream.bytes);
+        my %dict = :Length1($!font-buf.bytes);
         %dict<Filter> = /<FlateDecode>
             unless $!face.font-format eq 'Type 1';
 
@@ -556,7 +556,7 @@ class PDF::Font::Loader::FreeType
     method !make-subset {
         # perform subsetting on the font
         my %ords := $!encoder.charset;
-        my $buf := $!font-stream;
+        my $buf := $!font-buf;
         my %input = do if $!enc.starts-with: 'identity' {
             # need to retain gids for identity based encodings
             my @glyphs = %ords.keys;
@@ -572,9 +572,9 @@ class PDF::Font::Loader::FreeType
 
     method cb-finish {
         unless $!built++ {
-            temp $!font-stream = $!subset
+            temp $!font-buf = $!subset
                 ?? self!make-subset()
-                !! $!font-stream;
+                !! $!font-buf;
 
             self!make-dict();
         }

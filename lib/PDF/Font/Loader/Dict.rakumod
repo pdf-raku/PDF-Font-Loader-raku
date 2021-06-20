@@ -68,16 +68,16 @@ class PDF::Font::Loader::Dict {
             }
             if $embed {
                 with .<FontFile> // .<FontFile2> // .<FontFile3> {
-                    my $font-stream = .decoded;
-                    $font-stream = $font-stream.encode("latin-1")
-                        unless $font-stream ~~ Blob;
-                    %opt ,= :$font-stream;
+                    my $font-buf = .decoded;
+                    $font-buf = $font-buf.encode("latin-1")
+                        unless $font-buf ~~ Blob;
+                    %opt ,= :$font-buf;
                 }
             }
 
             # See [PDF 32000 Table 114 - Entries in an encoding dictionary]
             %opt<enc> //= do {
-                my $embedded := %opt<font-stream>.defined;
+                my $embedded := %opt<font-buf>.defined;
                 my $symbolic := ?((.<Flags>//0) +& SymbolicFlag);
                 # in-case a Type 1 font has been marked as symbolic
                 my $type1 = True with .<FontFile> // %opt<differences>;

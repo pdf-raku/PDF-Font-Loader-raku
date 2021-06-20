@@ -11,21 +11,21 @@ class PDF::Font::Loader:ver<0.5.0> {
     proto method load-font($?: |c) is export(:load-font) {*};
 
     multi method load-font($class = $?CLASS: IO() :$file!, |c) {
-        my Blob $font-stream = $file.slurp: :bin;
-        $class.load-font(:$font-stream, |c);
+        my Blob $font-buf = $file.slurp: :bin;
+        $class.load-font(:$font-buf, |c);
     }
 
-    multi method load-font($?: Font::FreeType::Face :$face!, Blob :$font-stream!, |c) {
+    multi method load-font($?: Font::FreeType::Face :$face!, Blob :$font-buf!, |c) {
         $face.font-format eq 'Type 1'
-            ?? PDF::Font::Loader::Type1.new( :$face, :$font-stream, |c)
-            !! PDF::Font::Loader::FreeType.new( :$face, :$font-stream, |c);
+            ?? PDF::Font::Loader::Type1.new( :$face, :$font-buf, |c)
+            !! PDF::Font::Loader::FreeType.new( :$face, :$font-buf, |c);
     }
 
-    multi method load-font($?: Blob :$font-stream!, |c) is default {
+    multi method load-font($?: Blob :$font-buf!, |c) is default {
         state Font::FreeType $free-type;
         $free-type //= Font::FreeType.new;
-        my Font::FreeType::Face $face = $free-type.face($font-stream);
-        $.load-font( :$face, :$font-stream, |c);
+        my Font::FreeType::Face $face = $free-type.face($font-buf);
+        $.load-font( :$face, :$font-buf, |c);
     }
 
     # resolve font name via fontconfig
