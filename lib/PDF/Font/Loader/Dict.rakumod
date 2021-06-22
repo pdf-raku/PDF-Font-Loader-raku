@@ -1,7 +1,14 @@
 
 #| Loads a font from a PDF font dictionary (experimental)
 class PDF::Font::Loader::Dict {
+    use PDF::Content::Font::CoreFont;
     my subset FontDict of Hash where .<Type> ~~ 'Font';
+
+    sub font-descriptor(FontDict $dict is copy) is rw {
+        $dict = $dict<DescendantFonts>[0]
+            if $dict<Subtype> ~~ 'Type0';
+        $dict<FontDescriptor>;
+    }
 
     method !base-enc($_, :$dict!) {
         when 'Identity-H'        {'identity-h' }
@@ -17,17 +24,17 @@ class PDF::Font::Loader::Dict {
     }
 
     method is-core-font( FontDict :$dict! ) {
-        ! $dict<FontDescriptor>.defined;
+        ! font-descriptor($dict).defined
     }
 
     method is-embedded-font( FontDict :$dict! ) {
-        do with $dict<FontDescriptor> {
+        do with font-descriptor($dict) {
             (.<FontFile>:exists) || (.<FontFile2>:exists) || (.<FontFile3>:exists)
         }
     }
 
     method load-font-opts(FontDict :$dict! is copy, Bool :$embed = False, |c) {
-        my %opt = :!subset, :$embed;
+        my %opt = :!subset, :$embed, :$dict;
         %opt<cmap> = $_
             with $dict<ToUnicode>;
 
@@ -46,11 +53,9 @@ class PDF::Font::Loader::Dict {
         constant SymbolicFlag = 1 +< 5;
         constant ItalicFlag = 1 +< 6;
 
-        $dict = $dict<DescendantFonts>[0]
-            if $dict<Subtype> ~~ 'Type0';
+        %opt<font-descriptor> = font-descriptor($dict);
 
-        with $dict<FontDescriptor> {
-            # embedded font
+        with %opt<font-descriptor> {
             %opt<font-name> = $_ with .<FontName>;
 
             %opt<width> = .lc with .<FontStretch>;
@@ -66,25 +71,22 @@ class PDF::Font::Loader::Dict {
                     'courier';
                 }
             }
-            if $embed {
-                with .<FontFile> // .<FontFile2> // .<FontFile3> {
-                    my $font-buf = .decoded;
-                    $font-buf = $font-buf.encode("latin-1")
-                        unless $font-buf ~~ Blob;
-                    %opt ,= :$font-buf;
+
+            with .<FontFile> // .<FontFile2> // .<FontFile3> {
+                %opt<font-buf> = do given .decoded {
+                    $_ ~~ Blob ?? $_ !! .encode("latin-1")
                 }
             }
 
             # See [PDF 32000 Table 114 - Entries in an encoding dictionary]
             %opt<enc> //= do {
-                my $embedded := %opt<font-buf>.defined;
                 my $symbolic := ?((.<Flags>//0) +& SymbolicFlag);
                 # in-case a Type 1 font has been marked as symbolic
                 my $type1 = True with .<FontFile> // %opt<differences>;
                 $type1 //= .<Subtype> ~~ 'Type1C'
                     with .<FontFile3>;
 
-                $embedded && $symbolic && !$type1
+                $embed && $symbolic && !$type1
                     ?? 'identity'
                     !! 'std';
             }

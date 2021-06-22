@@ -5,7 +5,7 @@ class PDF::Font::Loader:ver<0.5.0> {
     use Font::FreeType;
     use Font::FreeType::Face;
     use PDF::Font::Loader::FreeType;
-    use PDF::Font::Loader::Type1;
+    use PDF::Content::Font;
     use PDF::Font::Loader::Dict;
 
     proto method load-font($?: |c) is export(:load-font) {*};
@@ -16,27 +16,25 @@ class PDF::Font::Loader:ver<0.5.0> {
     }
 
     multi method load-font($?: Font::FreeType::Face :$face!, Blob :$font-buf!, |c) {
-        $face.font-format eq 'Type 1'
-            ?? PDF::Font::Loader::Type1.new( :$face, :$font-buf, |c)
-            !! PDF::Font::Loader::FreeType.new( :$face, :$font-buf, |c);
+        PDF::Font::Loader::FreeType.new: :$face, :$font-buf, |c;
     }
 
     multi method load-font($?: Blob :$font-buf!, |c) is default {
-        state Font::FreeType $free-type;
-        $free-type //= Font::FreeType.new;
-        my Font::FreeType::Face $face = $free-type.face($font-buf);
+        my Font::FreeType::Face $face = Font::FreeType.face($font-buf);
         $.load-font( :$face, :$font-buf, |c);
     }
 
     # resolve font name via fontconfig
-    multi method load-font($class = $?CLASS: Str :$family!, |c) {
+    multi method load-font($class = $?CLASS: Str :$family!, :$dict, |c) {
+        note "subsituting font: $family" with $dict;
         my $file = $class.find-font(:$family, |c);
         $class.load-font: :$file, |c;
     }
 
-    multi method load-font($?: Hash :$dict!, |c) {
-        my %opts = PDF::Font::Loader::Dict.load-font-opts( :$dict, |c);
-        $.load-font( |%opts );
+    # resolve via PDF font dictionary
+    multi method load-font($?: PDF::Content::Font:D :$dict!, |c) {
+        my %opts = PDF::Font::Loader::Dict.load-font-opts(:$dict, |c);
+        $.load-font: |%opts;
     }
 
     subset Weight is export(:Weight) where /^[thin|extralight|light|book|regular|medium|semibold|bold|extrabold|black|<[0..9]>**3]$/;

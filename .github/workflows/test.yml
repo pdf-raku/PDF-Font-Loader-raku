@@ -2,8 +2,8 @@ name: test
 
 on:
   push:
-    branches:
-      - '*'
+    branches-ignore:
+      - 'reuse'
     tags-ignore:
       - '*'
   pull_request:

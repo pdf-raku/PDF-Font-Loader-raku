@@ -30,15 +30,15 @@ $pdf.add-page.text: {
 $pdf.add-page.text: {
    .text-position = [10, 700];
    .font = $otf-font;
-   .say: "Sample Open Type Font";
+   .say: "Sample Open Type Font: {$otf-font.font-name}";
    .say: 'Grumpy wizards make toxic brew for the evil Queen and Jack';
 
-   .text-position = [10, 550];
+   .text-position = [10, 650];
    .font = $cff-font;
-   .say: "Sample CFF Font";
+   .say: "Sample CFF Font: {$cff-font.font-name}";
    .say: 'Grumpy wizards make toxic brew for the evil Queen and Jack';
 
-   .text-position = [10, 400];
+   .text-position = [10, 600];
    .font = $ttc-font;
    .say: "Sample TTC (TrueType collection) Font - not embedded";
    .say: 'Grumpy wizards make toxic brew for the evil Queen and Jack';
