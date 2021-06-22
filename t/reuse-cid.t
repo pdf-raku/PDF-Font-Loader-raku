@@ -53,5 +53,9 @@ $pdf.add-page.graphics: {
     .font = $f;
     .say: "reused DejaVuSans (CID) font", :position[10,500];
 }
-$pdf.save-as: "t/pdf-reuse-cid.pdf";
+
+# ensure consistant document ID generation
+$pdf.id =  $*PROGRAM-NAME.fmt('%-16.16s');
+
+$pdf.save-as: "t/reuse-cid.pdf";
 done-testing;

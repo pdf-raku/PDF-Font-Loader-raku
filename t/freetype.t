@@ -42,10 +42,15 @@ $pdf.add-page.text: {
    .font = $ttc-font;
    .say: "Sample TTC (TrueType collection) Font - not embedded";
    .say: 'Grumpy wizards make toxic brew for the evil Queen and Jack';
+
+   .text-position = [10, 550];
+   .font = .core-font: 'Times';
+   .say: "Core Font (Times)";
+   .say: 'Grumpy wizards make toxic brew for the evil Queen and Jack';
 }
 
 # ensure consistant document ID generation
-$pdf.id =  $*PROGRAM-NAME.fmt('%-16s').substr(0,16);
+$pdf.id = $*PROGRAM-NAME.fmt('%-16.16s');
 
 lives-ok { $pdf.save-as: "t/freetype.pdf"; };
 

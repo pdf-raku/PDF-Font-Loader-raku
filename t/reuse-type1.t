@@ -11,8 +11,8 @@ my PDF::Lite::Page $page = $pdf.page(2);
 
 $pdf.page(2).gfx.text: -> $gfx {
     my PDF::COS::Dict %fonts = $gfx.resources('Font');
-    $gfx.text-position = 10, 500;
-    is-deeply %fonts.keys.sort, ("F1", "F2", "F3");
+    $gfx.text-position = 10, 400;
+    is-deeply %fonts.keys.sort, ("F1", "F2", "F3", "F4");
     my PDF::Content::FontObj $f1 =  PDF::Font::Loader.load-font: :dict(%fonts<F1>), :embed;
     is $f1.font-name, 'Cantarell-Oblique', 'font-name';
     is $f1.enc, 'win', 'enc';
@@ -25,6 +25,9 @@ $pdf.page(2).gfx.text: -> $gfx {
     }, 'reuse font';
 }
 
-$pdf.save-as: "t/reuse.pdf";
+# ensure consistant document ID generation
+$pdf.id =  $*PROGRAM-NAME.fmt('%-16.16s');
+
+$pdf.save-as: "t/reuse-type1.pdf";
 
 done-testing;

@@ -13,7 +13,7 @@ class PDF::Font::Loader::Dict {
         base-font($dict)<FontDescriptor>;
     }
 
-    method !base-enc($_, :$dict!) {
+    sub base-enc($_, :$dict!) {
         when 'Identity-H'        {'identity-h' }
         when 'Identity-V'        {'identity-v' }
         when 'WinAnsiEncoding'   { 'win' }
@@ -26,8 +26,9 @@ class PDF::Font::Loader::Dict {
         }
     }
 
-    method is-core-font( FontDict :$dict! ) {
-        ! font-descriptor($dict).defined
+    method is-core-font($?: FontDict :$dict! ) is export(:is-core-font) {
+        $dict<Subtype> ~~ 'Type1'
+        && ! font-descriptor($dict).defined
     }
 
     method is-embedded-font( FontDict :$dict! ) {
@@ -73,7 +74,7 @@ class PDF::Font::Loader::Dict {
         ( $first-char, $last-char, @widths );
     }
 
-    method load-font-opts(FontDict :$dict! is copy, Bool :$embed = False, |c) {
+    method load-font-opts($?: FontDict :$dict! is copy, Bool :$embed = False, |c) is export(:load-font-opts) {
         my %opt = :!subset, :$embed, :$dict;
         %opt<cmap> = $_
             with $dict<ToUnicode>;
@@ -81,9 +82,9 @@ class PDF::Font::Loader::Dict {
         %opt<enc> //= do with $dict<Encoding> {
             when Hash {
                 %opt<differences> = $_ with .<Differences>;
-                self!base-enc(.<BaseEncoding>, :$dict);
+                base-enc(.<BaseEncoding>, :$dict);
             }
-            default { self!base-enc($_, :$dict); }
+            default { base-enc($_, :$dict); }
         }
 
         if $dict<Subtype> ~~ 'Type0' {

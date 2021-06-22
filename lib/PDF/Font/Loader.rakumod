@@ -6,7 +6,7 @@ class PDF::Font::Loader:ver<0.5.0> {
     use Font::FreeType::Face;
     use PDF::Font::Loader::FontObj;
     use PDF::Content::Font;
-    use PDF::Font::Loader::Dict;
+    use PDF::Font::Loader::Dict :&is-core-font, :&load-font-opts;
 
     proto method load-font($?: |c) is export(:load-font) {*};
 
@@ -25,16 +25,20 @@ class PDF::Font::Loader:ver<0.5.0> {
     }
 
     # resolve font name via fontconfig
-    multi method load-font($class = $?CLASS: Str :$family!, :$dict, |c) {
-        note "subsituting font: $family" with $dict;
-        my $file = $class.find-font(:$family, |c);
-        $class.load-font: :$file, |c;
+    multi method load-font($class = $?CLASS: Str :$family!, :$dict, :$quiet, |c) {
+        my $file = $class.find-font: :$family, |c;
+        my $font := $class.load-font: :$file, :$dict, |c;
+        unless $quiet {
+            my $name = c<font-name> // $family;
+            note "loading font: $name -> $file" with $dict;
+        }
+        $font;
     }
 
     # resolve via PDF font dictionary
     multi method load-font($?: PDF::Content::Font:D :$dict!, |c) {
-        my %opts = PDF::Font::Loader::Dict.load-font-opts(:$dict, |c);
-        $.load-font: |%opts;
+        my %opts = load-font-opts(:$dict, |c);
+        $.load-font: |%opts, |c;
     }
 
     subset Weight is export(:Weight) where /^[thin|extralight|light|book|regular|medium|semibold|bold|extrabold|black|<[0..9]>**3]$/;

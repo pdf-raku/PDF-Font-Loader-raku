@@ -1,8 +1,10 @@
 use v6;
+use Test;
+plan 4;
+
 use PDF::Font::Loader;
 use PDF::Lite;
 use PDF::Content::FontObj;
-use Test;
 my PDF::Lite $pdf .= new;
 my PDF::Lite::Page $page = $pdf.add-page;
 my @differences = 1, 'b', 'c', 10, 'y', 'z';
@@ -14,7 +16,7 @@ $page.text: {
     .say: "encoding check: abcdxyz";;
 }
 # ensure consistant document ID generation
-$pdf.id =  $*PROGRAM-NAME.fmt('%-16s').substr(0,16);
+$pdf.id =  $*PROGRAM-NAME.fmt('%-16.16s');
 
 lives-ok { $pdf.save-as: "t/type1-encoding.pdf"; };
 

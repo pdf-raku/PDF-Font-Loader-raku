@@ -45,6 +45,7 @@ class PDF::Font::Loader::FontObj
     has Str:D $.family          = $!face.family-name;
     has Str:D $.font-name is rw = $!face.postscript-name // $!family;
     has Bool $!finished = True;
+    has Bool $!add-widths;
 
     sub subsetter {
         require ::("HarfBuzz::Subset")
@@ -108,6 +109,9 @@ class PDF::Font::Loader::FontObj
             if @differences;
 
         @!widths = .map(*.Int) with $widths;
+        # Be careful not to start adding widths if an existing
+        # font dictionary doesn't already have them.
+        $!add-widths = so @!widths || !$!dict.defined;
 
         PDF::Content::Font.make-font($_, self)
             with $!dict;
@@ -349,13 +353,16 @@ class PDF::Font::Loader::FontObj
     # finalize the font, depending on how it's been used
     method !finish-font($dict) {
         if $!enc.starts-with('identity') {
-            $dict<DescendantFonts>[0]<W> = self!make-cmap-widths;
+            $dict<DescendantFonts>[0]<W> = self!make-cmap-widths
+                if $!add-widths;
             $dict<ToUnicode> //= self!make-cmap-stream;
         }
         else {
-            $dict<FirstChar> = $!first-char;
-            $dict<LastChar> = $!last-char;
-            $dict<Widths> = @!widths;
+            if $!add-widths {
+                $dict<FirstChar> = $!first-char;
+                $dict<LastChar> = $!last-char;
+                $dict<Widths> = @!widths;
+            }
             if $!encoder.differences -> $Differences {
                 $dict<Encoding> = %(
                     Type =>         /<Encoding>,
