@@ -4,7 +4,7 @@ class PDF::Font::Loader:ver<0.5.0> {
 
     use Font::FreeType;
     use Font::FreeType::Face;
-    use PDF::Font::Loader::FreeType;
+    use PDF::Font::Loader::FontObj;
     use PDF::Content::Font;
     use PDF::Font::Loader::Dict;
 
@@ -16,7 +16,7 @@ class PDF::Font::Loader:ver<0.5.0> {
     }
 
     multi method load-font($?: Font::FreeType::Face :$face!, Blob :$font-buf!, |c) {
-        PDF::Font::Loader::FreeType.new: :$face, :$font-buf, |c;
+        PDF::Font::Loader::FontObj.new: :$face, :$font-buf, |c;
     }
 
     multi method load-font($?: Blob :$font-buf!, |c) is default {

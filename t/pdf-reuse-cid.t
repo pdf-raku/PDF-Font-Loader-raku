@@ -5,7 +5,7 @@ use PDF::Font::Loader;
 use PDF::Content::FontObj;
 
 plan 5;
-# see if we can re-load the font that we wrote in pdf-text.align.t
+# see if we can re-load the CID font that we wrote in pdf-text.align.t
 
 class FontLoader {
     # load fonts from a rendering class
@@ -39,7 +39,7 @@ my PDF::Content::FontObj $f;
 for gather FontLoader.new.render: $pdf.page(1) -> PDF::Content::FontObj $font {
     $f = $font;
     # a few sanity checks
-    isa-ok $font, 'PDF::Font::Loader::FreeType', 'loaded a FreeType font';
+    isa-ok $font, 'PDF::Font::Loader::FontObj', 'loaded a FreeType font';
     like $font.font-name, /^[<[A..Z]>**6'+']?'DejaVuSans'$/, 'font name';
     ok( 1100 < $font.height < 1900, 'font height')
         or diag "unexpected font height: {$font.height}";
@@ -51,7 +51,7 @@ for gather FontLoader.new.render: $pdf.page(1) -> PDF::Content::FontObj $font {
 }
 $pdf.add-page.graphics: {
     .font = $f;
-    .say: "here goes nothing", :position[10,20];
+    .say: "reused DejaVuSans (CID) font", :position[10,500];
 }
-$pdf.save-as: "/tmp/out.pdf";
+$pdf.save-as: "t/pdf-reuse-cid.pdf";
 done-testing;

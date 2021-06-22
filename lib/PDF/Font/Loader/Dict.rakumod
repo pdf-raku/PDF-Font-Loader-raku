@@ -4,10 +4,13 @@ class PDF::Font::Loader::Dict {
     use PDF::Content::Font::CoreFont;
     my subset FontDict of Hash where .<Type> ~~ 'Font';
 
+    sub base-font($dict) {
+        $dict<Subtype> ~~ 'Type0'
+            ?? $dict<DescendantFonts>[0]
+            !! $dict;
+    }
     sub font-descriptor(FontDict $dict is copy) is rw {
-        $dict = $dict<DescendantFonts>[0]
-            if $dict<Subtype> ~~ 'Type0';
-        $dict<FontDescriptor>;
+        base-font($dict)<FontDescriptor>;
     }
 
     method !base-enc($_, :$dict!) {
@@ -33,6 +36,43 @@ class PDF::Font::Loader::Dict {
         }
     }
 
+    sub decode-widths($W) {
+        my $first-char = $W[0];
+        my uint16 @widths;
+        my int $i = 0;
+        my int $n = $W.elems;
+
+        while $i < $n {
+            my $code = $W[$i++];
+            if $code < $first-char {
+                # Allow codes to be in any sequence
+                @widths.prepend: 0 xx ($first-char - $code);
+                $first-char = $code;
+            }
+            given $W[$i++] {
+                when Array {
+                    my $a := $_;
+                    # format: code [W1 W2 ...]
+                    @widths[$code + $_ - $first-char] = $a[$_]
+                        for 0 ..^ $a.elems;
+                }
+                when Numeric {
+                    # format: code code2 W
+                    my $code2 := $_;
+                    my $width := $W[$i++];
+                    @widths[$_ - $first-char] = $width
+                       for $code .. $code2;
+                }
+                default {
+                    warn "unexpected {.raku} in /W (widths) array";
+                }
+            }
+        }
+
+        my $last-char = $first-char + @widths - 1;
+        ( $first-char, $last-char, @widths );
+    }
+
     method load-font-opts(FontDict :$dict! is copy, Bool :$embed = False, |c) {
         my %opt = :!subset, :$embed, :$dict;
         %opt<cmap> = $_
@@ -46,9 +86,16 @@ class PDF::Font::Loader::Dict {
             default { self!base-enc($_, :$dict); }
         }
 
-        %opt<first-char> = $_ with $dict<FirstChar>;
-        %opt<last-char>  = $_ with $dict<LastChar>;
-        %opt<widths>     = $_ with $dict<Widths>;
+        if $dict<Subtype> ~~ 'Type0' {
+            if base-font($dict)<W> -> $W {
+                %opt<first-char last-char widths> = decode-widths($W)
+            }
+        }
+        else {
+            %opt<first-char> = $_ with $dict<FirstChar>;
+            %opt<last-char>  = $_ with $dict<LastChar>;
+            %opt<widths>     = $_ with $dict<Widths>;
+        }
 
         constant SymbolicFlag = 1 +< 5;
         constant ItalicFlag = 1 +< 6;

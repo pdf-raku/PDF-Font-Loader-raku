@@ -25,7 +25,7 @@
     "PDF::Font::Loader::Enc::Identity16": "lib/PDF/Font/Loader/Enc/Identity16.rakumod",
     "PDF::Font::Loader::Enc::Identity8": "lib/PDF/Font/Loader/Enc/Identity8.rakumod",
     "PDF::Font::Loader::Enc::Type1": "lib/PDF/Font/Loader/Enc/Type1.rakumod",
-    "PDF::Font::Loader::FreeType": "lib/PDF/Font/Loader/FreeType.rakumod",
+    "PDF::Font::Loader::FontObj": "lib/PDF/Font/Loader/FontObj.rakumod",
     "PDF::Font::Loader::Type1::Stream": "lib/PDF/Font/Loader/Type1/Stream.rakumod"
   },
   "resources": [

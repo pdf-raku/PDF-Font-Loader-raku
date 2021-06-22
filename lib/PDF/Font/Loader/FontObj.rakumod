@@ -1,6 +1,6 @@
 use PDF::Content::FontObj;
 
-class PDF::Font::Loader::FreeType
+class PDF::Font::Loader::FontObj
     does PDF::Content::FontObj {
     use PDF::COS;
     use PDF::COS::Dict;
@@ -350,7 +350,7 @@ class PDF::Font::Loader::FreeType
     method !finish-font($dict) {
         if $!enc.starts-with('identity') {
             $dict<DescendantFonts>[0]<W> = self!make-cmap-widths;
-            $dict<ToUnicode> = self!make-cmap-stream;
+            $dict<ToUnicode> //= self!make-cmap-stream;
         }
         else {
             $dict<FirstChar> = $!first-char;
