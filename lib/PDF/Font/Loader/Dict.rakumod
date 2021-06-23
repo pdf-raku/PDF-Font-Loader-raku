@@ -37,6 +37,7 @@ class PDF::Font::Loader::Dict {
         }
     }
 
+    # Decode widths from a /FontDescriptor /W array
     sub decode-widths($W) {
         my $first-char = $W[0];
         my uint16 @widths;
@@ -98,8 +99,7 @@ class PDF::Font::Loader::Dict {
             %opt<widths>     = $_ with $dict<Widths>;
         }
 
-        constant SymbolicFlag = 1 +< 5;
-        constant ItalicFlag = 1 +< 6;
+        enum (:SymbolicFlag(1 +< 5), :ItalicFlag(1 +< 6));
 
         %opt<font-descriptor> = font-descriptor($dict);
 
@@ -141,10 +141,12 @@ class PDF::Font::Loader::Dict {
         }
         else {
             # no font descriptor. assume core font
-            my $family = $dict<BaseFont> // 'courier';
+            my $font-name = $dict<BaseFont> // 'courier';
+            my $family = $font-name;
             %opt<weight> = 'bold' if $family ~~ s/:i ['-'|',']? bold //;
             %opt<slant> = $0.lc if $family ~~ s/:i ['-'|',']? (italic|oblique) //;
-            %opt<family> = $family;
+            %opt ,= :$font-name;
+            %opt ,= :$family;
             %opt<enc> //= do given $family {
                 when /:i ^[ZapfDingbats|WebDings]/ {'zapf'}
                 when /:i ^[Symbol]/ {'sym'}

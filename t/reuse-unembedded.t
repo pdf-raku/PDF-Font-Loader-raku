@@ -14,7 +14,8 @@ $pdf.page(2).gfx.text: -> $gfx {
     my PDF::Content::FontObj $f3 = PDF::Font::Loader.load-font: :dict(%fonts<F3>), :quiet;
     $gfx.text-position = 10, 400;
     subtest 'unembedded non-core' => {
-        plan 4;
+        plan 5;
+        is $f3.font-name, 'WenQuanYiMicroHei', 'font name';
         is $f3.enc, 'win', 'enc';
         nok $f3.is-embedded, 'is embedded';
         nok $f3.is-subset, "isn't subset";
@@ -25,8 +26,9 @@ $pdf.page(2).gfx.text: -> $gfx {
         }, 'reuse unembedded font';
     }
     subtest 'unembedded core-font' => {
-        plan 4;
+        plan 5;
         my PDF::Content::FontObj $f4 = PDF::Font::Loader.load-font: :dict(%fonts<F4>), :quiet;
+        is $f4.font-name, 'Times-Roman', 'font name';
         is $f4.enc, 'win', 'enc';
         nok $f4.is-embedded, 'is embedded';
         nok $f4.is-subset, "isn't subset";

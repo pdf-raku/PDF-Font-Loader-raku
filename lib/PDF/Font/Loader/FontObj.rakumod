@@ -117,8 +117,6 @@ class PDF::Font::Loader::FontObj
             with $!dict;
     }
 
-    method is-subset { so ($!font-name ~~ m/^<[A..Z]>**6"+"/) }
-
     method height($pointsize = 1000, Bool :$from-baseline, Bool :$hanging) {
         die "todo: height of non-scaling fonts" unless $!face.is-scalable;
         my FT_BBox $bbox = $!face.bounding-box;
@@ -224,8 +222,6 @@ class PDF::Font::Loader::FontObj
             !! self!make-other-font-file($buf);
     }
 
-    method is-embedded { $!embed && $!font-buf.defined }
-
     sub bit(\n) { 1 +< (n-1) }
     my enum Flags «
         :FixedPitch(bit(1))
@@ -313,8 +309,6 @@ class PDF::Font::Loader::FontObj
         $!font-descriptor;
     }
 
-    method is-core-font { ! self!font-descriptor.defined }
-
     method !encoding-name {
 
         constant %EncName = %(
@@ -380,7 +374,7 @@ class PDF::Font::Loader::FontObj
 
     method !make-enc-dict {
         my $Type = /(<Font>);
-        my $Subtype = ( /(self!font-type-entry) );
+        my $Subtype  = /(self!font-type-entry);
         my $BaseFont = /($!font-name);
         my $Encoding = /(self!encoding-name);
 
@@ -647,5 +641,17 @@ class PDF::Font::Loader::FontObj
         }
         $dict;
     }
+
+    ## Informational methods
+    method type { $.to-dict<Subtype>.fmt; }
+    method encoding { $!enc }
+    method is-embedded {
+        $!embed // do with $!font-descriptor {
+            .{self!font-file-entry}:exists;
+        } // False;
+    }
+    method is-subset { so ($!font-name ~~ m/^<[A..Z]>**6"+"/) }
+    method is-core-font { ! self!font-descriptor.defined }
+
 }
 

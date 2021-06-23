@@ -3,13 +3,13 @@
 [[Raku PDF Project]](https://pdf-raku.github.io)
  / [[PDF-Font-Loader Module]](https://pdf-raku.github.io/PDF-Font-Loader-raku)
 
-NAME
-====
+Name
+----
 
 PDF::Font::Loader
 
-SYNPOSIS
-========
+Synposis
+--------
 
     # load a font from a file
     use PDF::Font::Loader :load-font;
@@ -36,19 +36,19 @@ SYNPOSIS
     }
     $pdf.save-as: "/tmp/example.pdf";
 
-DESCRIPTION
-===========
+Description
+-----------
 
 This module provdes font loading and handling for [PDF::Lite](https://pdf-raku.github.io/PDF-Lite-raku), [PDF::API6](https://pdf-raku.github.io/PDF-API6) and other PDF modules.
 
-METHODS
-=======
+Loading Methods
+-------
 
 ### load-font
 
 A class level method to create a new font object.
 
-#### `PDF::Font::Loader.load-font(Str :$file, Bool :$subset, :$enc, $lang);`
+#### `PDF::Font::Loader.load-font(Str :$file, Bool :$subset, :$enc, :$lang, :$dict);`
 
 Loads a font file.
 
@@ -86,6 +86,7 @@ parameters:
 
     `win` is used as the default encoding for fonts with no more than 255 glyphs. `identity-h` is used otherwise.
 
+
     It is recommended that you set a single byte encoding such as `:enc<mac>` or `:enc<win>` when it known that no more that 255 distinct characters will actually be used from the font within the PDF.
 
 #### `PDF::Font::Loader.load-font(Str :$family, Str :$weight, Str :$stretch, Str :$slant, Bool :$subset, Str :$enc, Str :$lang);`
@@ -119,6 +120,10 @@ parameters:
 
     A RFC-3066-style language tag. `fontconfig` will select only fonts whose character set matches the preferred lang. See also [I18N::LangTags](https://modules.raku.org/dist/I18N::LangTags:cpan:UFOBAT).
 
+  * `:$dict`
+
+  Loads from a PDF Font Dictionary (see <a href="#user-content-loading-pdf-fonts">below</a>).
+
 ### find-font
 
     use PDF::Font::Loader
@@ -139,8 +144,93 @@ Locates a matching font-file. Doesn't actually load it.
     say $file;  # /usr/share/fonts/truetype/dejavu/DejaVuSansCondensed-BoldOblique.ttf
     my $font = PDF::Font::Loader.load-font: :$file;
 
-INSTALL
-=======
+Font Object Methods
+-----------------
+
+### font-name
+
+The font name
+
+### height
+
+Overall font height
+
+### encode
+
+Encodes strings
+
+### decode
+
+Decodes buffers
+
+### kern
+
+Kern text
+
+### to-dict
+
+Produces a draft PDF font dictionary.
+
+### cb-finish
+
+Finishing hook for the PDF tool-chain. This produces a finalized PDF font dictionary, including embedded fonts, character widths and encoding mappings.
+
+### is-embedded
+
+Whether a font-file is embedded.
+
+### is-subset
+
+Whether the font has been subsetting
+
+### is-core-font
+
+Whether the font is a core font
+
+Loading PDF Fonts
+---------------
+
+Fonts can also be loaded from PDF font dictionarys. The following example loads and summarizes page-level fonts:
+
+```raku
+use PDF::Lite;
+use PDF::Font::Loader;
+use PDF::Content::Font;
+use PDF::Content::FontObj;
+
+constant Fmt = "%-30s %-8s %-10s %-3s %-3s";
+sub yn($_) {.so ?? 'yes' !! 'no' }
+
+my %SeenFont{PDF::Content::Font};
+my PDF::Lite $pdf .= open: "t/freetype.pdf";
+say sprintf(Fmt, |<name type encode emb sub>);
+say sprintf(Fmt, |<-------------------------- ------- ---------- --- --->);
+for 1 .. $pdf.page-count {
+    my PDF::Content::Font %fonts = $pdf.page($_).gfx.resources('Font');
+
+    for %fonts.values -> $dict {
+        unless %SeenFont{$dict}++ {
+            my PDF::Content::FontObj $font = PDF::Font::Loader.load-font: :$dict, :quiet;
+            say sprintf(Fmt, .font-name, .type, .encoding, .is-embedded.&yn, .is-subset.&yn)
+                given $font;
+        }
+    }
+}
+```
+Produces:
+```
+name                           type     encode     emb sub
+--------------------------     -------  ---------- --- ---
+DejaVuSans                     Type0    identity-h yes no 
+Times-Roman                    Type1    win        no  no 
+WenQuanYiMicroHei              TrueType win        no  no 
+NimbusRoman-Regular            Type1    win        yes no 
+Cantarell-Oblique              Type1    win        yes no 
+
+```
+
+Install
+-------
 
 - PDF::Font::Loader depends on Font::FreeType which further depends on the [freetype](https://www.freetype.org/download.html) library, so you must install that prior to installing this module.
 
