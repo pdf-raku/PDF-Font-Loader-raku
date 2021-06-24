@@ -126,7 +126,16 @@ class PDF::Font::Loader::FontObj
         $height * $pointsize /($!face.units-per-EM);
     }
 
-    method encode(Str $text, :$str) {
+    multi method stringwidth(Str $text, :$kern) {
+        self.encode($text, :width)
+        + ($kern ?? self!font-kernwidth($text) !! 0);
+    }
+    multi method stringwidth(Str $text, $pointsize, :$kern) {
+        self.stringwidth($text, :$kern) * $pointsize / 1000;
+    }
+
+    method encode(Str $text, :$str, :$width) {
+        my int $w = 0;
         my $encoded := $!encoder.encode($text);
         if $encoded {
             my $to-unicode := $!encoder.to-unicode;
@@ -141,21 +150,36 @@ class PDF::Font::Loader::FontObj
                     @!widths.prepend: 0 xx ($!first-char - $_);
                     $!first-char = $_;
                 }
-                @!widths[$_ - $!first-char] ||= do {
-                    $!finished = False;
-                    $.stringwidth($to-unicode[$_].chr).round;
-                }
+                $w += (
+                    @!widths[$_ - $!first-char] ||= do {
+                        $!finished = False;
+                        self!font-stringwidth($to-unicode[$_].chr).round;
+                    }
+                );
             }
             $!last-char = $!first-char + @!widths - 1;
+
+            if $width {
+                $w;
+            }
+            else {
+                # 16 bit encoding. convert to bytes
+                $encoded := pack($encoded, 16)
+                    if $encoded.of ~~ uint16;
+
+                $str ?? $encoded.decode('latin-1') !! $encoded;
+            }
         }
+    }
 
-        # 16 bit encoding. convert to bytes
-        $encoded := pack($encoded, 16)
-            if $encoded.of ~~ uint16;
-
-        $str
-            ?? $encoded.decode('latin-1')
-            !! $encoded;
+    method glyph-width(Str $ch) is rw {
+        if $!add-widths && self.encode($ch) {
+            my $enc = $!encoder.encode($ch);
+            @!widths[ $enc[0] - $!first-char ];
+        }
+        else {
+            Numeric;
+        }
     }
 
     method !font-type-entry returns Str {
@@ -529,11 +553,8 @@ class PDF::Font::Loader::FontObj
 
     method to-dict { $!dict //= PDF::Content::Font.make-font(self!make-dict, self) }
 
-    method stringwidth(Str $text is copy, Numeric $pointsize?, Bool :$kern) {
-        my FT_Pos $x = 0;
-        my FT_Pos $y = 0;
+    method !font-stringwidth(Str $text) {
         my FT_UInt $prev-idx = 0;
-        my FT_Vector $kerning .= new;
         my $struct = $!face.raw;
         my $glyph-slot = $struct.glyph;
         my Numeric $stringwidth = 0;
@@ -547,17 +568,31 @@ class PDF::Font::Loader::FontObj
                 }
                 ft-try({ $struct.FT_Load_Glyph( $this-idx, FT_LOAD_NO_SCALE ); });
                 $stringwidth += $glyph-slot.metrics.hori-advance * $scale;
-                if $kern && $prev-idx {
+            }
+            $prev-idx = $this-idx;
+        }
+        $stringwidth.round;
+    }
+
+    method !font-kernwidth(Str $text is copy) {
+        my FT_UInt $prev-idx = 0;
+        my FT_Vector $kerning .= new;
+        my $struct = $!face.raw;
+        my int $kernwidth = 0;
+        my $scale = 1000 / ($!face.units-per-EM || 1000);
+
+        for $text.ords -> $char-code {
+            my FT_UInt $this-idx = $struct.FT_Get_Char_Index( $char-code );
+            if $this-idx {
+                if $prev-idx {
                     ft-try({ $struct.FT_Get_Kerning($prev-idx, $this-idx, FT_KERNING_UNSCALED, $kerning); });
                     my $dx := ($kerning.x * $scale).round;
-                    $stringwidth += $dx;
+                    $kernwidth += $dx;
                 }
             }
             $prev-idx = $this-idx;
         }
-        $stringwidth = $stringwidth.round;
-        $stringwidth *= $_ / 1000 with $pointsize;
-        $stringwidth;
+        $kernwidth;
     }
 
     method !char-height(UInt $char-code) {
@@ -575,40 +610,43 @@ class PDF::Font::Loader::FontObj
     }
 
     method kern(Str $text) {
-        my FT_UInt      $prev-idx = 0;
-        my Bool         $has-kerning = $!face.has-kerning;
-        my FT_Vector    $kerning .= new;
-        my FT_Face      $face-struct = $!face.raw;
-        my FT_GlyphSlot $glyph-slot = $face-struct.glyph;
-        my Str          $str = '';
-        my Numeric      $stringwidth = 0.0;
+        my Numeric      $kernwidth = 0.0;
         my @chunks;
-        my $scale = 1000 / $!face.units-per-EM;
 
-        for $text.ords -> $char-code {
-            my FT_UInt $this-idx = $face-struct.FT_Get_Char_Index( $char-code );
-            if $this-idx {
-                ft-try({ $face-struct.FT_Load_Glyph( $this-idx, FT_LOAD_NO_SCALE); });
-                $stringwidth += $glyph-slot.metrics.hori-advance * $scale;
-                if $has-kerning && $prev-idx {
-                    ft-try({ $face-struct.FT_Get_Kerning($prev-idx, $this-idx, FT_KERNING_UNSCALED, $kerning); });
-                    my $dx := ($kerning.x * $scale).round;
-                    if $dx {
-                        @chunks.push: $str;
-                        @chunks.push: $dx;
-                        $stringwidth += $dx;
-                        $str = '';
+        if $!face.has-kerning {
+            my FT_UInt      $prev-idx = 0;
+            my FT_Vector    $kerning .= new;
+            my FT_Face      $face-struct = $!face.raw;
+            my FT_GlyphSlot $glyph-slot = $face-struct.glyph;
+            my Str          $str = '';
+            my $scale = 1000 / $!face.units-per-EM;
+
+            for $text.ords -> $char-code {
+                my FT_UInt $this-idx = $face-struct.FT_Get_Char_Index( $char-code );
+                if $this-idx {
+                    if $prev-idx {
+                        ft-try({ $face-struct.FT_Get_Kerning($prev-idx, $this-idx, FT_KERNING_UNSCALED, $kerning); });
+                        my $dx := ($kerning.x * $scale).round;
+                        if $dx {
+                            @chunks.push: $str;
+                            @chunks.push: $dx;
+                            $kernwidth += $dx;
+                            $str = '';
+                        }
                     }
+                    $str ~= $char-code.chr;
+                    $prev-idx = $this-idx;
                 }
-                $str ~= $char-code.chr;
-                $prev-idx = $this-idx;
             }
+
+            @chunks.push: $str
+                if $str.chars;
+        }
+        else {
+            @chunks.push: $text;
         }
 
-        @chunks.push: $str
-            if $str.chars;
-
-        @chunks, $stringwidth.round;
+        @chunks, self.stringwidth($text) + $kernwidth.round;
     }
 
     method !make-subset {

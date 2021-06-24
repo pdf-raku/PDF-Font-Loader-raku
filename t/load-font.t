@@ -1,6 +1,6 @@
 use v6;
 use Test;
-plan 21;
+plan 24;
 use PDF::Grammar::Test :is-json-equiv;
 use PDF::Font::Loader :Weight, :Stretch, :Slant;
 use PDF::Content::FontObj;
@@ -27,6 +27,11 @@ is $vera.stringwidth("RVX", :!kern), 2064, 'stringwidth :!kern';
 is $vera.stringwidth("RVX", :kern), 2064 - 55, 'stringwidth :kern';
 is-deeply $vera.kern("RVX" ), (['R', -55, 'VX'], 2064 - 55), '.kern(...)';
 is-deeply $vera.kern('ABCD' ), (['AB', -18, 'CD'], 2820), '.kern(...)';
+
+is $vera.glyph-width('V'), 684;
+$vera.glyph-width('V') -= 20;
+is $vera.glyph-width('V'), 664;
+is $vera.stringwidth("RVX", :!kern), 2044, 'stringwidth, width adjustment';
 
 my Hash $times-dict = $times.cb-finish();
 my $descriptor-dict = $times-dict<FontDescriptor>:delete;

@@ -165,7 +165,23 @@ Decodes buffers
 
 ### kern
 
-Kern text
+Kern text via the font's kerning tables. Returns chunks of text seperated by numeric kern widths.
+
+```raku
+say $font.kern("ABCD"); # ["AB", -18, "CD"]
+```
+
+### glyph-width
+
+Return the width of a glyph. This is a `rw` method that can be used to adjust
+glyph spacing for rendering and stringwidth calculations:
+
+```raku
+say $vera.glyph-width('V'); # 684;
+$vera.glyph-width('V') -= 100;
+say $vera.glyph-width('V'); # 584;
+
+```
 
 ### to-dict
 
