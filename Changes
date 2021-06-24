@@ -1,5 +1,13 @@
 {{$NEXT}}
+
+0.5.1  2021-06-24T13:52:53+12:00
+   More forgiving font handling #7 part II
    - Renamed PDF::Font::Loader::FreeType -> PDF::Font::Loader::FontObj
+   - Make font width tables authoritative; stringwidth() method now
+     checks the font's width arrary (/W or /Widths entry) before
+     consulting font metrics.
+   - Add glyph-width() rw method
+   - Fix font-name() and is-embedded() methods
 
 0.5.0  2021-06-19T10:10:30+12:00
    More forgiving font handling #7

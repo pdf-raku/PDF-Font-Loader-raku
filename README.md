@@ -173,8 +173,8 @@ say $font.kern("ABCD"); # ["AB", -18, "CD"]
 
 ### glyph-width
 
-Return the width of a glyph. This is a `rw` method that can be used to adjust
-glyph spacing for rendering and stringwidth calculations:
+Return the width of a glyph. This is a `rw` method that can be used to globally
+adjust a font's glyph spacing for rendering and stringwidth calculations:
 
 ```raku
 say $vera.glyph-width('V'); # 684;
