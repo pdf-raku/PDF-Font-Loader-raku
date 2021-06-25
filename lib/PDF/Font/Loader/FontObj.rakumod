@@ -336,6 +336,8 @@ class PDF::Font::Loader::FontObj
             :mac<MacRomanEncoding>,
             :mac-extra<MacExpertEncoding>,
             :identity-h<Identity-H>,
+            :identity-v<Identity-V>,
+            :identity<Identity>,
         );
 
         with %EncName{$!enc} {
@@ -518,7 +520,7 @@ class PDF::Font::Loader::FontObj
             $DescendantFonts[0]<dict><FontDescriptor> = $_;
         }
 
-        my $Encoding = /($!enc eq 'identity-v' ?? 'Identity-V' !! 'Identity-H');
+        my $Encoding = /(self!encoding-name);
         my $dict = PDF::COS::Dict.COERCE: %(
             :Type( /<Font> ),
             :Subtype( /<Type0> ),
