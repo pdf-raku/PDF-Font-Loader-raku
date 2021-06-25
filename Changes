@@ -1,4 +1,6 @@
 {{$NEXT}}
+   - Added PDF::Font::Loader::Metrics class and $font-obj.shape
+     method.
 
 0.5.1  2021-06-24T13:52:53+12:00
     Reusing a font within a PDF copies it #6

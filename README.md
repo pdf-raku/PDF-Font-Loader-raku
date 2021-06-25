@@ -203,6 +203,20 @@ Whether the font has been subsetting
 
 Whether the font is a core font
 
+### shape
+```raku
+use PDF::Font::Loader::Metrics;
+my PDF::Font::Loader::Metrics @shape = $font.shape: "Hi";
+say "code-point:{.code-point.raku} cid:{.cid} dx:{.dx} dy:{.dy}"
+    for @shape
+```
+
+Computes font placement information for a rendered string, including the font glyph index (CiD), and `dx`, `dy` unscaled displacement to the next glyph.
+
+=item - zero-sized (unknown)  glyphs are omitted.
+
+=item - `dx` and `dy` should be multiplied by the current font-size to get the actual displacement.
+
 Loading PDF Fonts
 ---------------
 

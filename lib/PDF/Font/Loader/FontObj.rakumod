@@ -14,6 +14,7 @@ class PDF::Font::Loader::FontObj
     use PDF::Font::Loader::Enc::Identity8;
     use PDF::Font::Loader::Enc::Identity16;
     use PDF::Font::Loader::Enc::Type1;
+    use PDF::Font::Loader::Metrics;
     use PDF::Font::Loader::Type1::Stream;
     use Font::FreeType:ver(v0.3.0+);
     use Font::FreeType::Face;
@@ -26,6 +27,20 @@ class PDF::Font::Loader::FontObj
 
     constant Px = 64.0;
     sub prefix:</>($name) { PDF::COS::Name.COERCE($name) };
+    sub bit(\n) { 1 +< (n-1) }
+
+    my enum Flags «
+        :FixedPitch(bit(1))
+        :Serif(bit(2))
+        :Symbolic(bit(3))
+        :Script(bit(4))
+        :Nonsymbolic(bit(6))
+        :Italic(bit(7))
+        :AllCap(bit(17))
+        :SmallCap(bit(18))
+        :ForceBold(bit(19))
+        »;
+    enum <Width Height>;
 
     has Font::FreeType::Face:D $.face is required;
     use PDF::Font::Loader::Enc;
@@ -138,7 +153,7 @@ class PDF::Font::Loader::FontObj
 
     multi method stringwidth(Str $text, :$kern) {
         ([+] self!encode-chars($text).map: { @!widths[$_ - $!first-char] })
-        + ($kern ?? self!font-kernwidth($text) !! 0);
+        + ($kern ?? self!font-kerning($text)[Width] !! 0);
     }
     multi method stringwidth(Str $text, $pointsize, :$kern) {
         self.stringwidth($text, :$kern) * $pointsize / 1000;
@@ -161,7 +176,8 @@ class PDF::Font::Loader::FontObj
                 }
                 @!widths[$_ - $!first-char] ||= do {
                     $!finished = False;
-                    self!font-stringwidth($to-unicode[$_].chr).round;
+                    my $chr := $to-unicode[$_].chr;
+                    self!font-stringsize($chr)[Width].round;
                 }
             }
             $!last-char = $!first-char + @!widths - 1;
@@ -242,18 +258,34 @@ class PDF::Font::Loader::FontObj
             !! self!make-other-font-file($buf);
     }
 
-    sub bit(\n) { 1 +< (n-1) }
-    my enum Flags «
-        :FixedPitch(bit(1))
-        :Serif(bit(2))
-        :Symbolic(bit(3))
-        :Script(bit(4))
-        :Nonsymbolic(bit(6))
-        :Italic(bit(7))
-        :AllCap(bit(17))
-        :SmallCap(bit(18))
-        :ForceBold(bit(19))
-        »;
+    my constant Metrics = PDF::Font::Loader::Metrics;
+    has Metrics %!shape; 
+
+    method !make-shape($char) {
+        my Metrics $shape;
+
+        if self!encode-chars($char) -> $enc {
+            if @!widths[ $enc[0] - $!first-char ] -> $width {
+                my $dx := ($width / 1000).Num;
+                my uint32 $code-point = $char.ord;
+                my FT_UInt $cid = $!face.glyph-index( $code-point );
+                $shape .= new: :$code-point, :$cid, :$dx;
+            }
+        }
+
+        $shape;
+    }
+
+    method shape($text) {
+        my Metrics @shapes;
+
+        for $text.comb -> $char {
+            @shapes.push: $_
+                with %!shape{$char} //= self!make-shape($char);
+        }
+
+        @shapes;
+    }
 
     sub pclt-font-weight(Int $w) {
         given ($w + 7) / 14 {
@@ -551,11 +583,12 @@ class PDF::Font::Loader::FontObj
 
     method to-dict { $!dict //= PDF::Content::Font.make-font(self!make-dict, self) }
 
-    method !font-stringwidth(Str $text) {
+    method !font-stringsize(Str $text) {
         my FT_UInt $prev-idx = 0;
         my $struct = $!face.raw;
         my $glyph-slot = $struct.glyph;
-        my Numeric $stringwidth = 0;
+        my int $width = 0;
+        my int $height = 0;
         my $scale = 1000 / ($!face.units-per-EM || 1000);
 
         for $text.ords -> $char-code {
@@ -565,18 +598,21 @@ class PDF::Font::Loader::FontObj
                     when Font::FreeType::Error { warn "error processing char {$char-code.chr.raku} (code:$char-code, index:$this-idx): " ~ .message; }
                 }
                 ft-try({ $struct.FT_Load_Glyph( $this-idx, FT_LOAD_NO_SCALE ); });
-                $stringwidth += $glyph-slot.metrics.hori-advance * $scale;
+                my \metrics = $glyph-slot.metrics;
+                $width  += metrics.hori-advance;
+                $height += metrics.vert-advance;
             }
             $prev-idx = $this-idx;
         }
-        $stringwidth.round;
+        ($width * $scale, $height * $scale);
     }
 
-    method !font-kernwidth(Str $text is copy) {
+    method !font-kerning(Str $text is copy) {
         my FT_UInt $prev-idx = 0;
         my FT_Vector $kerning .= new;
         my $struct = $!face.raw;
-        my int $kernwidth = 0;
+        my int $width = 0;
+        my int $height = 0;
         my $scale = 1000 / ($!face.units-per-EM || 1000);
 
         for $text.ords -> $char-code {
@@ -584,13 +620,13 @@ class PDF::Font::Loader::FontObj
             if $this-idx {
                 if $prev-idx {
                     ft-try({ $struct.FT_Get_Kerning($prev-idx, $this-idx, FT_KERNING_UNSCALED, $kerning); });
-                    my $dx := ($kerning.x * $scale).round;
-                    $kernwidth += $dx;
+                    $width  += $kerning.x;
+                    $height += $kerning.y;
                 }
             }
             $prev-idx = $this-idx;
         }
-        $kernwidth;
+        (($width * $scale).round, ($height * $scale).round);
     }
 
     method !char-height(UInt $char-code) {
