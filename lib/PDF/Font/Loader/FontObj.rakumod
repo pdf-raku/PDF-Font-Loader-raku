@@ -126,16 +126,25 @@ class PDF::Font::Loader::FontObj
         $height * $pointsize /($!face.units-per-EM);
     }
 
+    method glyph-width(Str $ch) is rw {
+        my $enc = self!encode-chars($ch);
+        if $enc {
+            @!widths[ $enc[0] - $!first-char ];
+        }
+        else {
+            Numeric;
+        }
+    }
+
     multi method stringwidth(Str $text, :$kern) {
-        self.encode($text, :width)
+        ([+] self!encode-chars($text).map: { @!widths[$_ - $!first-char] })
         + ($kern ?? self!font-kernwidth($text) !! 0);
     }
     multi method stringwidth(Str $text, $pointsize, :$kern) {
         self.stringwidth($text, :$kern) * $pointsize / 1000;
     }
 
-    method encode(Str $text, :$str, :$width) {
-        my int $w = 0;
+    method !encode-chars(Str $text) {
         my $encoded := $!encoder.encode($text);
         if $encoded {
             my $to-unicode := $!encoder.to-unicode;
@@ -150,36 +159,23 @@ class PDF::Font::Loader::FontObj
                     @!widths.prepend: 0 xx ($!first-char - $_);
                     $!first-char = $_;
                 }
-                $w += (
-                    @!widths[$_ - $!first-char] ||= do {
-                        $!finished = False;
-                        self!font-stringwidth($to-unicode[$_].chr).round;
-                    }
-                );
+                @!widths[$_ - $!first-char] ||= do {
+                    $!finished = False;
+                    self!font-stringwidth($to-unicode[$_].chr).round;
+                }
             }
             $!last-char = $!first-char + @!widths - 1;
-
-            if $width {
-                $w;
-            }
-            else {
-                # 16 bit encoding. convert to bytes
-                $encoded := pack($encoded, 16)
-                    if $encoded.of ~~ uint16;
-
-                $str ?? $encoded.decode('latin-1') !! $encoded;
-            }
         }
+        $encoded;
     }
 
-    method glyph-width(Str $ch) is rw {
-        if $!add-widths && self.encode($ch) {
-            my $enc = $!encoder.encode($ch);
-            @!widths[ $enc[0] - $!first-char ];
-        }
-        else {
-            Numeric;
-        }
+    method encode($text is raw, :$str) {
+        # 16 bit encoding. convert to bytes
+        my $encoded := self!encode-chars($text);
+        $encoded := pack($encoded, 16)
+           if $encoded.of ~~ uint16;
+
+        $str ?? $encoded.decode('latin-1') !! $encoded;
     }
 
     method !font-type-entry returns Str {

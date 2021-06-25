@@ -1,7 +1,9 @@
 {{$NEXT}}
 
 0.5.1  2021-06-24T13:52:53+12:00
-   More forgiving font handling #7 part II
+    Reusing a font within a PDF copies it #6
+   - Accept :$dict option re-use it, updating as needed (char-maps,
+     widths, encoding differences.
    - Renamed PDF::Font::Loader::FreeType -> PDF::Font::Loader::FontObj
    - Make font width tables authoritative; stringwidth() method now
      checks the font's width arrary (/W or /Widths entry) before
