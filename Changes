@@ -1,4 +1,6 @@
 {{$NEXT}}
+
+0.5.2  2021-06-26T09:58:42+12:00
    - Added PDF::Font::Loader::Metrics class and $font-obj.shape
      method.
 

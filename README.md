@@ -8,7 +8,7 @@ Name
 
 PDF::Font::Loader
 
-Synposis
+Synopsis
 --------
 
     # load a font from a file
@@ -39,7 +39,7 @@ Synposis
 Description
 -----------
 
-This module provdes font loading and handling for [PDF::Lite](https://pdf-raku.github.io/PDF-Lite-raku), [PDF::API6](https://pdf-raku.github.io/PDF-API6) and other PDF modules.
+This module provides font loading and handling for [PDF::Lite](https://pdf-raku.github.io/PDF-Lite-raku), [PDF::API6](https://pdf-raku.github.io/PDF-API6) and other PDF modules.
 
 Loading Methods
 -------
@@ -165,7 +165,7 @@ Decodes buffers
 
 ### kern
 
-Kern text via the font's kerning tables. Returns chunks of text seperated by numeric kern widths.
+Kern text via the font's kerning tables. Returns chunks of text separated by numeric kern widths.
 
 ```raku
 say $font.kern("ABCD"); # ["AB", -18, "CD"]
@@ -174,7 +174,7 @@ say $font.kern("ABCD"); # ["AB", -18, "CD"]
 ### glyph-width
 
 Return the width of a glyph. This is a `rw` method that can be used to globally
-adjust a font's glyph spacing for rendering and stringwidth calculations:
+adjust a font's glyph spacing for rendering and string-width calculations:
 
 ```raku
 say $vera.glyph-width('V'); # 684;
@@ -220,7 +220,7 @@ Computes font placement information for a rendered string, including the font gl
 Loading PDF Fonts
 ---------------
 
-Fonts can also be loaded from PDF font dictionarys. The following example loads and summarizes page-level fonts:
+Fonts can also be loaded from PDF font dictionaries. The following example loads and summarizes page-level fonts:
 
 ```raku
 use PDF::Lite;
