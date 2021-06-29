@@ -53,15 +53,16 @@ class PDF::Font::Loader::FontObj
     has uint $.first-char;
     has uint16 @!widths;
     method widths is rw { @!widths }
-    my subset EncodingScheme where 'mac'|'win'|'zapf'|'sym'|'identity'|'identity-h'|'identity-v'|'std'|'mac-extra';
+    my subset EncodingScheme where 'mac'|'win'|'zapf'|'sym'|'identity'|'identity-h'|'identity-v'|'std'|'mac-extra'|'cmap';
     has EncodingScheme $!enc;
     has Bool $.embed = True;
     has Bool $.subset = False;
     has Str:D $.family          = $!face.family-name;
     has Str:D $.font-name is rw = $!face.postscript-name // $!family;
     has Bool $!finished;
+    has Bool $!gids-updated;
     has Bool $!build-widths;
-    # /CIDToGIDMap (CID font)
+    has Bool $!widths-updated;
     my constant Glyph = PDF::Font::Loader::Glyph;
     has Glyph %!glyphs{Int};
 
@@ -72,6 +73,7 @@ class PDF::Font::Loader::FontObj
     submethod TWEAK(
         PDF::COS::Dict :$!dict,
         :@differences,
+        :@cid-to-gid-map,
         :$widths,
         PDF::COS::Stream :$cmap,
         Str :$!enc = self!font-type-entry eq 'Type1' || !$!embed || $!face.num-glyphs <= 255
@@ -110,22 +112,21 @@ class PDF::Font::Loader::FontObj
 
         $!encoder = do {
             when $cmap.defined {
-                PDF::Font::Loader::Enc::CMap.new: :$cmap, :$!face;
+                PDF::Font::Loader::Enc::CMap.new: :$cmap, :$!face, :@cid-to-gid-map;
             }
             when $!enc eq 'identity' {
-                PDF::Font::Loader::Enc::Identity8.new: :$!face;
+                PDF::Font::Loader::Enc::Identity8.new: :$!face, :@cid-to-gid-map;
             }
             when $!enc ~~ 'identity-h'|'identity-v' {
-                PDF::Font::Loader::Enc::Identity16.new: :$!face;
+                PDF::Font::Loader::Enc::Identity16.new: :$!face, :@cid-to-gid-map;
             }
             default {
-                PDF::Font::Loader::Enc::Type1.new: :$!enc, :$!face;
+                PDF::Font::Loader::Enc::Type1.new: :$!enc, :$!face, :@cid-to-gid-map;
             }
         }
 
         $!encoder.differences = @differences
             if @differences;
-
         @!widths = .map(*.Int) with $widths;
         # Be careful not to start adding widths if an existing
         # font dictionary doesn't already have them.
@@ -154,9 +155,10 @@ class PDF::Font::Loader::FontObj
             FETCH => { .dx with self.glyphs($ch)[0] },
             STORE => -> $, UInt() $dx {
                 with self!encode-chars($ch)[0] -> $cid {
-                    $!finished = False;
+                    $!gids-updated = True;
                     my $fc = self.first-char($cid);
                     @!widths[$cid - $fc] = $dx;
+                    $!widths-updated = True;
                     self!glyph($cid).dx = $dx;
                 }
             }
@@ -174,10 +176,12 @@ class PDF::Font::Loader::FontObj
     multi method first-char { $!first-char }
     multi method first-char($cid) {
         unless @!widths {
+            $!widths-updated = True;
             $!first-char = $cid;
             @!widths = [0];
         }
         if $!first-char > $cid {
+            $!widths-updated = True;
             @!widths.prepend: 0 xx ($!first-char - $cid);
             $!first-char = $cid;
         }
@@ -188,7 +192,7 @@ class PDF::Font::Loader::FontObj
 
     method !encode-chars(Str $text) {
         my $cids := $!encoder.encode($text);
-        if $!build-widths {
+        if $!build-widths || $!encoder.cid-to-gid-map {
             self!glyph($_) for $cids.list;
         }
         $cids;
@@ -271,13 +275,27 @@ class PDF::Font::Loader::FontObj
         %!glyphs{$cid} //= do {
             
             my uint32 $code-point = $!encoder.to-unicode[$cid] || 0;
-            my FT_UInt $gid = $!face.glyph-index( $code-point)
-                if $code-point;
-            $gid ||= $!encoder.cid-to-gid($cid);
+            my FT_UInt $gid;
+            if $!encoder.cid-to-gid-map -> $gids {
+                if $code-point && ! $gids[$cid] {
+                    $gids[$cid] = $!face.glyph-index($code-point);
+                    $!finished = False;
+                    $!gids-updated = True;
+                }
+                $gid = $gids[$cid] || $cid;
+            }
+            else {
+                $gid = $code-point
+                    ?? $!face.glyph-index($code-point)
+                    !! $cid;
+            }
+
             my $fc := $.first-char($cid);
             my $dx := (
                 @!widths[$cid - $fc] ||= do {
-                    $!finished = False;
+                    $!widths-updated = True;
+                    $!finished = False
+                        if $!build-widths;
                     self!glyph-size($gid)[Width].round;
                 });
             Glyph.new: :$code-point, :$cid, :$gid, :$dx;
@@ -402,15 +420,25 @@ class PDF::Font::Loader::FontObj
         @W;
     }
 
+    method !make-gid-map {
+        my $cids = $!encoder.cid-to-gid-map;
+        my $decoded = unpack($cids, 16);
+        PDF::COS::Stream.COERCE: { :$decoded };
+    }
+
     # finalize the font, depending on how it's been used
     method !finish-font($dict) {
-        if $!enc.starts-with('identity') {
-            $dict<DescendantFonts>[0]<W> = self!make-cmap-widths
-                if $!build-widths;
+        if $!enc.starts-with('identity') || $!enc eq 'cmap' {
             $dict<ToUnicode> //= self!make-cmap-stream;
+
+            $dict<DescendantFonts>[0]<W> = self!make-cmap-widths
+                if $!build-widths && $!widths-updated--;
+            
+            $dict<CIDToGIDMap> = self!make-gid-map
+                if $!gids-updated--;    
         }
         else {
-            if $!build-widths {
+            if $!build-widths && $!widths-updated-- {
                 $dict<FirstChar> = $.first-char;
                 $dict<LastChar> = $.last-char;
                 $dict<Widths> = @!widths;

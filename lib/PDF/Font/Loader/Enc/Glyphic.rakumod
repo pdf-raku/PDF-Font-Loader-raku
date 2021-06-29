@@ -8,7 +8,6 @@ role PDF::Font::Loader::Enc::Glyphic
     use Font::FreeType::Raw::Defs;
     has Font::FreeType::Face $.face is required;
     has Hash $!glyph-map;
-    has %!cid-to-gid-map;
 
     # Callback for character mapped glyphs
     method lookup-glyph(UInt $chr-code) {
@@ -18,10 +17,9 @@ role PDF::Font::Loader::Enc::Glyphic
     # Callback for unmapped glyphs
     method map-glyph($glyph-name, $cid) {
         if $!face.index-from-glyph-name($glyph-name) -> $gid {
-            %!cid-to-gid-map{$cid} //= $gid;
+            $.cid-to-gid-map[$cid] ||= $gid;
         }
     }
-    method cid-to-gid($cid) { %!cid-to-gid-map{$cid} // $cid }
 
     method glyph-map {
       $!glyph-map //= do {

@@ -1,9 +1,10 @@
 {{$NEXT}}
-   - rename PDF::Font::Loader::Metrics -> PDF::Font::Loader::Glyph
+   - Rename PDF::Font::Loader::Metrics -> PDF::Font::Loader::Glyph
      and shape() method to glyphs()
    - Handle unknown and un-mapped custom type-1 glyphs. Provide
      a glyphs(@cids) multi method to allow glyph extraction when
      there's no unicode mapping
+   - Handle /CIDToGIDMap entrys in font dictionaries
 
 0.5.2  2021-06-26T09:58:42+12:00
    - Added PDF::Font::Loader::Metrics class and $font-obj.shape

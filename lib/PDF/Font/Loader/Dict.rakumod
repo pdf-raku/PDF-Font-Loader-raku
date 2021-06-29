@@ -2,6 +2,8 @@
 #| Loads a font from a PDF font dictionary (experimental)
 class PDF::Font::Loader::Dict {
     use PDF::Content::Font::CoreFont;
+    use PDF::COS::Stream;
+    use PDF::IO::Util :pack;
     my subset FontDict of Hash where .<Type> ~~ 'Font';
 
     sub base-font($dict) {
@@ -14,11 +16,13 @@ class PDF::Font::Loader::Dict {
     }
 
     sub base-enc($_, :$dict!) {
-        when 'Identity-H'        {'identity-h' }
-        when 'Identity-V'        {'identity-v' }
+        when 'CMap'              { 'cmap' }
+        when 'Identity-H'        { 'identity-h' }
+        when 'Identity-V'        { 'identity-v' }
         when 'WinAnsiEncoding'   { 'win' }
         when 'MacRomanEncoding'  { 'mac' }
         when 'MacExpertEncoding' { 'mac-extra' }
+        when 'StandardEncoding'  { 'std' }
         default {
             warn "unimplemented font encoding: $_"
                 with $_;
@@ -80,17 +84,39 @@ class PDF::Font::Loader::Dict {
         %opt<cmap> = $_
             with $dict<ToUnicode>;
 
-        %opt<enc> //= do with $dict<Encoding> {
-            when Hash {
-                %opt<differences> = $_ with .<Differences>;
-                base-enc(.<BaseEncoding>, :$dict);
+        with $dict<Encoding> {
+            %opt<enc> = do {
+                when PDF::COS::Stream {
+                    # assume CMAP. See PDF-32000 Table 121
+                    # – Entries in a Type 0 font dictionary
+                    %opt<cmap> //= $_;
+                    'cmap';
+                }
+                when Hash {
+                    %opt<differences> = $_ with .<Differences>;
+                    base-enc(.<BaseEncoding>, :$dict);
+                }
+                default { base-enc($_, :$dict); }
             }
-            default { base-enc($_, :$dict); }
         }
 
         if $dict<Subtype> ~~ 'Type0' {
-            if base-font($dict)<W> -> $W {
-                %opt<first-char last-char widths> = decode-widths($W)
+            # CiD Font
+            given base-font($dict) {
+                with .<W> -> $W {
+                    %opt<first-char last-char widths> = decode-widths($W)
+                }
+                with .<CIDToGIDMap> {
+                    when 'Identity' {}
+                    when PDF::COS::Stream {
+                        my uint16 @gids = unpack(.decoded.ords, 16);
+                        %opt<cid-to-gid-map> = @gids;
+                    }
+                    default {
+                        # probably a named CMAP
+                        warn "unable to handle /CIDToGIDMap $_ for this font";
+                    }
+                }
             }
         }
         else {

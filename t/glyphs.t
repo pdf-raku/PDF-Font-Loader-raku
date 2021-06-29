@@ -1,6 +1,7 @@
 use Test;
 plan 6;
 use PDF::Font::Loader :load-font;
+use PDF::Font::Loader::FontObj;
 use PDF::Font::Loader::Glyph;
 use PDF::Lite;
 use PDF::Content;
