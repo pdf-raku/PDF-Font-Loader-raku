@@ -28,11 +28,10 @@ jobs:
       - name: Install Dependencies
         run: |
           # install and test if need be (includes [test-depends])
-          #sudo apt-get install -y libperl-dev libexcel-writer-xlsx-perl libspreadsheet-read-perl cpanminus
-          #sudo cpanm Spreadsheet::Reader::ExcelXML Spreadsheet::ParseXLSX
-          #sudo apt-get install -y libcsv-dev
-          #sudo apt-get install -y libcairo2-dev libfreetype6-dev
           zef install --/test App::Prove6
+          # currently running these off the bleed
+          (git checkout https://github.com/pdf-raku/PDF-Content-raku && cd PDF-Content-raku && zef install .)
+          (git checkout https://github.com/pdf-raku/Font-FreeType-raku && cd Font-FreeType-raku && zef install .)
           zef install --deps-only .
       - name: Run Tests
         run: prove6 -I. t

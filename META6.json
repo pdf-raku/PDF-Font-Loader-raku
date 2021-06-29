@@ -8,8 +8,8 @@
   "depends": [
     "PDF:ver<0.4.12+>",
     "PDF::Lite:ver<0.0.8+>",
-    "PDF::Content:ver<0.5.2+>",
-    "Font::FreeType:ver<0.3.7+>",
+    "PDF::Content:ver<0.5.3+>",
+    "Font::FreeType:ver<0.3.8+>",
     "PDF:ver<0.4.6+>",
     "Native::Packing"
   ],
@@ -27,7 +27,7 @@
     "PDF::Font::Loader::Enc::Identity8": "lib/PDF/Font/Loader/Enc/Identity8.rakumod",
     "PDF::Font::Loader::Enc::Type1": "lib/PDF/Font/Loader/Enc/Type1.rakumod",
     "PDF::Font::Loader::FontObj": "lib/PDF/Font/Loader/FontObj.rakumod",
-    "PDF::Font::Loader::Metrics": "lib/PDF/Font/Loader/Metrics.rakumod",
+    "PDF::Font::Loader::Glyph": "lib/PDF/Font/Loader/Glyph.rakumod",
     "PDF::Font::Loader::Type1::Stream": "lib/PDF/Font/Loader/Type1/Stream.rakumod"
   },
   "resources": [

@@ -203,19 +203,27 @@ Whether the font has been subsetting
 
 Whether the font is a core font
 
-### shape
+### face
+
+[Font::FreeType::Face](https://pdf-raku.github.io/Font-FreeType-raku/Font/FreeType/Face) object associated with the font.
+
+If the font was loaded from a `$dict` object and `is-embedded` is true, the `face` object has been loaded from the embedded font, otherwise its a system-loaded
+font, selected to match the font.
+
+### glyphs
 ```raku
-use PDF::Font::Loader::Metrics;
-my PDF::Font::Loader::Metrics @shape = $font.shape: "Hi";
-say "code-point:{.code-point.raku} cid:{.cid} dx:{.dx} dy:{.dy}"
-    for @shape
+use PDF::Font::Loader::Glyph;
+my PDF::Font::Loader::Glyph @glyphs = $font.glyphs: "Hi";
+say "code-point:{.code-point.raku} cid:{.cid} gid:{.gid} dx:{.dx} dy:{.dy}"
+    for @glyphs;
 ```
 
-Computes font placement information for a rendered string, including the font glyph index (CiD), and `dx`, `dy` unscaled displacement to the next glyph.
+Maps a string to at set of glyphs:
 
-=item - zero-sized (unknown)  glyphs are omitted.
-
-=item - `dx` and `dy` should be multiplied by the current font-size to get the actual displacement.
+- `code-point` is a character code mapping
+- `cid` is the encoded value
+- `gid` is the font index of the glyph in the font object`s `face` attribute.
+- `dx` and `dy` are unscaled font sizes. They should be multiplied by the current font-size/1000 to get the actual sizes.
 
 Loading PDF Fonts
 ---------------

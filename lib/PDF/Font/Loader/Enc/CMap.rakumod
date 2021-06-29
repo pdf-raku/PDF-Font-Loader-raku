@@ -10,7 +10,7 @@ class PDF::Font::Loader::Enc::CMap
     has uint32 @.to-unicode;
     has Int %.charset{Int};
     # todo handle multiple code-space lengths
-    has UInt $.bytes-per-char;
+    has UInt $.bytes-per-cid;
 
     sub valid-codepoint($_) {
         # not an exhaustive check
@@ -43,10 +43,10 @@ class PDF::Font::Loader::Enc::CMap
             for .decoded.Str.lines {
                 if /:s \d+ begincodespacerange/ ff /endcodespacerange/ {
                     if /:s [ '<' $<r>=[<xdigit>+] '>' ] ** 2 / {
-                        my $this-bytes-per-char = (@<r>[1].chars + 1) div 2;
+                        my $this-bytes-per-cid = (@<r>[1].chars + 1) div 2;
                         warn "todo: handle variable encoding in CMAPs (ge, $_)"
-                                if $!bytes-per-char && $!bytes-per-char != $this-bytes-per-char;
-                        $!bytes-per-char = $this-bytes-per-char;
+                                if $!bytes-per-cid && $!bytes-per-cid != $this-bytes-per-cid;
+                        $!bytes-per-cid = $this-bytes-per-cid;
                     }
                 }
                 if /:s^ \d+ beginbfrange/ ff /^endbfrange/ {
@@ -97,7 +97,7 @@ class PDF::Font::Loader::Enc::CMap
                 }
             }
         }
-        $!bytes-per-char //= 1;
+        $!bytes-per-cid //= 1;
     }
 
     method set-encoding($chr-code, $idx) {
@@ -109,7 +109,7 @@ class PDF::Font::Loader::Enc::CMap
         $idx;
     }
     method !decoder {
-        $!bytes-per-char > 1
+        $!bytes-per-cid > 1
             ?? -> \hi, \lo=0 {@!to-unicode[hi +< 8 + lo]}
             !! -> $_ { @!to-unicode[$_] };
     }
@@ -121,18 +121,20 @@ class PDF::Font::Loader::Enc::CMap
             for $win-encoding.pairs;
         %win;
     }
-    has UInt $!next-sid = 0;
+    has UInt $!next-cid = 0;
+    has %!used-cid;
+    method use-cid($_) { %!used-cid{$_}++ }
     method !allocate($chr-code) {
         my $idx := %PreferredEnc{$chr-code};
-        if $idx && !@!to-unicode[$idx] {
+        if $idx && !@!to-unicode[$idx] && !%!used-cid{$idx} {
             self.set-encoding($chr-code, $idx);
         }
         else {
             # sequential allocation
             repeat {
-            } while @!to-unicode[++$!next-sid];
-            $idx := $!next-sid;
-            if $!bytes-per-char > 1 || $idx < 256 {
+            } while %!used-cid{$!next-cid} || @!to-unicode[++$!next-cid];
+            $idx := $!next-cid;
+            if $!bytes-per-cid > 1 || $idx < 256 {
                 self.set-encoding($chr-code, $idx);
             }
             else {
@@ -154,7 +156,7 @@ class PDF::Font::Loader::Enc::CMap
         self.encode($text).decode: 'latin-1';
     }
     multi method encode(Str $text ) is default {
-        if $!bytes-per-char > 1 {
+        if $!bytes-per-cid > 1 {
             # 2 byte encoding; let the caller inspect, then repack this
             my uint16 @ = $text.ords.map({ %!charset{$_} // self!allocate: $_ }).grep: {$_};
         }

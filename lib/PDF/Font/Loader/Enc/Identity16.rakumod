@@ -14,7 +14,7 @@ class PDF::Font::Loader::Enc::Identity16
     has UInt $.max-index;
     has Bool $!init;
 
-    method bytes-per-char { 2 }
+    method bytes-per-cid { 2 }
 
     multi method encode(Str $text, :$str! --> Str) {
         my $hex-string = self.encode($text).decode: 'latin-1';
@@ -53,7 +53,7 @@ class PDF::Font::Loader::Enc::Identity16
     }
     multi method decode(Str $encoded --> buf32) {
         my @to-unicode := self.to-unicode;
-        buf32.new: $encoded.ords.map( -> \hi, \lo {@to-unicode[hi +< 8 + lo]}).grep: {$_};
+        buf32.new: self.cids($encoded).map({@to-unicode[$_]}).grep: {$_};
     }
 
 }
