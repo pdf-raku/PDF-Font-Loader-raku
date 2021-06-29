@@ -3,9 +3,11 @@ plan 6;
 use PDF::Font::Loader :load-font;
 use PDF::Font::Loader::Glyph;
 use PDF::Lite;
+use PDF::Content;
+use PDF::Content::Font;
+use Font::FreeType;
 my constant Glyph = PDF::Font::Loader::Glyph;
 my PDF::Content::FontObj $deja = load-font( :file<t/fonts/DejaVuSans.ttf>, :!subset );
-
 
 my PDF::Font::Loader::Glyph @shape = $deja.glyphs("Hello");
 
@@ -22,6 +24,9 @@ my PDF::Content::Font:D $dict = $pdf.page(1).gfx.resources('Font')<F1>;
 
 my PDF::Font::Loader::FontObj:D $font .= load-font: :$dict;
 my uint8 @encoded = 3,5,10;
+
+todo "PDF::Content v0.5.3+ and Font::FreeType v0.3.8+ required to run these tests", 3
+    unless PDF::Content.^ver >= v0.5.3 && Font::FreeType.^ver >= v0.3.8;
 
 @shape = $font.glyphs(@encoded);
 is-deeply @shape[0], Glyph.new: :code-point(0), :cid(3), :gid(16), :dx(391), :dy(0);
