@@ -30,8 +30,8 @@ jobs:
           # install and test if need be (includes [test-depends])
           zef install --/test App::Prove6
           # currently running these off the bleed
-          (git checkout https://github.com/pdf-raku/PDF-Content-raku && cd PDF-Content-raku && zef install .)
-          (git checkout https://github.com/pdf-raku/Font-FreeType-raku && cd Font-FreeType-raku && zef install .)
+          (git clone https://github.com/pdf-raku/PDF-Content-raku && cd PDF-Content-raku && zef install .)
+          (git clone https://github.com/pdf-raku/Font-FreeType-raku && cd Font-FreeType-raku && zef install .)
           zef install --deps-only .
       - name: Run Tests
         run: prove6 -I. t
