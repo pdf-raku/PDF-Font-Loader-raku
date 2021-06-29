@@ -218,7 +218,7 @@ say "code-point:{.code-point.raku} cid:{.cid} gid:{.gid} dx:{.dx} dy:{.dy}"
     for @glyphs;
 ```
 
-Maps a string to at set of glyphs:
+Maps a string to a set of glyphs:
 
 - `code-point` is a character code mapping
 - `cid` is the encoded value
