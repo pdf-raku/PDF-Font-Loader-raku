@@ -1,12 +1,14 @@
 {{$NEXT}}
+   - Add new sub-class PDF::Font::Loader::FontObj::CID
 
 0.5.3  2021-06-30T11:20:17+12:00
+   Glyph maps #8
    - Rename PDF::Font::Loader::Metrics -> PDF::Font::Loader::Glyph
      and shape() method to glyphs()
    - Handle unknown and un-mapped custom type-1 glyphs. Provide
      a glyphs(@cids) multi method to allow glyph extraction when
      there's no unicode mapping
-   - Handle /CIDToGIDMap entrys in font dictionaries
+   - Handle /CIDToGIDMap entries in font dictionaries
 
 0.5.2  2021-06-26T09:58:42+12:00
    - Added PDF::Font::Loader::Metrics class and $font-obj.shape
@@ -18,7 +20,7 @@
      widths, encoding differences.
    - Renamed PDF::Font::Loader::FreeType -> PDF::Font::Loader::FontObj
    - Make font width tables authoritative; stringwidth() method now
-     checks the font's width arrary (/W or /Widths entry) before
+     checks the font's width array (/W or /Widths entry) before
      consulting font metrics.
    - Add glyph-width() rw method
    - Fix font-name() and is-embedded() methods
@@ -30,7 +32,7 @@
      basic characteristic are present, and only restrict embedding
      to permitted font formats.
    - Warn and disable embedding, rather that aborting, if the font
-     doesn't meet embedding critera.
+     doesn't meet embedding criteria.
    - Changed default option for loading from PDF dictionary :!embed
    - Defer some error checks until font object construction; to make
      reading of PDF files even more forgiving.
@@ -45,7 +47,7 @@
 Release 0.4.2
    - Adjust to PDF 0.4.5+ (renamed PDF::Writer -> PDF::IO::Writer)
    - Make CMAP encoding adaptive. An unknown character is mapped to
-     win encoding. If that fails, unallocated sids are allocated
+     win encoding. If that fails, unallocated cids are allocated
      sequentially as unknown characters are encountered.
 
 Release 0.4.1
@@ -102,11 +104,11 @@ Release 0.2.3
 
      load-font: :$dict
 
-     Backported from [PDF::To::Cairo::]FontLoader.
+     Back ported from [PDF::To::Cairo::]FontLoader.
 
 Release 0.2.2
     - replace positional with :family parameter in find-font(),
-      load-font(). For consistancy with PDF::Content.load-font
+      load-font(). For consistency with PDF::Content.load-font
       method.
 
 Release 0.2.1

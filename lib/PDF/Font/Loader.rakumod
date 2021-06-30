@@ -5,6 +5,7 @@ class PDF::Font::Loader:ver<0.5.3> {
     use Font::FreeType;
     use Font::FreeType::Face;
     use PDF::Font::Loader::FontObj;
+    use PDF::Font::Loader::FontObj::CID;
     use PDF::Content::Font;
     use PDF::Font::Loader::Dict :&is-core-font, :&load-font-opts;
 
@@ -15,8 +16,19 @@ class PDF::Font::Loader:ver<0.5.3> {
         $class.load-font(:$font-buf, |c);
     }
 
-    multi method load-font($?: Font::FreeType::Face :$face!, Blob :$font-buf!, |c) {
-        PDF::Font::Loader::FontObj.new: :$face, :$font-buf, |c;
+    multi method load-font(
+        $?: Font::FreeType::Face :$face!,
+        Blob :$font-buf!,
+        Bool :$embed = True,
+        Str  :$enc = $face.font-format eq 'Type 1' || !$embed || $face.num-glyphs <= 255
+            ?? 'win'
+            !! 'identity-h',
+        |c,
+    ) {
+        my \class = $enc.starts-with('identity') || $enc eq 'cmap'
+            ?? PDF::Font::Loader::FontObj::CID
+            !! PDF::Font::Loader::FontObj;
+        class.new: :$face, :$font-buf, :$enc, :$embed, |c;
     }
 
     multi method load-font($?: Blob :$font-buf!, |c) is default {
