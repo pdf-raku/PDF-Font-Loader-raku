@@ -14,6 +14,7 @@ use PDF::Font::Loader::Enc::CMap;
 use PDF::Font::Loader::Enc::Identity8;
 use PDF::Font::Loader::Enc::Identity16;
 use PDF::Font::Loader::Enc::Type1;
+use PDF::Font::Loader::Enc::Glyphic;
 use PDF::Font::Loader::Glyph;
 use PDF::Font::Loader::Type1::Stream;
 use Font::FreeType:ver(v0.3.0+);
@@ -44,7 +45,7 @@ enum <Width Height>;
 
 has Font::FreeType::Face:D $.face is required;
 use PDF::Font::Loader::Enc;
-has PDF::Font::Loader::Enc $.encoder handles <decode enc cids>;
+has PDF::Font::Loader::Enc $.encoder is built handles <decode enc cids>;
 has Blob $.font-buf;
 has PDF::COS::Dict $!dict;
 # Font descriptors are needed for all but core fonts
@@ -383,24 +384,108 @@ method encoding {
         :cmap<CMap>,
     );
 
-    with %EncName{$!enc} {
-        /($_);
+    %EncName{$!enc};
+}
+
+sub charset-to-unicode(%charset) {
+    my uint32 @to-unicode;
+    @to-unicode[.value] = .key
+        for %charset.pairs;
+    @to-unicode;
+}
+
+method make-cmap-stream {
+    my PDF::COS::Name $CMapName .= COERCE: 'raku-cmap-' ~ $!font-name;
+    my PDF::COS::Name $Type .= COERCE: 'CMap';
+
+    my $dict = %(
+        :$Type,
+        :$CMapName,
+        :CIDSystemInfo{
+            :Ordering<Identity>,
+            :Registry($!font-name),
+            :Supplement(0),
+        },
+    );
+
+    my $to-unicode := $!subset
+        ?? charset-to-unicode($!encoder.charset)
+        !! $!encoder.to-unicode;
+    my @cmap-char;
+    my @cmap-range;
+    my \i = $!encoder.bytes-per-cid - 1;
+    my \cid-fmt   := ('<%02X>', '<%04X>')[i];
+    my \char-fmt  := ('<%02X> <%04X>', '<%04X> <%04X>')[i];
+    my \range-fmt := ('<%02X> <%02X> <%04X>', '<%04X> <%04X> <%04X>')[i];
+    my \last-char := $.last-char;
+
+    loop (my uint16 $cid = $.first-char; $cid <= last-char; $cid++) {
+        my uint32 $char-code = $to-unicode[$cid]
+          || next;
+        my uint16 $start-cid = $cid;
+        my uint32 $start-code = $char-code;
+        while $cid < last-char && $to-unicode[$cid + 1] == $char-code+1 {
+            $cid++; $char-code++;
+        }
+        if $start-cid == $cid {
+            @cmap-char.push: char-fmt.sprintf($cid, $start-code);
+        }
+        else {
+            @cmap-range.push: range-fmt.sprintf($start-cid, $cid, $start-code);
+        }
     }
+
+    if @cmap-char {
+        @cmap-char.unshift: "{+@cmap-char} beginbfchar";
+        @cmap-char.push: 'endbfchar';
+    }
+
+    if @cmap-range {
+        @cmap-range.unshift: "{+@cmap-range} beginbfrange";
+        @cmap-range.push: 'endbfrange';
+    }
+
+    my PDF::IO::Writer $writer .= new;
+    my $cmap-name = $writer.write: $CMapName.content;
+    my $postscript-name = $writer.write: :literal($!font-name);
+
+    my $decoded = qq:to<--END-->.chomp;
+        %% Custom
+        %% CMap
+        %%
+        /CIDInit /ProcSet findresource begin
+        12 dict begin begincmap
+        /CIDSystemInfo <<
+           /Registry $postscript-name
+           /Ordering (XYZ)
+           /Supplement 0
+        >> def
+        /CMapName $cmap-name def
+        1 begincodespacerange {$.first-char.fmt(cid-fmt)} {last-char.fmt(cid-fmt)} endcodespacerange
+        {@cmap-char.join: "\n"}
+        {@cmap-range.join: "\n"}
+        endcmap CMapName currendict /CMap defineresource pop end end
+        --END--
+
+    PDF::COS::Stream.COERCE: { :$dict, :$decoded };
 }
 
 # finalize the font, depending on how it's been used
 method finish-font($dict, :$save-widths) {
+    $dict<ToUnicode> //= self.make-cmap-stream
+        if $!encoder ~~ PDF::Font::Loader::Enc::Glyphic && $!encoder.has-exotic-glyphs;
     if $save-widths {
         $dict<FirstChar> = $.first-char;
         $dict<LastChar> = $.last-char;
         $dict<Widths> = @!widths;
     }
     if $!encoder.differences -> $Differences {
-        $dict<Encoding> = %(
-            Type =>         /<Encoding>,
-            BaseEncoding => /(self.encoding),
-            :$Differences,
-        )
+        my %enc = :Type(/<Encoding>), :$Differences;
+
+        %enc<BaseEncoding> = /($_)
+            with self.encoding;
+
+        $dict<Encoding> = %enc;
     }
 }
 
@@ -570,4 +655,7 @@ method is-embedded {
 }
 method is-subset { so ($!font-name ~~ m/^<[A..Z]>**6"+"/) }
 method is-core-font { ! self.font-descriptor.defined }
+method has-encoding {
+    so $!encoder.to-unicode.first: {$_}
+}
 

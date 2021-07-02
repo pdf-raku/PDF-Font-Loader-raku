@@ -20,7 +20,8 @@ is $vera.height(:hanging).round, 1164, 'font height hanging';
 is-approx $vera.height(12), 13.96875, 'font height @ 12pt';
 is-approx $vera.height(12, :from-baseline), 11.138672, 'font base-height @ 12pt';
 my $times = PDF::Font::Loader.load-font: :file<t/fonts/TimesNewRomPS.pfa>;
-# Vera defines: AB˚. Doesn't include: ♥♣✔
+# - Vera defines: AB˚. Doesn't include: ♥♣✔
+# - Ring (˚) is not in WinsAnsii encoding
 is-deeply $times.encode("A♥♣✔˚B", :str), "A\x[1]B", '.encode(...) sanity';
 
 is $vera.stringwidth("RVX", :!kern), 2064, 'stringwidth :!kern';
@@ -35,6 +36,9 @@ is $vera.stringwidth("RVX", :!kern), 2044, 'stringwidth, width adjustment';
 
 my Hash $times-dict = $times.cb-finish();
 my $descriptor-dict = $times-dict<FontDescriptor>:delete;
+# The ring character (˚) is enough to trigger building a /ToUnicode CMap
+my $to-unicode = $times-dict<ToUnicode>:delete;
+
 is-json-equiv $times-dict, {
     :Type<Font>,
     :Subtype<Type1>,

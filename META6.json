@@ -6,12 +6,13 @@
   "build-depends": [
   ],
   "depends": [
-    "PDF:ver<0.4.12+>",
+    "PDF:ver<0.4.14+>",
     "PDF::Lite:ver<0.0.8+>",
-    "PDF::Content:ver<0.5.2+>",
-    "Font::FreeType:ver<0.3.7+>",
-    "PDF:ver<0.4.6+>",
-    "Native::Packing"
+    "PDF::Content:ver<0.5.3+>",
+    "Font::FreeType:ver<0.3.8+>",
+    "PDF:ver<0.4.14+>",
+    "Native::Packing",
+    "Font::AFM"
   ],
   "description": "Font loading and embedding for the PDF tool-chain",
   "license": "Artistic-2.0",

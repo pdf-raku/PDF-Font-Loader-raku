@@ -203,6 +203,10 @@ Whether the font has been subsetting
 
 Whether the font is a core font
 
+### has-encoding
+
+Whether the font has unicode encoding. This is needed to encode or extrac text.
+
 ### face
 
 [Font::FreeType::Face](https://pdf-raku.github.io/Font-FreeType-raku/Font/FreeType/Face) object associated with the font.

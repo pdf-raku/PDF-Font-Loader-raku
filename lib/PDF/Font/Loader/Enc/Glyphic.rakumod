@@ -7,15 +7,27 @@ role PDF::Font::Loader::Enc::Glyphic
     use Font::FreeType::Raw;
     use Font::FreeType::Raw::Defs;
     has Font::FreeType::Face $.face is required;
+    use Font::AFM;
+
     has Hash $!glyph-map;
+    has Bool $.has-exotic-glyphs;
 
     # Callback for character mapped glyphs
-    method lookup-glyph(UInt $chr-code) {
-        $!face.glyph-name($chr-code.chr);
+    method lookup-glyph(UInt $code-point) {
+        my $glyph-name;
+        if self.charset{$code-point} -> $cid {
+            if $.cid-to-gid-map[$cid] -> $gid {
+                $glyph-name = $!face.glyph-name-from-index($gid);
+            }
+        }
+        $glyph-name //= $!face.glyph-name($code-point.chr) // '.notdef';
+        # Not sure what glyph names are universally supported. This is conservative.
+        $!has-exotic-glyphs ||= $glyph-name !~~ %Font::AFM::Glyphs{$code-point.chr};
+        $glyph-name;
     }
 
     # Callback for unmapped glyphs
-    method map-glyph($glyph-name, $cid) {
+    method cid-map-glyph($glyph-name, $cid) {
         if $!face.index-from-glyph-name($glyph-name) -> $gid {
             $.cid-to-gid-map[$cid] ||= $gid;
         }
