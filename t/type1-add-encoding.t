@@ -67,6 +67,7 @@ is-deeply @shape[1], Glyph.new(:code-point(105), :cid(4), :gid(21), :dx(334), :d
 
 ## reserialize. check than encodings are intact
 
+$pdf.id = $*PROGRAM-NAME.fmt('%-16.16s');
 $pdf .= open: $pdf.Blob;
 $dict = $pdf.page(1).resources('Font')<F1>;
 $font .= load-font: :$dict;
@@ -81,9 +82,7 @@ $pdf.page(1).gfx.text: {
     .say: "Added string";
 }
 
-# ensure consistant document ID generation
 $pdf.id = $*PROGRAM-NAME.fmt('%-16.16s');
-
 lives-ok {$pdf.save-as: "t/type1-add-encoding.pdf" };
 
 done-testing;

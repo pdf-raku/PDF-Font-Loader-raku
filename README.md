@@ -9,7 +9,7 @@ Name
 PDF::Font::Loader
 
 Synopsis
---------
+========
 
     # load a font from a file
     use PDF::Font::Loader :load-font;
@@ -41,7 +41,7 @@ Description
 
 This module provides font loading and handling for [PDF::Lite](https://pdf-raku.github.io/PDF-Lite-raku), [PDF::API6](https://pdf-raku.github.io/PDF-API6) and other PDF modules.
 
-Loading Methods
+Methods
 -------
 
 ### load-font
@@ -86,8 +86,11 @@ parameters:
 
     `win` is used as the default encoding for fonts with no more than 255 glyphs. `identity-h` is used otherwise.
 
-
     It is recommended that you set a single byte encoding such as `:enc<mac>` or `:enc<win>` when it known that no more that 255 distinct characters will actually be used from the font within the PDF.
+
+  * `:$dict`
+
+    Associated font dictionary.
 
 #### `PDF::Font::Loader.load-font(Str :$family, Str :$weight, Str :$stretch, Str :$slant, Bool :$subset, Str :$enc, Str :$lang);`
 
@@ -120,10 +123,6 @@ parameters:
 
     A RFC-3066-style language tag. `fontconfig` will select only fonts whose character set matches the preferred lang. See also [I18N::LangTags](https://modules.raku.org/dist/I18N::LangTags:cpan:UFOBAT).
 
-  * `:$dict`
-
-  Loads from a PDF Font Dictionary (see <a href="#user-content-loading-pdf-fonts">below</a>).
-
 ### find-font
 
     use PDF::Font::Loader
@@ -144,8 +143,12 @@ Locates a matching font-file. Doesn't actually load it.
     say $file;  # /usr/share/fonts/truetype/dejavu/DejaVuSansCondensed-BoldOblique.ttf
     my $font = PDF::Font::Loader.load-font: :$file;
 
-Font Object Methods
------------------
+PDF::Font::Loader::FontObj Methods
+----------------------------------
+
+The following methods are available on the loaded font:
+
+Font Object Methods -----------------
 
 ### font-name
 
@@ -161,6 +164,8 @@ Encodes strings
 
 ### decode
 
+    -
+
 Decodes buffers
 
 ### kern
@@ -173,14 +178,12 @@ say $font.kern("ABCD"); # ["AB", -18, "CD"]
 
 ### glyph-width
 
-Return the width of a glyph. This is a `rw` method that can be used to globally
-adjust a font's glyph spacing for rendering and string-width calculations:
+Return the width of a glyph. This is a `rw` method that can be used to globally adjust a font's glyph spacing for rendering and string-width calculations:
 
 ```raku
 say $vera.glyph-width('V'); # 684;
 $vera.glyph-width('V') -= 100;
 say $vera.glyph-width('V'); # 584;
-
 ```
 
 ### to-dict
@@ -211,10 +214,10 @@ Whether the font has unicode encoding. This is needed to encode or extrac text.
 
 [Font::FreeType::Face](https://pdf-raku.github.io/Font-FreeType-raku/Font/FreeType/Face) object associated with the font.
 
-If the font was loaded from a `$dict` object and `is-embedded` is true, the `face` object has been loaded from the embedded font, otherwise its a system-loaded
-font, selected to match the font.
+If the font was loaded from a `$dict` object and `is-embedded` is true, the `face` object has been loaded from the embedded font, otherwise its a system-loaded font, selected to match the font.
 
 ### glyphs
+
 ```raku
 use PDF::Font::Loader::Glyph;
 my PDF::Font::Loader::Glyph @glyphs = $font.glyphs: "Hi";
@@ -224,13 +227,15 @@ say "code-point:{.code-point.raku} cid:{.cid} gid:{.gid} dx:{.dx} dy:{.dy}"
 
 Maps a string to a set of glyphs:
 
-- `code-point` is a character code mapping
-- `cid` is the encoded value
-- `gid` is the font index of the glyph in the font object`s `face` attribute.
-- `dx` and `dy` are unscaled font sizes. They should be multiplied by the current font-size/1000 to get the actual sizes.
+  * `code-point` is a character code mapping
 
-Loading PDF Fonts
----------------
+  * `cid` is the encoded value
+
+  * `gid` is the font index of the glyph in the font object`s `face` attribute.
+
+  * `dx` and `dy` are unscaled font sizes. They should be multiplied by the current font-size/1000 to get the actual sizes.
+
+Loading PDF Fonts ---------------
 
 Fonts can also be loaded from PDF font dictionaries. The following example loads and summarizes page-level fonts:
 
@@ -259,22 +264,22 @@ for 1 .. $pdf.page-count {
     }
 }
 ```
-Produces:
-```
-name                           type     encode     emb sub
---------------------------     -------  ---------- --- ---
-DejaVuSans                     Type0    identity-h yes no 
-Times-Roman                    Type1    win        no  no 
-WenQuanYiMicroHei              TrueType win        no  no 
-NimbusRoman-Regular            Type1    win        yes no 
-Cantarell-Oblique              Type1    win        yes no 
 
-```
+Produces:
+
+<table class="pod-table">
+<thead><tr>
+<th>name</th> <th>type</th> <th>encode</th> <th>emb</th> <th>sub</th>
+</tr></thead>
+<tbody>
+<tr> <td>DejaVuSans</td> <td>Type0</td> <td>identity-h</td> <td>yes</td> <td>no</td> </tr> <tr> <td>Times-Roman</td> <td>Type1</td> <td>win</td> <td>no</td> <td>no</td> </tr> <tr> <td>WenQuanYiMicroHei</td> <td>TrueType</td> <td>win</td> <td>no</td> <td>no</td> </tr> <tr> <td>NimbusRoman-Regular</td> <td>Type1</td> <td>win</td> <td>yes</td> <td>no</td> </tr> <tr> <td>Cantarell-Oblique</td> <td>Type1</td> <td>win</td> <td>yes</td> <td>no</td> </tr>
+</tbody>
+</table>
 
 Install
 -------
 
-- PDF::Font::Loader depends on Font::FreeType which further depends on the [freetype](https://www.freetype.org/download.html) library, so you must install that prior to installing this module.
+  * PDF::Font::Loader depends on Font::FreeType which further depends on the [freetype](https://www.freetype.org/download.html) library, so you must install that prior to installing this module.
 
-- Installation of the [fontconfig](https://www.freedesktop.org/wiki/Software/fontconfig/) library and command-line tools is strongly recommended.
+  * Installation of the [fontconfig](https://www.freedesktop.org/wiki/Software/fontconfig/) library and command-line tools is strongly recommended.
 

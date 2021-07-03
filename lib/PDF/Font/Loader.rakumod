@@ -88,11 +88,11 @@ class PDF::Font::Loader:ver<0.5.3> {
 
 =begin pod
 
-=head1 NAME
+=head2 Name
 
 PDF::Font::Loader
 
-=head1 SYNPOSIS
+=head1 Synopsis
 
  # load a font from a file
  use PDF::Font::Loader :load-font;
@@ -119,18 +119,18 @@ PDF::Font::Loader
  }
  $pdf.save-as: "/tmp/example.pdf";
 
-=head1 DESCRIPTION
+=head2 Description
 
-This module provdes font loading and handling for
+This module provides font loading and handling for
 L<PDF::Lite>,  L<PDF::API6> and other PDF modules.
 
-=head1 METHODS
+=head2 Methods
 
 =head3 load-font
 
 A class level method to create a new font object.
 
-=head4 C<PDF::Font::Loader.load-font(Str :$file, Bool :$subset, :$enc, $lang);>
+=head4 C<PDF::Font::Loader.load-font(Str :$file, Bool :$subset, :$enc, :$lang, :$dict);>
 
 Loads a font file.
 
@@ -173,6 +173,12 @@ Selects the encoding mode: common modes are `win`, `mac` and `identity-h`.
 
 It is recommended that you set a single byte encoding such as `:enc<mac>` or `:enc<win>` when it known that
 no more that 255 distinct characters will actually be used from the font within the PDF.
+=end item
+
+=begin item
+C<:$dict>
+
+Associated font dictionary.
 =end item
 
 =head4 C<PDF::Font::Loader.load-font(Str :$family, Str :$weight, Str :$stretch, Str :$slant, Bool :$subset, Str :$enc, Str :$lang);>
@@ -240,11 +246,142 @@ Locates a matching font-file. Doesn't actually load it.
    say $file;  # /usr/share/fonts/truetype/dejavu/DejaVuSansCondensed-BoldOblique.ttf
    my $font = PDF::Font::Loader.load-font: :$file;
 
-=head1 INSTALL
+=head2 PDF::Font::Loader::FontObj Methods
 
-- PDF::Font::Loader depends on Font::FreeType which further depends on the [freetype](https://www.freetype.org/download.html) library, so you must install that prior to installing this module.
+The following methods are available on the loaded font:
 
-- Installation of the [fontconfig](https://www.freedesktop.org/wiki/Software/fontconfig/) library and command-line tools is strongly recommended.
+Font Object Methods
+-----------------
+
+### font-name
+
+The font name
+
+### height
+
+Overall font height
+
+### encode
+
+Encodes strings
+
+### decode
+
+   -
+Decodes buffers
+
+### kern
+
+Kern text via the font's kerning tables. Returns chunks of text separated by numeric kern widths.
+
+=begin code :lang<raku>
+say $font.kern("ABCD"); # ["AB", -18, "CD"]
+=end code
+
+### glyph-width
+
+Return the width of a glyph. This is a `rw` method that can be used to globally
+adjust a font's glyph spacing for rendering and string-width calculations:
+
+=begin code :lang<raku>
+say $vera.glyph-width('V'); # 684;
+$vera.glyph-width('V') -= 100;
+say $vera.glyph-width('V'); # 584;
+=end code
+
+=head3 to-dict
+
+Produces a draft PDF font dictionary.
+
+=head3 cb-finish
+
+Finishing hook for the PDF tool-chain. This produces a finalized PDF font dictionary, including embedded fonts, character widths and encoding mappings.
+
+=head3 is-embedded
+
+Whether a font-file is embedded.
+
+=head3 is-subset
+
+Whether the font has been subsetting
+
+=head3 is-core-font
+
+Whether the font is a core font
+
+=head3 has-encoding
+
+Whether the font has unicode encoding. This is needed to encode or extrac text.
+
+=head3 face
+
+L<Font::FreeType::Face> object associated with the font.
+
+If the font was loaded from a `$dict` object and `is-embedded` is true, the `face` object has been loaded from the embedded font, otherwise its a system-loaded
+font, selected to match the font.
+
+=head3 glyphs
+=begin code :lang<raku>
+use PDF::Font::Loader::Glyph;
+my PDF::Font::Loader::Glyph @glyphs = $font.glyphs: "Hi";
+say "code-point:{.code-point.raku} cid:{.cid} gid:{.gid} dx:{.dx} dy:{.dy}"
+    for @glyphs;
+=end code
+
+Maps a string to a set of glyphs:
+
+=item `code-point` is a character code mapping
+=item `cid` is the encoded value
+=item `gid` is the font index of the glyph in the font object`s `face` attribute.
+=item `dx` and `dy` are unscaled font sizes. They should be multiplied by the current font-size/1000 to get the actual sizes.
+
+Loading PDF Fonts
+---------------
+
+Fonts can also be loaded from PDF font dictionaries. The following example loads and summarizes page-level fonts:
+
+=begin code :lang<raku>
+use PDF::Lite;
+use PDF::Font::Loader;
+use PDF::Content::Font;
+use PDF::Content::FontObj;
+
+constant Fmt = "%-30s %-8s %-10s %-3s %-3s";
+sub yn($_) {.so ?? 'yes' !! 'no' }
+
+my %SeenFont{PDF::Content::Font};
+my PDF::Lite $pdf .= open: "t/freetype.pdf";
+say sprintf(Fmt, |<name type encode emb sub>);
+say sprintf(Fmt, |<-------------------------- ------- ---------- --- --->);
+for 1 .. $pdf.page-count {
+    my PDF::Content::Font %fonts = $pdf.page($_).gfx.resources('Font');
+
+    for %fonts.values -> $dict {
+        unless %SeenFont{$dict}++ {
+            my PDF::Content::FontObj $font = PDF::Font::Loader.load-font: :$dict, :quiet;
+            say sprintf(Fmt, .font-name, .type, .encoding, .is-embedded.&yn, .is-subset.&yn)
+                given $font;
+        }
+    }
+}
+=end code
+Produces:
+
+=begin table
+name                      |     type    |  encode    | emb | sub
+--------------------------+-------------+------------+-----+---
+DejaVuSans                |    Type0    | identity-h | yes | no 
+Times-Roman               |    Type1    | win        | no  | no 
+WenQuanYiMicroHei         |    TrueType | win        | no  | no 
+NimbusRoman-Regular       |    Type1    | win        | yes | no 
+Cantarell-Oblique         |    Type1    | win        | yes | no 
+=end table
+
+=head2 Install
+
+=item PDF::Font::Loader depends on Font::FreeType which further depends on the [freetype](https://www.freetype.org/download.html) library, so you must install that prior to installing this module.
+
+=item Installation of the [fontconfig](https://www.freedesktop.org/wiki/Software/fontconfig/) library and command-line tools is strongly recommended.
 
 =end pod
 
