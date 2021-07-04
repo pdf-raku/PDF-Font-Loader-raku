@@ -1,6 +1,10 @@
 {{$NEXT}}
+
+0.5.4  2021-07-05T09:20:00+12:00
    - Add new sub-class PDF::Font::Loader::FontObj::CID
    - Fix ToUnicode CMaps for subsetted fonts
+   - Allow subsetting of 'CFF' format OpenType fonts. HarfBuzz can
+     handle these.
 
 0.5.3  2021-06-30T11:20:17+12:00
    Glyph maps #8
