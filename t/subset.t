@@ -65,11 +65,13 @@ $pdf.add-page.gfx.text: {
 
 check-fonts('created fonts');
 
-$pdf.id = $*PROGRAM-NAME.fmt('%-16.16s');
-$pdf.save-as: "t/subset.pdf";
+# Don't save PDF files. They have randomly varying font-name prefixs
+mkdir 'tmp';
+
+$pdf.save-as: "tmp/subset.pdf";
 
 # check our subsets survive serialization;
-$pdf .= open: "t/subset.pdf";
+$pdf .= open: "tmp/subset.pdf";
 
 my %fonts = $pdf.page(1).resources('Font');
 $ttf-font = load-font( dict => %fonts<F1> );
