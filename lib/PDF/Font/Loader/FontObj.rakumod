@@ -99,11 +99,11 @@ submethod TWEAK(
     }
 
     if $!subset {
-        if self!font-type-entry eq 'TrueType' {
+        if $!face.font-format ~~ 'TrueType'|'OpenType'|'CFF' {
             $!font-name ~~ s/^[<[A..Z]>**6"+"]?/{(("A".."Z").pick xx 6).join ~ "+"}/;
         }
         else {
-           warn  "unable to subset font $!font-name of type {$!face.font-type}";
+           warn  "unable to subset font $!font-name of type {$!face.font-format}";
            $!subset = False;
         }
     }
@@ -389,7 +389,7 @@ method encoding {
 
 sub charset-to-unicode(%charset) {
     my uint32 @to-unicode;
-    @to-unicode[.value] = .key
+    @to-unicode[.key] = .value
         for %charset.pairs;
     @to-unicode;
 }
@@ -613,7 +613,7 @@ method !make-subset {
     # perform subsetting on the font
     my %ords := $!encoder.charset;
     my $buf := $!font-buf;
-    my %input = do if $!enc.starts-with: 'identity' {
+    my %input = do if $!enc.starts-with('identity') {
         # need to retain gids for identity based encodings
         my @glyphs = %ords.keys;
         %( :@glyphs, :retain-gids)
@@ -634,8 +634,8 @@ method cb-finish {
             my $save-gids   := $!gids-updated--;
             self.finish-font: $dict, :$save-widths, :$save-gids;
             if $!subset {
-                my Blob $buf = self!make-font-file: self!make-subset();
-                $!font-descriptor{self!font-file-entry} = $buf;
+                my PDF::COS::Stream $font-file = self!make-font-file: self!make-subset();
+                $!font-descriptor{self!font-file-entry} = $font-file;
             }
             $!finished = False;
         }
@@ -649,9 +649,9 @@ method cb-finish {
 ## Informational methods
 method type { $.to-dict<Subtype>.fmt; }
 method is-embedded {
-    $!embed // do with $!font-descriptor {
+    $!embed || do with $!font-descriptor {
         .{self!font-file-entry}:exists;
-    } // False;
+    } || False;
 }
 method is-subset { so ($!font-name ~~ m/^<[A..Z]>**6"+"/) }
 method is-core-font { ! self.font-descriptor.defined }

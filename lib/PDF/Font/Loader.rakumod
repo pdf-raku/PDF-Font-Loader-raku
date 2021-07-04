@@ -48,9 +48,9 @@ class PDF::Font::Loader:ver<0.5.3> {
     }
 
     # resolve via PDF font dictionary
-    multi method load-font($?: PDF::Content::Font:D :$dict!, |c) {
+    multi method load-font($class = $?CLASS: PDF::Content::Font:D :$dict!, |c) {
         my %opts = load-font-opts(:$dict, |c);
-        $.load-font: |%opts, |c;
+        $class.load-font: |%opts, |c;
     }
 
     subset Weight is export(:Weight) where /^[thin|extralight|light|book|regular|medium|semibold|bold|extrabold|black|<[0..9]>**3]$/;

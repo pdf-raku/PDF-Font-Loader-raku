@@ -10,7 +10,7 @@ use Font::FreeType;
 my constant Glyph = PDF::Font::Loader::Glyph;
 my PDF::Content::FontObj $deja = load-font( :file<t/fonts/DejaVuSans.ttf>, :!subset );
 
-my PDF::Font::Loader::Glyph @shape = $deja.glyphs("Hello");
+my Glyph @shape = $deja.glyphs("Hello");
 
 is +@shape, 5;
 

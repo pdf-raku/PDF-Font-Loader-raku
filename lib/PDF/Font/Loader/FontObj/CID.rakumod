@@ -17,6 +17,7 @@ submethod TWEAK {
     }
 }
 
+# /Subtype entry for the descendant CID font
 method !cid-font-type-entry {
     given $.face.font-format {
         when 'CFF' { 'CIDFontType0' }
@@ -66,34 +67,33 @@ method finish-font($dict, :$save-widths, :$save-gids) {
 method make-dict {
     my $BaseFont = /($.font-name);
     my $Type = /<Font>;
-    my $Subtype = /(self!cid-font-type-entry);
-
-    my $DescendantFonts = [
-        :dict{
-            :$Type,
-            :$Subtype,
-            :$BaseFont,
-            :CIDToGIDMap( /<Identity> ),
-            :CIDSystemInfo{
-                :Ordering<Identity>,
-                :Registry<Adobe>,
-                :Supplement(0),
-            },
-        }, ];
-
-    with self.font-descriptor {
-        .<Flags> +|= FontFlags::Symbolic;
-        $DescendantFonts[0]<dict><FontDescriptor> = $_;
-    }
-
     my $Encoding = /(self.encoding);
     my $dict = PDF::COS::Dict.COERCE: %(
         :Type( /<Font> ),
         :Subtype( /<Type0> ),
         :$BaseFont,
-        :$DescendantFonts,
         :$Encoding,
     );
+
+
+    my $cid-font = {
+        :$Type,
+        :Subtype(/(self!cid-font-type-entry)),
+        :$BaseFont,
+        :CIDToGIDMap( /<Identity> ),
+        :CIDSystemInfo{
+            :Ordering<Identity>,
+            :Registry<Adobe>,
+            :Supplement(0),
+        }
+    };
+
+    with self.font-descriptor {
+        .<Flags> +|= FontFlags::Symbolic;
+        $cid-font<FontDescriptor> = $_;
+    }
+
+    $dict<DescendantFonts> = [ $cid-font ];
     $dict<DescendantFonts>[0].is-indirect = True;
     $dict;
 }

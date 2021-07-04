@@ -33,17 +33,19 @@ role PDF::Font::Loader::Enc::Glyphic
         }
     }
 
+    # build a maps for glyph names to characters
+    # - see also PDF::Content::Font::Enc::Glyphic, which calls this
     method glyph-map {
       $!glyph-map //= do {
           my %codes;
           if $!face.has-glyph-names {
               my FT_Face $struct = $!face.raw;  # get the native face object
-              my FT_UInt $glyph-idx;
-              my FT_ULong $char-code = $struct.FT_Get_First_Char( $glyph-idx);
-              while $glyph-idx {
+              my FT_UInt $gid;
+              my FT_ULong $char-code = $struct.FT_Get_First_Char( $gid);
+              while $gid {
                   my $char := $char-code.chr;
-                  %codes{ $!face.glyph-name-from-index($glyph-idx) } = $char;
-                  $char-code = $struct.FT_Get_Next_Char( $char-code, $glyph-idx);
+                  %codes{ $!face.glyph-name-from-index($gid) } = $char;
+                  $char-code = $struct.FT_Get_Next_Char( $char-code, $gid);
               }
           }
           %codes;

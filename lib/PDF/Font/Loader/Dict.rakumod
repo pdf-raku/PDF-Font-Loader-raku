@@ -1,4 +1,3 @@
-
 #| Loads a font from a PDF font dictionary (experimental)
 class PDF::Font::Loader::Dict {
     use PDF::Content::Font::CoreFont;
@@ -107,7 +106,8 @@ class PDF::Font::Loader::Dict {
                     %opt<first-char last-char widths> = decode-widths($W)
                 }
                 with .<CIDToGIDMap> {
-                    when 'Identity' {}
+                    when 'Identity' {
+                    }
                     when PDF::COS::Stream {
                         my uint16 @gids = unpack(.decoded.ords, 16);
                         %opt<cid-to-gid-map> = @gids;

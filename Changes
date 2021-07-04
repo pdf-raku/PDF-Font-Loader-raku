@@ -1,5 +1,6 @@
 {{$NEXT}}
    - Add new sub-class PDF::Font::Loader::FontObj::CID
+   - Fix ToUnicode CMaps for subsetted fonts
 
 0.5.3  2021-06-30T11:20:17+12:00
    Glyph maps #8

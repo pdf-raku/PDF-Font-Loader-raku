@@ -100,13 +100,13 @@ class PDF::Font::Loader::Enc::CMap
         $!bytes-per-cid //= 1;
     }
 
-    method set-encoding($chr-code, $idx) {
-        unless @!to-unicode[$idx] ~~ $chr-code {
-            @!to-unicode[$idx] = $chr-code;
-            %!charset{$chr-code} = $idx;
-            $.add-glyph-diff($idx);
+    method set-encoding($chr-code, $cid) {
+        unless @!to-unicode[$cid] ~~ $chr-code {
+            @!to-unicode[$cid] = $chr-code;
+            %!charset{$chr-code} = $cid;
+            $.add-glyph-diff($cid);
         }
-        $idx;
+        $cid;
     }
     method !decoder {
         $!bytes-per-cid > 1
@@ -125,23 +125,23 @@ class PDF::Font::Loader::Enc::CMap
     has %!used-cid;
     method use-cid($_) { %!used-cid{$_}++ }
     method !allocate($chr-code) {
-        my $idx := %PreferredEnc{$chr-code};
-        if $idx && !@!to-unicode[$idx] && !%!used-cid{$idx} {
-            self.set-encoding($chr-code, $idx);
+        my $cid := %PreferredEnc{$chr-code};
+        if $cid && !@!to-unicode[$cid] && !%!used-cid{$cid} {
+            self.set-encoding($chr-code, $cid);
         }
         else {
             # sequential allocation
             repeat {
             } while %!used-cid{$!next-cid} || @!to-unicode[++$!next-cid];
-            $idx := $!next-cid;
-            if $!bytes-per-cid > 1 || $idx < 256 {
-                self.set-encoding($chr-code, $idx);
+            $cid := $!next-cid;
+            if $!bytes-per-cid > 1 || $cid < 256 {
+                self.set-encoding($chr-code, $cid);
             }
             else {
-                $idx := Int;
+                $cid := Int;
             }
         }
-        $idx;
+        $cid;
     }
 
     multi method decode(Str $s, :$str! --> Str) {
