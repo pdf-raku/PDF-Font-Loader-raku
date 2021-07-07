@@ -10,19 +10,19 @@ role PDF::Font::Loader::Enc::Glyphic
     use Font::AFM;
 
     has Hash $!glyph-map;
-    has Bool $.has-exotic-glyphs;
 
     # Callback for character mapped glyphs
-    method lookup-glyph(UInt $code-point) {
+    method lookup-glyph(UInt $ord) {
         my $glyph-name;
-        if self.charset{$code-point} -> $cid {
+        if self.charset{$ord} -> $cid {
             if $.cid-to-gid-map[$cid] -> $gid {
                 $glyph-name = $!face.glyph-name-from-index($gid);
             }
         }
-        $glyph-name //= $!face.glyph-name($code-point.chr) // '.notdef';
+        $glyph-name //= $!face.glyph-name($ord.chr) // '.notdef';
         # Not sure what glyph names are universally supported. This is conservative.
-        $!has-exotic-glyphs ||= $glyph-name !~~ %Font::AFM::Glyphs{$code-point.chr};
+        $.encoding-updated = True
+            unless $glyph-name ~~ %Font::AFM::Glyphs{$ord.chr};
         $glyph-name;
     }
 

@@ -45,16 +45,14 @@ enum <Width Height>;
 
 has Font::FreeType::Face:D $.face is required;
 use PDF::Font::Loader::Enc;
-has PDF::Font::Loader::Enc $.encoder is built handles <decode enc>;
+has PDF::Font::Loader::Enc $!encoder handles <decode first-char last-char widths>;
+method encoder { $!encoder }
 has Blob $.font-buf;
 has PDF::COS::Dict $!dict;
 # Font descriptors are needed for all but core fonts
 has $.font-descriptor = PDF::COS::Dict.COERCE: %( :Type(/'FontDescriptor'));
-has uint $.first-char;
-has uint16 @!widths;
-method widths is rw { @!widths }
 my subset EncodingScheme where 'mac'|'win'|'zapf'|'sym'|'identity'|'identity-h'|'identity-v'|'std'|'mac-extra'|'cmap';
-has EncodingScheme $!enc;
+has EncodingScheme $.enc;
 has Bool $.embed = True;
 has Bool $.subset = False;
 has Str:D $.family          = $!face.family-name;
@@ -62,7 +60,6 @@ has Str:D $.font-name is rw = $!face.postscript-name // $!family;
 has Bool $!finished;
 has Bool $!gids-updated;
 has Bool $!build-widths;
-has Bool $!widths-updated;
 my constant Glyph = PDF::Font::Loader::Glyph;
 has Glyph %!glyphs{Int};
 
@@ -74,9 +71,7 @@ submethod TWEAK(
     EncodingScheme:D :$!enc!,
     PDF::COS::Dict :$!dict,
     :@differences,
-    :@cid-to-gid-map,
-    :$widths,
-    PDF::COS::Stream :$cmap,
+    :%encoder,
 ) is hidden-from-backtrace {
 
     $!subset = False
@@ -110,29 +105,28 @@ submethod TWEAK(
 
     # See [PDF 32000 Table 117 – Entries in a CIDFont dictionary]
     warn "ignoring /CIDToGIDMap for {self.encoding} encoding"
-        if $!enc.starts-with('identity') && @cid-to-gid-map;
+        if $!enc.starts-with('identity') && (%encoder<cid-to-gid-map>:delete);
 
     $!encoder = do {
-        when $cmap.defined {
-            PDF::Font::Loader::Enc::CMap.new: :$cmap, :$!face, :@cid-to-gid-map;
+        when %encoder<cmap>.defined {
+            PDF::Font::Loader::Enc::CMap.new: :$!face, |%encoder;
         }
         when $!enc eq 'identity' {
-            PDF::Font::Loader::Enc::Identity8.new: :$!face;
+            PDF::Font::Loader::Enc::Identity8.new: :$!face, |%encoder;
         }
         when $!enc ~~ 'identity-h'|'identity-v' {
-            PDF::Font::Loader::Enc::Identity16.new: :$!face;
+            PDF::Font::Loader::Enc::Identity16.new: :$!face, |%encoder;
         }
         default {
-            PDF::Font::Loader::Enc::Type1.new: :$!enc, :$!face, :@cid-to-gid-map;
+            PDF::Font::Loader::Enc::Type1.new: :$!enc, :$!face, |%encoder;
         }
     }
 
     $!encoder.differences = @differences
         if @differences;
-    @!widths = .map(*.Int) with $widths;
     # Be careful not to start adding widths if an existing
     # font dictionary doesn't already have them.
-    $!build-widths = so @!widths || !$!dict.defined;
+    $!build-widths = %encoder<widths>.so || !$!dict.defined;
     $!finished = ! $!build-widths;
 
     PDF::Content::Font.make-font($_, self)
@@ -155,13 +149,10 @@ method height($pointsize = 1000, Bool :$from-baseline, Bool :$hanging) {
 method glyph-width(Str $ch) is rw {
     Proxy.new(
         FETCH => { .dx with self.glyphs($ch)[0] },
-        STORE => -> $, UInt() $dx {
+        STORE => -> $, UInt() $width {
             with $!encoder.encode($ch, :cids)[0] -> $cid {
-                $!gids-updated = True;
-                my $fc = self.first-char($cid);
-                @!widths[$cid - $fc] = $dx;
-                $!widths-updated = True;
-                self!glyph($cid).dx = $dx;
+                $!encoder.set-width($cid, $width);
+                self!glyph($cid).dx = $width;
             }
         }
     );
@@ -174,23 +165,6 @@ multi method stringwidth(Str $text, :$kern) {
 multi method stringwidth(Str $text, $pointsize, :$kern) {
     self.stringwidth($text, :$kern) * $pointsize / 1000;
 }
-
-multi method first-char { $!first-char }
-multi method first-char($cid) {
-    unless @!widths {
-        $!widths-updated = True;
-        $!first-char = $cid;
-        @!widths = [0];
-    }
-    if $!first-char > $cid {
-        $!widths-updated = True;
-        @!widths.prepend: 0 xx ($!first-char - $cid);
-        $!first-char = $cid;
-    }
-    $!first-char;
-}
-
-method last-char { $!first-char + @!widths - 1; }
 
 method decode-cids(Str $byte-str) {
     warn $!encoder.WHAT.raku;
@@ -281,14 +255,8 @@ method !glyph($cid is raw) {
                 !! $cid;
         }
 
-        my $fc := $.first-char($cid);
-        my $dx := (
-            @!widths[$cid - $fc] ||= do {
-                $!widths-updated = True;
-                $!finished = False
-                    if $!build-widths;
-                self!glyph-size($gid)[Width].round;
-            });
+        my $dx = self!glyph-size($gid)[Width].round;
+        $!encoder.set-width($cid, $dx);
         Glyph.new: :$code-point, :$cid, :$gid, :$dx;
     }
 }
@@ -475,11 +443,11 @@ method make-cmap-stream {
 # finalize the font, depending on how it's been used
 method finish-font($dict, :$save-widths) {
     $dict<ToUnicode> //= self.make-cmap-stream
-        if $!encoder ~~ PDF::Font::Loader::Enc::Glyphic && $!encoder.has-exotic-glyphs;
+        if $!encoder.encoding-updated;
     if $save-widths {
         $dict<FirstChar> = $.first-char;
-        $dict<LastChar> = $.last-char;
-        $dict<Widths> = @!widths;
+        $dict<LastChar>  = $.last-char;
+        $dict<Widths>    = $.widths;
     }
     if $!encoder.differences -> $Differences {
         my %enc = :Type(/<Encoding>), :$Differences;
@@ -630,16 +598,20 @@ method !make-subset {
 
 method cb-finish {
     my $dict := self.to-dict;
-    if $!first-char.defined {
-        unless $!finished {
-            my $save-widths := $!build-widths && $!widths-updated--;
+    if $.first-char.defined {
+        
+        my $widths-updated = $!encoder.widths-updated;
+        my $encoding-updated = $!encoder.encoding-updated;
+
+        if !$!finished || $widths-updated || $encoding-updated {
+            my $save-widths := $!build-widths && $widths-updated--;
             my $save-gids   := $!gids-updated--;
             self.finish-font: $dict, :$save-widths, :$save-gids;
             if $!subset {
                 my PDF::COS::Stream $font-file = self!make-font-file: self!make-subset();
                 $!font-descriptor{self!font-file-entry} = $font-file;
             }
-            $!finished = False;
+            $!finished = True;
         }
     }
     else {

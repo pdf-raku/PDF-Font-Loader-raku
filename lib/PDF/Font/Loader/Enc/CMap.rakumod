@@ -115,6 +115,7 @@ class PDF::Font::Loader::Enc::CMap
             # we currently only allocate 2 byte CID encodings
             @!enc-width[$cid] = 1 + $!is-wide.ord;
             $.add-glyph-diff($cid);
+            $.encoding-updated = True;
         }
         $cid;
     }

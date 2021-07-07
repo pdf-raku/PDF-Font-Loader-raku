@@ -80,7 +80,8 @@ class PDF::Font::Loader::Dict {
 
     method load-font-opts($?: FontDict :$dict! is copy, Bool :$embed = False, |c) is export(:load-font-opts) {
         my %opt = :!subset, :$embed, :$dict;
-        %opt<cmap> = $_
+        my %encoder;
+        %encoder<cmap> = $_
             with $dict<ToUnicode>;
 
         with $dict<Encoding> {
@@ -88,7 +89,7 @@ class PDF::Font::Loader::Dict {
                 when PDF::COS::Stream {
                     # assume CMAP. See PDF-32000 Table 121
                     # – Entries in a Type 0 font dictionary
-                    %opt<cmap> //= $_;
+                    %encoder<cmap> //= $_;
                     'cmap';
                 }
                 when Hash {
@@ -103,14 +104,14 @@ class PDF::Font::Loader::Dict {
             # CiD Font
             given base-font($dict) {
                 with .<W> -> $W {
-                    %opt<first-char last-char widths> = decode-widths($W)
+                    %encoder<first-char last-char widths> = decode-widths($W);
                 }
                 with .<CIDToGIDMap> {
                     when 'Identity' {
                     }
                     when PDF::COS::Stream {
                         my uint16 @gids = unpack(.decoded, 16);
-                        %opt<cid-to-gid-map> = @gids;
+                        %encoder<cid-to-gid-map> = @gids;
                     }
                     default {
                         # probably a named CMAP
@@ -120,10 +121,11 @@ class PDF::Font::Loader::Dict {
             }
         }
         else {
-            %opt<first-char> = $_ with $dict<FirstChar>;
-            %opt<last-char>  = $_ with $dict<LastChar>;
-            %opt<widths>     = $_ with $dict<Widths>;
+            %encoder<first-char> = $_ with $dict<FirstChar>;
+            %encoder<last-char>  = $_ with $dict<LastChar>;
+            %encoder<widths>     = $_ with $dict<Widths>;
         }
+        %opt<encoder> = %encoder;
 
         enum (:SymbolicFlag(1 +< 5), :ItalicFlag(1 +< 6));
 

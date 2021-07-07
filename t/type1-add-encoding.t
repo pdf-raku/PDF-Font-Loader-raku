@@ -1,5 +1,5 @@
 use Test;
-plan 11;
+plan 13;
 use PDF::Font::Loader :load-font;
 use PDF::Font::Loader::FontObj;
 use PDF::Font::Loader::Glyph;
@@ -61,9 +61,10 @@ for '–' => 'g179', :O<g50>, :r<g85>, :i<g76>, :g<g74>, :n<g81>,
 }
 
 # We should now be able to do unicode encoding
-@shape = $font.glyphs("Hi");
+@shape = $font.glyphs("HiQ");
 is-deeply @shape[0], Glyph.new(:code-point(72), :cid(48), :gid(26), :dx(823), :dy(0)), 'pre-save encoding';
 is-deeply @shape[1], Glyph.new(:code-point(105), :cid(4), :gid(21), :dx(334), :dy(0)), 'pre-save encoding';
+is-deeply @shape[2], Glyph.new(:code-point(81), :cid(61), :gid(6), :dx(823), :dy(0)), 'pre-save encoding';
 
 ## reserialize. check than encodings are intact
 
@@ -72,9 +73,10 @@ $pdf .= open: $pdf.Blob;
 $dict = $pdf.page(1).resources('Font')<F1>;
 $font .= load-font: :$dict;
 
-@shape = $font.glyphs("Hi");
+@shape = $font.glyphs("HiQ");
 is-deeply @shape[0], Glyph.new(:code-point(72), :cid(48), :gid(26), :dx(823), :dy(0)), 'reloaded encoding';
 is-deeply @shape[1], Glyph.new(:code-point(105), :cid(4), :gid(21), :dx(334), :dy(0)), 'reloaded encoding';
+is-deeply @shape[2], Glyph.new(:code-point(81), :cid(61), :gid(6), :dx(823), :dy(0)), 'reloaded encoding';
 
 $pdf.page(1).gfx.text: {
     .font = $font;
