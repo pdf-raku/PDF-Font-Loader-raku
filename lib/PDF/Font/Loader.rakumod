@@ -324,12 +324,13 @@ font, selected to match the font.
 =begin code :lang<raku>
 use PDF::Font::Loader::Glyph;
 my PDF::Font::Loader::Glyph @glyphs = $font.glyphs: "Hi";
-say "code-point:{.code-point.raku} cid:{.cid} gid:{.gid} dx:{.dx} dy:{.dy}"
+say "name:{.name} code:{.code-point.raku} cid:{.cid} gid:{.gid} dx:{.dx} dy:{.dy}"
     for @glyphs;
 =end code
 
 Maps a string to a set of glyphs:
 
+=item `name` is a glyph name
 =item `code-point` is a character code mapping
 =item `cid` is the encoded value
 =item `gid` is the font index of the glyph in the font object`s `face` attribute.
@@ -367,7 +368,7 @@ for 1 .. $pdf.page-count {
 =end code
 Produces:
 
-=begin table
+=begin code
 name                      |     type    |  encode    | emb | sub
 --------------------------+-------------+------------+-----+---
 DejaVuSans                |    Type0    | identity-h | yes | no 
@@ -375,7 +376,7 @@ Times-Roman               |    Type1    | win        | no  | no
 WenQuanYiMicroHei         |    TrueType | win        | no  | no 
 NimbusRoman-Regular       |    Type1    | win        | yes | no 
 Cantarell-Oblique         |    Type1    | win        | yes | no 
-=end table
+=end code
 
 =head2 Install
 

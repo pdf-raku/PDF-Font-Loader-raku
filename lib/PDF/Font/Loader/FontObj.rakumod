@@ -70,9 +70,10 @@ sub subsetter {
 submethod TWEAK(
     EncodingScheme:D :$!enc!,
     PDF::COS::Dict :$!dict,
+    :@cid-to-gid-map,
     :@differences,
     :%encoder,
-) is hidden-from-backtrace {
+) {
 
     $!subset = False
         unless $!embed;
@@ -109,7 +110,7 @@ submethod TWEAK(
 
     $!encoder = do {
         when %encoder<cmap>.defined {
-            PDF::Font::Loader::Enc::CMap.new: :$!face, |%encoder;
+            PDF::Font::Loader::Enc::CMap.new: :$!face, |%encoder, :@cid-to-gid-map;
         }
         when $!enc eq 'identity' {
             PDF::Font::Loader::Enc::Identity8.new: :$!face, |%encoder;
@@ -118,7 +119,7 @@ submethod TWEAK(
             PDF::Font::Loader::Enc::Identity16.new: :$!face, |%encoder;
         }
         default {
-            PDF::Font::Loader::Enc::Type1.new: :$!enc, :$!face, |%encoder;
+            PDF::Font::Loader::Enc::Type1.new: :$!enc, :$!face, |%encoder, :@cid-to-gid-map;
         }
     }
 
@@ -167,7 +168,6 @@ multi method stringwidth(Str $text, $pointsize, :$kern) {
 }
 
 method decode-cids(Str $byte-str) {
-    warn $!encoder.WHAT.raku;
     my @cids = $!encoder.decode($byte-str, :cids);
     if $!build-widths || $!encoder.cid-to-gid-map {
         self!glyph($_) for @cids;
@@ -237,28 +237,7 @@ method !make-font-file($buf) {
 }
 
 method !glyph($cid is raw) {
-    %!glyphs{$cid} //= do {
-
-        my uint32 $code-point = $!encoder.to-unicode[$cid] || 0;
-        my FT_UInt $gid;
-        if $!encoder.cid-to-gid-map -> $gids {
-            if $code-point && ! $gids[$cid] {
-                $gids[$cid] = $!face.glyph-index($code-point);
-                $!finished = False;
-                $!gids-updated = True;
-            }
-            $gid = $gids[$cid] || $cid;
-        }
-        else {
-            $gid = $code-point
-                ?? $!face.glyph-index($code-point)
-                !! $cid;
-        }
-
-        my $dx = self!glyph-size($gid)[Width].round;
-        $!encoder.set-width($cid, $dx);
-        Glyph.new: :$code-point, :$cid, :$gid, :$dx;
-    }
+    %!glyphs{$cid} //= $!encoder.glyph($cid);
 }
 
 multi method glyphs(Str:D $text) {
@@ -481,27 +460,6 @@ method make-dict {
 }
 
 method to-dict { $!dict //= PDF::Content::Font.make-font(self.make-dict, self) }
-
-method !glyph-size($gid) {
-    my $struct = $!face.raw;
-    my $glyph-slot = $struct.glyph;
-    my $scale = 1000 / ($!face.units-per-EM || 1000);
-    my int $width  = 0;
-    my int $height = 0;
-
-    if $gid {
-        CATCH {
-            when Font::FreeType::Error { warn "error processing glyph index: {$gid}: " ~ .message; }
-        }
-        ft-try({ $struct.FT_Load_Glyph( $gid, FT_LOAD_NO_SCALE ); });
-        given $glyph-slot.metrics {
-            $width  = .hori-advance;
-            $height = .vert-advance;
-        }
-    }
-
-    ($width * $scale, $height * $scale);
-}
 
 method !font-kerning(Str $text is copy) {
     my FT_UInt $prev-idx = 0;

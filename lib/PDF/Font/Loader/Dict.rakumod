@@ -110,8 +110,10 @@ class PDF::Font::Loader::Dict {
                     when 'Identity' {
                     }
                     when PDF::COS::Stream {
-                        my uint16 @gids = unpack(.decoded, 16);
-                        %encoder<cid-to-gid-map> = @gids;
+                        my $decoded = .decoded;
+                        $decoded .= encode('latin-1') if $decoded ~~ Str;
+                        my uint16 @gids = unpack($decoded, 16);
+                        %opt<cid-to-gid-map> = @gids;
                     }
                     default {
                         # probably a named CMAP

@@ -27,8 +27,8 @@ sub check-fonts($whence) {
         like $ttf-font.font-name, /^<[A..Z]>**6 '+BitstreamVeraSans-Roman'$/, 'font-name';
         is $ttf-font.encoding, 'Identity-H', '$ttf-font.encoding';
         my Glyph @shape = $ttf-font.glyphs("Ab");
-        is-deeply @shape.head, Glyph.new(:code-point(65), :cid(36), :gid(36), :dx(684), :dy(0)), 'ttf-font glyph "A"';
-        is-deeply @shape.tail, Glyph.new(:code-point(98), :cid(69), :gid(69), :dx(635), :dy(0)), 'ttf-font glyph "b"';
+        is-deeply @shape.head, Glyph.new(:name<A>, :code-point(65), :cid(36), :gid(36), :dx(684), :dy(0)), 'ttf-font glyph "A"';
+        is-deeply @shape.tail, Glyph.new(:name<b>, :code-point(98), :cid(69), :gid(69), :dx(635), :dy(0)), 'ttf-font glyph "b"';
 
         ok $otf-font.is-subset, '$otf-font.is-subset';
         like $otf-font.font-name, /^<[A..Z]>**6 '+Cantarell-Oblique'$/, 'font-name';
@@ -44,8 +44,8 @@ sub check-fonts($whence) {
         like $ttc-font.font-name, /^<[A..Z]>**6 '+WenQuanYiMicroHei'$/, 'font-name';
         is $ttc-font.encoding, 'Identity-H', '$ttc-font.encoding';
         @shape = $ttc-font.glyphs("Ab");
-        is-deeply @shape.head, Glyph.new(:code-point(65), :cid(36), :gid(36), :dx(608), :dy(0)), 'ttc-font glyph "A"';
-        is-deeply @shape.tail, Glyph.new(:code-point(98), :cid(69), :gid(69), :dx(586), :dy(0)), 'ttc-font glyph "b"';
+        is-deeply @shape.head, Glyph.new(:name<A>, :code-point(65), :cid(36), :gid(36), :dx(608), :dy(0)), 'ttc-font glyph "A"';
+        is-deeply @shape.tail, Glyph.new(:name<b>, :code-point(98), :cid(69), :gid(69), :dx(586), :dy(0)), 'ttc-font glyph "b"';
     }
 }
 

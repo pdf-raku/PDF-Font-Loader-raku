@@ -58,7 +58,7 @@ class PDF::Font::Loader::Enc::CMap
                         }
                     }
                 }
-                if /:s^ \d+ beginbfrange/ ff /^endbfrange/ {
+                elsif /:s^ \d+ beginbfrange/ ff /^endbfrange/ {
                     if /:s [ '<' $<r>=[<xdigit>+] '>' ] ** 3 / {
                         my uint ($from, $to, $codepoint) = @<r>.map: { :16(.Str) };
                         for $from .. $to {
@@ -83,7 +83,7 @@ class PDF::Font::Loader::Enc::CMap
                         }
                     }
                 }
-                if /:s^ \d+ beginbfchar/ ff /^endbfchar/ {
+                elsif /:s^ \d+ beginbfchar/ ff /^endbfchar/ {
                     if /:s [ '<' $<r>=[<xdigit>+] '>' ] ** 2 / {
                         my uint ($from, $codepoint) = @<r>.map: { :16(.Str) };
                         if valid-codepoint($codepoint) {

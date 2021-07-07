@@ -221,11 +221,13 @@ If the font was loaded from a `$dict` object and `is-embedded` is true, the `fac
 ```raku
 use PDF::Font::Loader::Glyph;
 my PDF::Font::Loader::Glyph @glyphs = $font.glyphs: "Hi";
-say "code-point:{.code-point.raku} cid:{.cid} gid:{.gid} dx:{.dx} dy:{.dy}"
+say "name:{.name} code:{.code-point.raku} cid:{.cid} gid:{.gid} dx:{.dx} dy:{.dy}"
     for @glyphs;
 ```
 
 Maps a string to a set of glyphs:
+
+  * `name` is a glyph name
 
   * `code-point` is a character code mapping
 
@@ -267,14 +269,13 @@ for 1 .. $pdf.page-count {
 
 Produces:
 
-<table class="pod-table">
-<thead><tr>
-<th>name</th> <th>type</th> <th>encode</th> <th>emb</th> <th>sub</th>
-</tr></thead>
-<tbody>
-<tr> <td>DejaVuSans</td> <td>Type0</td> <td>identity-h</td> <td>yes</td> <td>no</td> </tr> <tr> <td>Times-Roman</td> <td>Type1</td> <td>win</td> <td>no</td> <td>no</td> </tr> <tr> <td>WenQuanYiMicroHei</td> <td>TrueType</td> <td>win</td> <td>no</td> <td>no</td> </tr> <tr> <td>NimbusRoman-Regular</td> <td>Type1</td> <td>win</td> <td>yes</td> <td>no</td> </tr> <tr> <td>Cantarell-Oblique</td> <td>Type1</td> <td>win</td> <td>yes</td> <td>no</td> </tr>
-</tbody>
-</table>
+    name                      |     type    |  encode    | emb | sub
+    --------------------------+-------------+------------+-----+---
+    DejaVuSans                |    Type0    | identity-h | yes | no 
+    Times-Roman               |    Type1    | win        | no  | no 
+    WenQuanYiMicroHei         |    TrueType | win        | no  | no 
+    NimbusRoman-Regular       |    Type1    | win        | yes | no 
+    Cantarell-Oblique         |    Type1    | win        | yes | no
 
 Install
 -------

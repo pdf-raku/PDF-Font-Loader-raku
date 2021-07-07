@@ -14,9 +14,9 @@ my Glyph @shape = $deja.glyphs("Hello");
 
 is +@shape, 5;
 
-is-deeply @shape.head, Glyph.new(:code-point(72), :cid(43), :gid(43), :dx(752), :dy(0));
+is-deeply @shape.head, Glyph.new(:name<H> :code-point(72), :cid(43), :gid(43), :dx(752), :dy(0));
 
-is-deeply @shape.tail, Glyph.new(:code-point(111), :cid(82), :gid(82), :dx(612), :dy(0));
+is-deeply @shape.tail, Glyph.new(:name<o>, :code-point(111), :cid(82), :gid(82), :dx(612), :dy(0));
 
 # Try shaping a font that lacks a unicode map
 
@@ -31,9 +31,9 @@ todo "PDF::Content v0.5.3+ and Font::FreeType v0.3.8+ required to run these test
     unless PDF::Content.^ver >= v0.5.3 && Font::FreeType.^ver >= v0.3.8;
 
 @shape = $font.glyphs(@encoded);
-is-deeply @shape[0], Glyph.new: :code-point(0), :cid(3), :gid(16), :dx(391), :dy(0);
-is-deeply @shape[1], Glyph.new: :code-point(0), :cid(5), :gid(25), :dx(558), :dy(0);
-is-deeply @shape[2], Glyph.new: :code-point(0), :cid(10), :gid(12), :dx(606), :dy(0);
+is-deeply @shape[0], Glyph.new: :name<g85>, :code-point(0), :cid(3), :gid(16), :dx(391), :dy(0);
+is-deeply @shape[1], Glyph.new: :name<g74>, :code-point(0), :cid(5), :gid(25), :dx(558), :dy(0);
+is-deeply @shape[2], Glyph.new: :name<g69>, :code-point(0), :cid(10), :gid(12), :dx(606), :dy(0);
 
 # See if we can setup an encoding that survives serialization
 my $face = $font.face;
@@ -62,9 +62,9 @@ for '–' => 'g179', :O<g50>, :r<g85>, :i<g76>, :g<g74>, :n<g81>,
 
 # We should now be able to do unicode encoding
 @shape = $font.glyphs("HiQ");
-is-deeply @shape[0], Glyph.new(:code-point(72), :cid(48), :gid(26), :dx(823), :dy(0)), 'pre-save encoding';
-is-deeply @shape[1], Glyph.new(:code-point(105), :cid(4), :gid(21), :dx(334), :dy(0)), 'pre-save encoding';
-is-deeply @shape[2], Glyph.new(:code-point(81), :cid(61), :gid(6), :dx(823), :dy(0)), 'pre-save encoding';
+is-deeply @shape[0], Glyph.new(:name<H>, :code-point(72),  :cid(48), :gid(26), :dx(823), :dy(0)), 'pre-save encoding';
+is-deeply @shape[1], Glyph.new(:name<i>, :code-point(105), :cid(4),  :gid(21), :dx(334), :dy(0)), 'pre-save encoding';
+is-deeply @shape[2], Glyph.new(:name<Q>, :code-point(81),  :cid(61), :gid(6),  :dx(823), :dy(0)), 'pre-save encoding';
 
 ## reserialize. check than encodings are intact
 
@@ -74,9 +74,9 @@ $dict = $pdf.page(1).resources('Font')<F1>;
 $font .= load-font: :$dict;
 
 @shape = $font.glyphs("HiQ");
-is-deeply @shape[0], Glyph.new(:code-point(72), :cid(48), :gid(26), :dx(823), :dy(0)), 'reloaded encoding';
-is-deeply @shape[1], Glyph.new(:code-point(105), :cid(4), :gid(21), :dx(334), :dy(0)), 'reloaded encoding';
-is-deeply @shape[2], Glyph.new(:code-point(81), :cid(61), :gid(6), :dx(823), :dy(0)), 'reloaded encoding';
+is-deeply @shape[0], Glyph.new(:name<H>, :code-point(72),  :cid(48), :gid(26), :dx(823), :dy(0)), 'reloaded encoding';
+is-deeply @shape[1], Glyph.new(:name<i>, :code-point(105), :cid(4),  :gid(21), :dx(334), :dy(0)), 'reloaded encoding';
+is-deeply @shape[2], Glyph.new(:name<Q>, :code-point(81),  :cid(61), :gid(6),  :dx(823), :dy(0)), 'reloaded encoding';
 
 $pdf.page(1).gfx.text: {
     .font = $font;
