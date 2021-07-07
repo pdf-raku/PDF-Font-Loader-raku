@@ -34,10 +34,7 @@ class FontLoader {
     }
 }
 
-my PDF::Lite $pdf .= open: "t/pdf-text-align.pdf";
-my PDF::Content::FontObj $f;
-for gather FontLoader.new.render: $pdf.page(1) -> PDF::Content::FontObj $font {
-    $f = $font;
+sub font-sanity($font) {
     # a few sanity checks
     isa-ok $font, 'PDF::Font::Loader::FontObj', 'loaded a FreeType font';
     like $font.font-name, /^[<[A..Z]>**6'+']?'DejaVuSans'$/, 'font name';
@@ -46,16 +43,22 @@ for gather FontLoader.new.render: $pdf.page(1) -> PDF::Content::FontObj $font {
     # first few characters in the subset
     my $text = "Abc♠♥♦♣b";
     my $enc = $font.encode($text, :str);
-    is-deeply $enc, [~]("\0\x[24]", "\0\x[45]", "\0\x[46]", "\x[F]\x[38]", "\x[F]\x[3d]", "\x[F]\x[3e]", "\x[F]\x[3b]", "\0\x[45]");
+    is-deeply $enc, [~]("\0\x[24]", "\0\x[45]", "\0\x[46]", "\x[F]\x[38]", "\x[F]\x[3d]", "\x[F]\x[3e]", "\x[F]\x[3b]", "\0\x[45]"), 'encode';
     is $font.decode($enc, :str), $text, "font encode/decode round-trip";
+}
+
+my PDF::Lite $pdf .= open: "t/pdf-text-align.pdf";
+my PDF::Content::FontObj $f;
+for gather FontLoader.new.render: $pdf.page(1) -> PDF::Content::FontObj $font {
+    font-sanity($font);
+    $f = $font;
 }
 $pdf.add-page.graphics: {
     .font = $f;
     .say: "reused DejaVuSans (CID) font", :position[10,500];
 }
 
-# ensure consistant document ID generation
 $pdf.id =  $*PROGRAM-NAME.fmt('%-16.16s');
-
 $pdf.save-as: "t/reuse-cid.pdf";
+
 done-testing;

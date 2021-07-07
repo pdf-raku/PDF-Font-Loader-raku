@@ -58,8 +58,8 @@ for ($times => "Á®ÆØ",
     my ($font, $encoded) = .kv;
     my $decoded = "Á®ÆØ";
     my $re-encoded = $font.encode($decoded, :str);
-    is-deeply $re-encoded, $encoded, "{$font.face.postscript-name} encoding";
-    is-deeply $font.decode($encoded, :str), $decoded, "{$font.face.postscript-name} decoding";
+    is $re-encoded, $encoded, "{$font.face.postscript-name} encoding";
+    is $font.decode($encoded, :str), $decoded, "{$font.face.postscript-name} decoding";
 }
 
 done-testing;

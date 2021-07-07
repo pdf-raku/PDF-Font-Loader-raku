@@ -125,16 +125,19 @@ my %ast = $/.ast;
 my PDF::IO::IndObj $ind-obj .= new( :$input, |%ast );
 my $cmap = $ind-obj.object;
 
-my PDF::Font::Loader::Enc::CMap $cmap-obj .= new: :$cmap, :$face;
+my PDF::Font::Loader::Enc::CMap $cmap-obj .= new: :$cmap, :$face, :!is-wide;
+nok $cmap-obj.is-wide;
 
-is-deeply $cmap-obj.decode("\x5\xF"), Buf[uint32].new(0x22, 0x2c), "decode";
-is $cmap-obj.decode("\x24\x25\x26", :str), 'ABC', "decode:str";
-is-deeply $cmap-obj.decode("\x5e"), Buf[uint32].new(0x6669), "decode ligature";
+is-deeply $cmap-obj.decode("\x5\xF", :cids), array[uint8].new(0x5, 0xF), 'decode-cids';
+is-deeply $cmap-obj.decode("\x5\xF", :ords), $(0x22, 0x2c), 'decode-ords';
+is $cmap-obj.decode("\x24\x25\x26"), 'ABC', "decode";
+is $cmap-obj.to-unicode[0x5e], 0x6669, 'ligature mapping';
+is-deeply $cmap-obj.decode("\x5e", :ords), $(0x6669, ), "decode ligature";
 $cmap-obj.differences = [0x42, 'C'];
-is $cmap-obj.decode("\x24\x25\x42", :str), 'ABC', "decode differences";
-is $cmap-obj.decode("\xA9", :str), '', "decode unknown";
+is $cmap-obj.decode("\x24\x25\x42"), 'ABC', "decode differences";
+is-deeply $cmap-obj.decode("\xA9"), '', "decode unknown";
 my Str $dec = "AB©C\c[DROMEDARY CAMEL]\c[BACTRIAN CAMEL]";
 my Str $enc = "\x24\x25\xA9\x42\x1\x2";
-is-deeply $cmap-obj.encode($dec, :str), $enc, "adaptive encoding";
-is-deeply $cmap-obj.decode($enc, :str), $dec, "adaptive decoding";
+is-deeply $cmap-obj.encode($dec), $enc, "adaptive encoding";
+is-deeply $cmap-obj.decode($enc), $dec, "adaptive decoding";
 done-testing;

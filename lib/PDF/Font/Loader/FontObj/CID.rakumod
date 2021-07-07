@@ -26,7 +26,7 @@ method !cid-font-type-entry {
     }
 }
 
-method !make-cmap-widths {
+method !make-widths {
     my @W;
     my uint $j = -2;
     my $chars = [];
@@ -57,11 +57,11 @@ method finish-font($dict, :$save-widths, :$save-gids) {
     $dict<ToUnicode> //= self.make-cmap-stream
         if self.has-encoding;
 
-    $dict<DescendantFonts>[0]<W> = self!make-cmap-widths
+    $dict<DescendantFonts>[0]<W> = self!make-widths
         if $save-widths;
             
     $dict<CIDToGIDMap> = self!make-gid-map
-        if $save-gids;    
+        if $save-gids && !self.enc.starts-with('identity');    
 }
 
 method make-dict {

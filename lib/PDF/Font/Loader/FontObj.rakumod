@@ -45,7 +45,7 @@ enum <Width Height>;
 
 has Font::FreeType::Face:D $.face is required;
 use PDF::Font::Loader::Enc;
-has PDF::Font::Loader::Enc $.encoder is built handles <decode enc cids>;
+has PDF::Font::Loader::Enc $.encoder is built handles <decode enc>;
 has Blob $.font-buf;
 has PDF::COS::Dict $!dict;
 # Font descriptors are needed for all but core fonts
@@ -108,15 +108,19 @@ submethod TWEAK(
         }
     }
 
+    # See [PDF 32000 Table 117 – Entries in a CIDFont dictionary]
+    warn "ignoring /CIDToGIDMap for {self.encoding} encoding"
+        if $!enc.starts-with('identity') && @cid-to-gid-map;
+
     $!encoder = do {
         when $cmap.defined {
             PDF::Font::Loader::Enc::CMap.new: :$cmap, :$!face, :@cid-to-gid-map;
         }
         when $!enc eq 'identity' {
-            PDF::Font::Loader::Enc::Identity8.new: :$!face, :@cid-to-gid-map;
+            PDF::Font::Loader::Enc::Identity8.new: :$!face;
         }
         when $!enc ~~ 'identity-h'|'identity-v' {
-            PDF::Font::Loader::Enc::Identity16.new: :$!face, :@cid-to-gid-map;
+            PDF::Font::Loader::Enc::Identity16.new: :$!face;
         }
         default {
             PDF::Font::Loader::Enc::Type1.new: :$!enc, :$!face, :@cid-to-gid-map;
@@ -152,7 +156,7 @@ method glyph-width(Str $ch) is rw {
     Proxy.new(
         FETCH => { .dx with self.glyphs($ch)[0] },
         STORE => -> $, UInt() $dx {
-            with self!encode-chars($ch)[0] -> $cid {
+            with $!encoder.encode($ch, :cids)[0] -> $cid {
                 $!gids-updated = True;
                 my $fc = self.first-char($cid);
                 @!widths[$cid - $fc] = $dx;
@@ -164,7 +168,7 @@ method glyph-width(Str $ch) is rw {
 }
 
 multi method stringwidth(Str $text, :$kern) {
-    ([+] self!encode-chars($text).map: { self!glyph($_).dx })
+    ([+] $!encoder.encode($text, :cids).map: { self!glyph($_).dx })
     + ($kern ?? self!font-kerning($text)[Width] !! 0);
 }
 multi method stringwidth(Str $text, $pointsize, :$kern) {
@@ -188,23 +192,21 @@ multi method first-char($cid) {
 
 method last-char { $!first-char + @!widths - 1; }
 
-method !encode-chars(Str $text) {
-    my $cids := $!encoder.encode($text);
+method decode-cids(Str $byte-str) {
+    warn $!encoder.WHAT.raku;
+    my @cids = $!encoder.decode($byte-str, :cids);
     if $!build-widths || $!encoder.cid-to-gid-map {
-        self!glyph($_) for $cids.list;
+        self!glyph($_) for @cids;
     }
-    $cids;
+    @cids;
 }
 
-method encode($text is raw, :$str) {
-    # 16 bit encoding. convert to bytes
-    my $encoded := self!encode-chars($text);
-    $encoded := pack($encoded, 16)
-       if $!encoder.bytes-per-cid == 2;
-
-    $str ?? $encoded.decode('latin-1') !! $encoded;
+method encode($text is raw, |c) {
+    if $!build-widths || $!encoder.cid-to-gid-map {
+        self!glyph($_) for $!encoder.encode($text, :cids);
+    }
+    $!encoder.encode($text, |c);
 }
-
 method !font-type-entry returns Str {
     given $!face.font-format {
         when 'Type 1'|'CFF' {'Type1' }
@@ -292,7 +294,7 @@ method !glyph($cid is raw) {
 }
 
 multi method glyphs(Str:D $text) {
-    self.glyphs: self!encode-chars($text);
+    self.glyphs: $!encoder.encode($text, :cids);
 }
 multi method glyphs(@cids) {
     @cids.map: { self!glyph($_); };
@@ -413,10 +415,10 @@ method make-cmap-stream {
         !! $!encoder.to-unicode;
     my @cmap-char;
     my @cmap-range;
-    my \i = $!encoder.bytes-per-cid - 1;
-    my \cid-fmt   := ('<%02X>', '<%04X>')[i];
-    my \char-fmt  := ('<%02X> <%04X>', '<%04X> <%04X>')[i];
-    my \range-fmt := ('<%02X> <%02X> <%04X>', '<%04X> <%04X> <%04X>')[i];
+    my $d = ($!encoder.is-wide ?? '4' !! '2');
+    my \cid-fmt   := '<%%0%sX>'.sprintf: $d;
+    my \char-fmt  := '<%%0%sX> <%%04X>'.sprintf: $d;
+    my \range-fmt := cid-fmt ~ ' ' ~ char-fmt;
     my \last-char := $.last-char;
 
     loop (my uint16 $cid = $.first-char; $cid <= last-char; $cid++) {

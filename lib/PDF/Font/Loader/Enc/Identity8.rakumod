@@ -12,19 +12,21 @@ class PDF::Font::Loader::Enc::Identity8
     has UInt $.idx-mask;
     has Bool $!init;
 
-    multi method encode(Str $hex-string, :$str! --> Str) {
+    method is-wide { False }
+
+    multi method encode(Str $text, :cids($)!) is default {
+        my $face-struct = $!face.raw;
+        buf8.new: $text.ords.map: {
+            my uint $cid = $face-struct.FT_Get_Char_Index($_);
+            @!to-unicode[$cid] ||= $_;
+            %!charset{$cid} ||= $_;
+            $cid;
+        }
+    }
+    multi method encode(Str $hex-string --> Str) {
         PDF::COS.coerce: :$hex-string;
     }
-    multi method encode(Str $text) is default {
-        my buf8 $codes .= new;;
-        my $face-struct = $!face.raw;
-        for $text.ords {
-            my uint $index = $face-struct.FT_Get_Char_Index($_);
-            @!to-unicode[$index] ||= $_;
-            %!charset{$index} ||= $_;
-            $codes.push: $index;
-        }
-        $codes;
+    method !encode-cids(Str $text) {
     }
 
     method !setup-decoding {
@@ -42,10 +44,13 @@ class PDF::Font::Loader::Enc::Identity8
         @!to-unicode;
     }
 
-    multi method decode(Str $encoded, :$str! --> Str) {
-        $.decode($encoded)».chr.join;
+    multi method decode(Str $encoded, :cids($)! --> buf8) {
+        $encoded.ords;
     }
-    multi method decode(Str $encoded --> buf8) {
-        buf32.new: $encoded.ords.map({@!to-unicode[$_]}).grep: {$_};
+    multi method decode(Str $encoded, :ords($)!) {
+        $encoded.ords.map({@!to-unicode[$_]}).grep: {$_};
+    }
+    multi method decode(Str $encoded --> Str) {
+        $.decode($encoded, :ords)».chr.join;
     }
 }

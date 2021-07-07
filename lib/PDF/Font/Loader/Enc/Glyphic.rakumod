@@ -51,5 +51,4 @@ role PDF::Font::Loader::Enc::Glyphic
           %codes;
       }
   }
-
 }

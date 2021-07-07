@@ -109,7 +109,7 @@ class PDF::Font::Loader::Dict {
                     when 'Identity' {
                     }
                     when PDF::COS::Stream {
-                        my uint16 @gids = unpack(.decoded.ords, 16);
+                        my uint16 @gids = unpack(.decoded, 16);
                         %opt<cid-to-gid-map> = @gids;
                     }
                     default {

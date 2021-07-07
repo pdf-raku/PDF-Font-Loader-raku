@@ -6,6 +6,7 @@ class PDF::Font::Loader::Enc::Identity16
     use Font::FreeType::Raw;
     use Font::FreeType::Raw::Defs;
     use PDF::COS;
+    use PDF::IO::Util :&pack;
 
     has Font::FreeType::Face $.face is required;
     has uint32 @!to-unicode;
@@ -14,22 +15,22 @@ class PDF::Font::Loader::Enc::Identity16
     has UInt $.max-index;
     has Bool $!init;
 
-    method bytes-per-cid { 2 }
+    method is-wide {True}
 
-    multi method encode(Str $text, :$str! --> Str) {
-        my $hex-string = self.encode($text).decode: 'latin-1';
-        PDF::COS.coerce: :$hex-string;
-    }
-    multi method encode(Str $text) is default {
-        my uint16 @codes;
+    multi method encode(Str $text, :cids($)!) {
         my $face-struct = $!face.raw;
-        for $text.ords {
-            my uint $index = $face-struct.FT_Get_Char_Index($_);
-            @!to-unicode[$index] ||= $_;
-            %!charset{$index} ||= $_;
-            @codes.push: $index;
+        buf16.new: $text.ords.map: {
+            my uint $cid = $face-struct.FT_Get_Char_Index($_);
+            @!to-unicode[$cid] ||= $_;
+            %!charset{$cid} ||= $_;
+            $cid;
         }
-        @codes;
+    }
+
+    multi method encode(Str $text --> Str) {
+        my buf8 $buf := pack(self.encode($text, :cids), 16);
+        my $hex-string = $buf.decode: 'latin-1';
+        PDF::COS.coerce: :$hex-string;
     }
 
     method !setup-decoding {
@@ -48,12 +49,16 @@ class PDF::Font::Loader::Enc::Identity16
         @!to-unicode;
     }
 
-    multi method decode(Str $encoded, :$str! --> Str) {
-        $.decode($encoded)».chr.join;
-    }
-    multi method decode(Str $encoded --> buf32) {
-        my @to-unicode := self.to-unicode;
-        buf32.new: self.cids($encoded).map({@to-unicode[$_]}).grep: {$_};
+    multi method decode(Str $encoded, :cids($)!) {
+        $encoded.ords.map: -> \hi, \lo {hi +< 8 + lo};
     }
 
+    multi method decode(Str $encoded, :ords($)!) {
+        my @to-unicode := self.to-unicode;
+        self.decode($encoded, :cids).map({@to-unicode[$_]}).grep: {$_};
+    }
+
+    multi method decode(Str $encoded --> Str) {
+        $.decode($encoded, :ords)».chr.join;
+    }
 }

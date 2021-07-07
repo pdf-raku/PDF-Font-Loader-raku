@@ -8,7 +8,7 @@
   "depends": [
     "PDF:ver<0.4.14+>",
     "PDF::Lite:ver<0.0.8+>",
-    "PDF::Content:ver<0.5.3+>",
+    "PDF::Content:ver<0.5.4+>",
     "Font::FreeType:ver<0.3.8+>",
     "PDF:ver<0.4.14+>",
     "Native::Packing",
