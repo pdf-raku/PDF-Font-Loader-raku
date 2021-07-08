@@ -19,26 +19,14 @@ my PDF::Font::Loader::Enc::CMap $encoder = $font.encoder;
 
 ok $encoder.is-wide;
 
-is-deeply $encoder.glyph(1), Glyph.new(:name<space>, :code-point(32), :cid(1), :gid(2), :dx(430), :dy(0));
-is-deeply $encoder.glyph(2), Glyph.new(:name<exclam>, :code-point(33), :cid(2), :gid(3), :dx(344), :dy(0));
-is-deeply $encoder.glyph(0x42), Glyph.new(:name<a>, :code-point(97), :cid(66), :gid(67), :dx(516), :dy(0));
+# single byte cid range <20> <7E> 1
+is $encoder.decode(' ', :cids)[0], 1;
+is $encoder.decode('a', :cids)[0], 66;
+is $encoder.decode("\x7E", :cids)[0], (0x7E - 0x20 + 1);
+is $encoder.encode('abc'), 'abc';
 
-todo "#8 variable CMaps", 3;
-is $encoder.decode("\x61\x62\x63"), 'abc', "decode";
-is $encoder.decode("\x41\x42\x43"), 'ABC', "decode";
-is $encoder.decode("\x31\x32\x33"), '123', "decode";
+# first multibyte cid range <8140> <817E> 633
+is $encoder.decode("\x81\x40", :cids)[0], 633;
+is $encoder.decode("\x81\x41", :cids)[0], 634;
 
-##is-deeply $encoder.decode("\x61\x62", :cids), array[uint16].new(0x61, 0x62), 'decode-cids';
-##is-deeply $encoder.decode("\x41\x42", :cids), array[uint16].new(0x41, 0x42), 'decode-cids';
-
-##is-deeply $encoder.decode("\x5\xF", :ords), $(0x22, 0x2c), 'decode-ords';
-##is $encoder.to-unicode[0x5e], 0x6669, 'ligature mapping';
-##is-deeply $encoder.decode("\x5e", :ords), $(0x6669, ), "decode ligature";
-##$encoder.differences = [0x42, 'C'];
-##is $encoder.decode("\x24\x25\x42"), 'ABC', "decode differences";
-##is-deeply $encoder.decode("\xA9"), '', "decode unknown";
-##my Str $dec = "AB©C\c[DROMEDARY CAMEL]\c[BACTRIAN CAMEL]";
-##my Str $enc = "\x24\x25\xA9\x42\x1\x2";
-##is-deeply $encoder.encode($dec), $enc, "adaptive encoding";
-##is-deeply $encoder.decode($enc), $dec, "adaptive decoding";
 done-testing;

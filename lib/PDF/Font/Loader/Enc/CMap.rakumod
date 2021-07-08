@@ -8,10 +8,11 @@ class PDF::Font::Loader::Enc::CMap
     also does PDF::Font::Loader::Enc::Glyphic;
 
     use PDF::IO::Util :&pack;
-
     has uint32 @.to-unicode;
     has Int %.charset{Int};
     has uint8 @!enc-width;
+    has uint16 @!cid-dec-map; # decoding mappings
+    has uint16 @!cid-enc-map; # encoding mappings
     has Bool $.is-wide = self.face.num-glyphs > 255;
 
     sub valid-codepoint($_) {
@@ -52,7 +53,7 @@ class PDF::Font::Loader::Enc::CMap
                         }
 
                         my ($low-enc, $high-enc) = @<r>.map: { :16(.Str) };
-                        @!enc-width[$high-enc] = 0; # allocate
+
                         for $low-enc .. $high-enc -> $enc {
                             @!enc-width[$enc] = $bytes;
                         }
@@ -74,10 +75,20 @@ class PDF::Font::Loader::Enc::CMap
                 }
                 elsif /:s^ \d+ begincidrange/ ff /^endcidrange/ {
                     if /:s [ '<' $<r>=[<xdigit>+] '>' ] ** 2 $<c>=[<digit>+] / {
-                        my uint ($from-ord, $to-ord) = @<r>.map: { :16(.Str) };
+                        my uint ($from, $to) = @<r>.map: { :16(.Str) };
                         my $cid = $<c>.Int;
-                        self!add-code($cid++, $_)
-                            for $from-ord ... $to-ord;
+                        for $from .. $to {
+                            @!cid-enc-map[$cid] = $_;
+                            @!cid-dec-map[$_] = $cid++;
+                        }
+                    }
+                }
+                elsif /:s^ \d+ begincidchar/ ff /^endcidchar/ {
+                    if /:s '<' $<r>=[<xdigit>+] '>' $<c>=[<digit>+] / {
+                        my uint $code = :16($<r>.Str);
+                        my $cid = $<c>.Int;
+                        @!cid-enc-map[$cid]  = $code;
+                        @!cid-dec-map[$code] = $cid++;
                     }
                 }
             }
@@ -153,6 +164,8 @@ class PDF::Font::Loader::Enc::CMap
         # variable encoding.
         so $!is-wide && $cid >= 256 && @!enc-width[$cid div 256] == 1;
     }
+    method !decode-cid($byte is raw) { @!cid-dec-map[$byte] || $byte }
+    method !encode-cid($byte is raw) { @!cid-enc-map[$byte] || $byte }
 
     multi method decode(Str $byte-string, :cids($)!) {
         my uint8 @bytes = $byte-string.ords;
@@ -163,16 +176,20 @@ class PDF::Font::Loader::Enc::CMap
             my uint16 @cids;
 
             loop (my int $i = 0; $i < $n; ) {
-                my $cid = @bytes[$i++];
-                # look ahead to see if this is a two byte encoding
-                my $cid2 = $cid * 256 + @bytes[$i];
-                if @!enc-width[$cid2] == 2 {
-                    $cid := $cid2;
+                my $sample := @bytes[$i++];
+                my $sample2 := $sample * 256 + @bytes[$i];
+
+                if @!enc-width[$sample2] == 2 {
+                    $sample := $sample2;
                     $i++;
                 }
-                @cids.push: $cid;
+
+                @cids.push: self!decode-cid($sample);
             }
             @cids;
+        }
+        elsif @!cid-dec-map {
+            @bytes.map: {self!decode-cid($_)}
         }
         else {
             @bytes;
@@ -188,7 +205,7 @@ class PDF::Font::Loader::Enc::CMap
     }
 
     multi method encode(Str $text, :cids($)!) {
-        $text.ords.map: { %!charset{$_} // self!allocate: $_ }
+        $text.ords.map: { self!encode-cid: %!charset{$_} // self!allocate: $_ }
     }
     multi method encode(Str $text --> Str) {
         self!encode-buf($text).decode: 'latin-1';

@@ -330,6 +330,7 @@ method encoding {
         :identity-h<Identity-H>,
         :identity-v<Identity-V>,
         :identity<Identity>,
+        :std<StandardEncoding>,
         :cmap<CMap>,
     );
 
