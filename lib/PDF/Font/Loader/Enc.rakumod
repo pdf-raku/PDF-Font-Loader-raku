@@ -35,7 +35,6 @@ method last-char { $!first-char + @!widths - 1; }
 method widths is rw { @!widths }
 method is-wide { False  }
 method set-width($cid, $width) {
-    die if $cid <= 0;
     my $fc = self.first-char($cid);
     @!widths[$cid - $fc] ||= do {
         $!widths-updated = True;

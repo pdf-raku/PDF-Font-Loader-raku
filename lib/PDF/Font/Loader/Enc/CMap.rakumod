@@ -60,52 +60,50 @@ class PDF::Font::Loader::Enc::CMap
                 }
                 elsif /:s^ \d+ beginbfrange/ ff /^endbfrange/ {
                     if /:s [ '<' $<r>=[<xdigit>+] '>' ] ** 3 / {
-                        my uint ($from, $to, $codepoint) = @<r>.map: { :16(.Str) };
+                        my uint ($from, $to, $ord) = @<r>.map: { :16(.Str) };
                         for $from .. $to {
-                            if valid-codepoint($codepoint) {
-                                %!charset{$codepoint} = $_;
-                                @!to-unicode[$_] = $codepoint;
-                            }
-                            else {
-                                with %Ligatures{$codepoint} -> $lig {
-                                    %!charset{$lig} = $_;
-                                    @!to-unicode[$_] = $lig;
-                                }
-                                elsif 0xFFFF < $codepoint < 0xFFFFFFFF {
-                                    warn sprintf("skipping possible unmapped ligature: U+%X...", $codepoint);
-                                }
-                                else {
-                                    warn sprintf("skipping invalid codepoint(s) in CMAP: U+%X...", $codepoint);
-                                    last;
-                                }
-                            }
-                            $codepoint++;
+                            last unless self!add-code($_, $ord++)
                         }
                     }
                 }
                 elsif /:s^ \d+ beginbfchar/ ff /^endbfchar/ {
                     if /:s [ '<' $<r>=[<xdigit>+] '>' ] ** 2 / {
-                        my uint ($from, $codepoint) = @<r>.map: { :16(.Str) };
-                        if valid-codepoint($codepoint) {
-                            %!charset{$codepoint} = $from;
-                            @!to-unicode[$from] = $codepoint;
-                        }
-                        else {
-                            with %Ligatures{$codepoint} -> $lig {
-                                %!charset{$lig} = $from;
-                                @!to-unicode[$from] = $lig;
-                            }
-                            elsif 0xFFFF < $codepoint < 0xFFFFFFFF {
-                                warn sprintf("skipping possible unmapped ligature: U+%X...", $codepoint);
-                            }
-                            else {
-                                warn sprintf("skipping invalid codepoint in CMAP: U+%X", $codepoint);
-                            }
-                        }
+                        my uint ($cid, $ord) = @<r>.map: { :16(.Str) };
+                        self!add-code($cid, $ord);
+                    }
+                }
+                elsif /:s^ \d+ begincidrange/ ff /^endcidrange/ {
+                    if /:s [ '<' $<r>=[<xdigit>+] '>' ] ** 2 $<c>=[<digit>+] / {
+                        my uint ($from-ord, $to-ord) = @<r>.map: { :16(.Str) };
+                        my $cid = $<c>.Int;
+                        self!add-code($cid++, $_)
+                            for $from-ord ... $to-ord;
                     }
                 }
             }
         }
+    }
+
+    method !add-code($cid, $ord) {
+        my $ok = True;
+        if valid-codepoint($ord) {
+            %!charset{$ord} = $cid;
+            @!to-unicode[$cid] = $ord;
+        }
+        else {
+            with %Ligatures{$ord} -> $lig {
+                %!charset{$lig} = $cid;
+                @!to-unicode[$_] = $lig;
+            }
+            elsif 0xFFFF < $ord < 0xFFFFFFFF {
+                warn sprintf("skipping possible unmapped ligature: U+%X...", $ord);
+            }
+            else {
+                warn sprintf("skipping invalid ord(s) in CMAP: U+%X...", $ord);
+                $ok = False;
+            }
+        }
+        $ok;
     }
 
     method set-encoding($chr-code, $cid) {

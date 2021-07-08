@@ -208,7 +208,7 @@ Whether the font is a core font
 
 ### has-encoding
 
-Whether the font has unicode encoding. This is needed to encode or extrac text.
+Whether the font has unicode encoding. This is needed to encode or extract text.
 
 ### face
 
