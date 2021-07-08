@@ -432,8 +432,10 @@ method finish-font($dict, :$save-widths) {
     if $!encoder.differences -> $Differences {
         my %enc = :Type(/<Encoding>), :$Differences;
 
-        %enc<BaseEncoding> = /($_)
-            with self.encoding;
+        with self.encoding {
+            %enc<BaseEncoding> = /($_)
+                unless $_ eq 'StandardEncoding'; # implied anyway
+        }
 
         $dict<Encoding> = %enc;
     }
