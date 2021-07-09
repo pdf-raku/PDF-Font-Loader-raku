@@ -2,7 +2,7 @@
 
 0.5.5  2021-07-09T08:21:49+12:00
    - Implement reading of CMaps with variable encoding and
-     and CID mappings #9
+     CID mappings #9
 
 0.5.4  2021-07-05T09:20:00+12:00
    - Add new sub-class PDF::Font::Loader::FontObj::CID

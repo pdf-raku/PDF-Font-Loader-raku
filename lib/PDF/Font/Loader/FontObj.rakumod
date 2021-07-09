@@ -361,63 +361,8 @@ method make-cmap-stream {
     my $to-unicode := $!subset
         ?? charset-to-unicode($!encoder.charset)
         !! $!encoder.to-unicode;
-    my @cmap-char;
-    my @cmap-range;
-    my $d = ($!encoder.is-wide ?? '4' !! '2');
-    my \cid-fmt   := '<%%0%sX>'.sprintf: $d;
-    my \char-fmt  := '<%%0%sX> <%%04X>'.sprintf: $d;
-    my \range-fmt := cid-fmt ~ ' ' ~ char-fmt;
-    my \last-char := $.last-char;
 
-    loop (my uint16 $cid = $.first-char; $cid <= last-char; $cid++) {
-        my uint32 $char-code = $to-unicode[$cid]
-          || next;
-        my uint16 $start-cid = $cid;
-        my uint32 $start-code = $char-code;
-        while $cid < last-char && $to-unicode[$cid + 1] == $char-code+1 {
-            $cid++; $char-code++;
-        }
-        if $start-cid == $cid {
-            @cmap-char.push: char-fmt.sprintf($cid, $start-code);
-        }
-        else {
-            @cmap-range.push: range-fmt.sprintf($start-cid, $cid, $start-code);
-        }
-    }
-
-    if @cmap-char {
-        @cmap-char.unshift: "{+@cmap-char} beginbfchar";
-        @cmap-char.push: 'endbfchar';
-    }
-
-    if @cmap-range {
-        @cmap-range.unshift: "{+@cmap-range} beginbfrange";
-        @cmap-range.push: 'endbfrange';
-    }
-
-    my PDF::IO::Writer $writer .= new;
-    my $cmap-name = $writer.write: $CMapName.content;
-    my $postscript-name = $writer.write: :literal($!font-name);
-
-    my $decoded = qq:to<--END-->.chomp;
-        %% Custom
-        %% CMap
-        %%
-        /CIDInit /ProcSet findresource begin
-        12 dict begin begincmap
-        /CIDSystemInfo <<
-           /Registry $postscript-name
-           /Ordering (XYZ)
-           /Supplement 0
-        >> def
-        /CMapName $cmap-name def
-        1 begincodespacerange {$.first-char.fmt(cid-fmt)} {last-char.fmt(cid-fmt)} endcodespacerange
-        {@cmap-char.join: "\n"}
-        {@cmap-range.join: "\n"}
-        endcmap CMapName currendict /CMap defineresource pop end end
-        --END--
-
-    PDF::COS::Stream.COERCE: { :$dict, :$decoded };
+    $!encoder.make-cmap-stream: :$dict, :$to-unicode, :$.font-name;
 }
 
 # finalize the font, depending on how it's been used
