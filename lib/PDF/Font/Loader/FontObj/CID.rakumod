@@ -81,11 +81,7 @@ method make-dict {
         :Subtype(/(self!cid-font-type-entry)),
         :$BaseFont,
         :CIDToGIDMap( /<Identity> ),
-        :CIDSystemInfo{
-            :Ordering<Identity>,
-            :Registry<Adobe>,
-            :Supplement(0),
-        }
+        :$.CIDSystemInfo
     };
 
     with self.font-descriptor {

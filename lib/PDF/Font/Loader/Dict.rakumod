@@ -81,15 +81,13 @@ class PDF::Font::Loader::Dict {
     method load-font-opts($?: FontDict :$dict! is copy, Bool :$embed = False, |c) is export(:load-font-opts) {
         my %opt = :!subset, :$embed, :$dict;
         my %encoder;
-        %encoder<cmap> = $_
-            with $dict<ToUnicode>;
 
         with $dict<Encoding> {
             %opt<enc> = do {
                 when PDF::COS::Stream {
                     # assume CMAP. See PDF-32000 Table 121
                     # – Entries in a Type 0 font dictionary
-                    %encoder<cmap> //= $_;
+                    %encoder<cmap> = $_;
                     'cmap';
                 }
                 when Hash {
@@ -98,6 +96,12 @@ class PDF::Font::Loader::Dict {
                 }
                 default { base-enc($_, :$dict); }
             }
+        }
+
+        with $dict<ToUnicode> -> PDF::COS::Stream $cmap {
+            
+            %opt<enc> //= 'cmap';
+            %encoder<cmap> //= $cmap;
         }
 
         if $dict<Subtype> ~~ 'Type0' {

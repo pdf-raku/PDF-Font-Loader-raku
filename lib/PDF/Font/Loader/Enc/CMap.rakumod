@@ -40,8 +40,8 @@ class PDF::Font::Loader::Enc::CMap
         }
     });
 
-    submethod TWEAK(PDF::COS::Stream :$cmap) {
-        with $cmap {
+    submethod TWEAK {
+        with self.cmap {
             for .decoded.Str.lines {
                 if /:s \d+ begincodespacerange/ ff /endcodespacerange/ {
                     if /:s [ '<' $<r>=[<xdigit>+] '>' ] ** 2 / {
