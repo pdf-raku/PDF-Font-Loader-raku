@@ -164,8 +164,6 @@ Encodes strings
 
 ### decode
 
-    -
-
 Decodes buffers
 
 ### kern
@@ -221,7 +219,7 @@ If the font was loaded from a `$dict` object and `is-embedded` is true, the `fac
 ```raku
 use PDF::Font::Loader::Glyph;
 my PDF::Font::Loader::Glyph @glyphs = $font.glyphs: "Hi";
-say "name:{.name} code:{.code-point.raku} cid:{.cid} gid:{.gid} dx:{.dx} dy:{.dy}"
+say "name:{.name} code:{.code-point} cid:{.cid} gid:{.gid} dx:{.dx} dy:{.dy}"
     for @glyphs;
 ```
 

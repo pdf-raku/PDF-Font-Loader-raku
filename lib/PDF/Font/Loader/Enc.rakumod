@@ -83,27 +83,23 @@ method !glyph-size($gid) {
     ($width * $scale, $height * $scale);
 }
 
-method make-cmap(:$to-unicode = self.to-unicode) {
+# may be overridden
+method make-cmap-content(:$to-unicode = self.to-unicode) {
     my @cmap-char;
     my @cmap-range;
-
-    fail 'unable to serialise without $.cmap'
-        without $!cmap;
-
     my $d = (self.is-wide ?? '4' !! '2');
     my \cid-fmt   := '<%%0%sX>'.sprintf: $d;
     my \char-fmt  := '<%%0%sX> <%%04X>'.sprintf: $d;
     my \range-fmt := cid-fmt ~ ' ' ~ char-fmt;
     my \last-char := $.last-char;
-    my Str:D $CMapName = $!cmap<CMapName>;
 
     loop (my uint16 $cid = $.first-char; $cid <= last-char; $cid++) {
-        my uint32 $char-code = $to-unicode[$cid]
+        my uint32 $ord = $to-unicode[$cid]
           || next;
         my uint16 $start-cid = $cid;
-        my uint32 $start-code = $char-code;
-        while $cid < last-char && $to-unicode[$cid + 1] == $char-code+1 {
-            $cid++; $char-code++;
+        my uint32 $start-code = $ord;
+        while $cid < last-char && $to-unicode[$cid + 1] == $ord+1 {
+            $cid++; $ord++;
         }
         if $start-cid == $cid {
             @cmap-char.push: char-fmt.sprintf($cid, $start-code);
@@ -113,18 +109,29 @@ method make-cmap(:$to-unicode = self.to-unicode) {
         }
     }
 
+    my @content = "1 begincodespacerange {$.first-char.fmt(cid-fmt)} {last-char.fmt(cid-fmt)} endcodespacerange";
+
     if @cmap-char {
-        @cmap-char.unshift: "{+@cmap-char} beginbfchar";
-        @cmap-char.push: 'endbfchar';
+        @content.push: "{+@cmap-char} beginbfchar";
+        @content.append: @cmap-char;
+        @content.push: 'endbfchar';
     }
 
     if @cmap-range {
-        @cmap-range.unshift: "{+@cmap-range} beginbfrange";
-        @cmap-range.push: 'endbfrange';
+        @content.push: "{+@cmap-range} beginbfrange";
+        @content.append: @cmap-range;
+        @content.push: 'endbfrange';
     }
 
+    @content.join: "\n";
+}
+
+method make-cmap(|c) {
+    fail 'unable to serialise without $.cmap'
+        without $!cmap;
+
     my PDF::IO::Writer $writer .= new;
-    my $cmap-name = $writer.write: $CMapName.content;
+    my $cmap-name = $writer.write: $!cmap<CMapName>.content;
     my $cid-system-info = $writer.write: $!cmap<CIDSystemInfo>.content;
 
     qq:to<--END-->.chomp;
@@ -135,11 +142,8 @@ method make-cmap(:$to-unicode = self.to-unicode) {
         12 dict begin begincmap
         $cid-system-info
         /CMapName $cmap-name def
-        1 begincodespacerange {$.first-char.fmt(cid-fmt)} {last-char.fmt(cid-fmt)} endcodespacerange
-        {@cmap-char.join: "\n"}
-        {@cmap-range.join: "\n"}
+        {self.make-cmap-content(|c)}
         endcmap CMapName currendict /CMap defineresource pop end end
         --END--
-
 }
 

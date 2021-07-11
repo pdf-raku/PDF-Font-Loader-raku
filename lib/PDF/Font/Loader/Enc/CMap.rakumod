@@ -14,6 +14,12 @@ class PDF::Font::Loader::Enc::CMap
     has uint16 @!cid-dec-map; # decoding mappings
     has uint16 @!cid-enc-map; # encoding mappings
     has Bool $.is-wide = self.face.num-glyphs > 255;
+    my enum NYI (
+        :XWide("encodings > 2 bytes"),
+        :VarEnc("variable encoding"),
+        :CIDMap("CID mappings"),
+    );
+    has NYI $!nyi;
 
     sub valid-codepoint($_) {
         # not an exhaustive check
@@ -41,14 +47,16 @@ class PDF::Font::Loader::Enc::CMap
     });
 
     submethod TWEAK {
+        my uint @w;
         with self.cmap {
             for .decoded.Str.lines {
                 if /:s \d+ begincodespacerange/ ff /endcodespacerange/ {
                     if /:s [ '<' $<r>=[<xdigit>+] '>' ] ** 2 / {
                         my $bytes = (@<r>[1].chars + 1) div 2;
                         $!is-wide ||= $bytes == 2;
+                        @w[$bytes]++;
                         if $bytes > 2 {
-                            has $!nyi //= "CMAP encodings > 2 bytes is NYI";
+                            $!nyi //= NYI::XWide;
                             $bytes = 2;
                         }
 
@@ -93,11 +101,81 @@ class PDF::Font::Loader::Enc::CMap
                 }
             }
         }
+
+        if $!nyi ~~ NYI::XWide {
+            warn "NYI reading of CMAPs with encodings > 2 bytes";
+        }
+        elsif @w[1] && @w[2] {
+            $!nyi //= NYI::VarEnc
+        }
+
+    }
+
+    method !make-cid-ranges {
+        my @content;
+        if @!cid-dec-map {
+            my @cmap-char;
+            my @cmap-range;
+            my $d = (self.is-wide ?? '4' !! '2');
+            my \cid-fmt   := '<%%0%sX>'.sprintf: $d;
+            my \char-fmt  := '<%%0%sX> %%d'.sprintf: $d;
+            my \range-fmt := cid-fmt ~ ' ' ~ char-fmt;
+            my \n = +@!cid-dec-map;
+
+            loop (my uint16 $idx = 0; $idx <= n; $idx++) {
+                my uint32 $code = @!cid-dec-map[$idx]
+                    || next;
+                my uint16 $start-idx = $idx;
+                my uint32 $start-code = $code;
+                while $idx < n && @!cid-dec-map[$idx + 1] == $code+1 {
+                    $idx++; $code++;
+                }
+                if $start-idx == $idx {
+                    @cmap-char.push: char-fmt.sprintf($idx, $code);
+                }
+                else {
+                    @cmap-range.push: range-fmt.sprintf($start-idx, $idx, $start-code);
+                }
+            }
+
+            if @cmap-char {
+                @content.push: "{+@cmap-char} begincidchar";
+                @content.append: @cmap-char;
+                @content.push: 'endcidchar';
+            }
+
+            if @cmap-range {
+                @content.push: "{+@cmap-range} begincidrange";
+                @content.append: @cmap-range;
+                @content.push: 'endcidrange';
+            }
+        }
+
+        @content.unshift: '' if @content;
+        @content.join: "\n";
+    }
+
+    method make-cmap-content {
+        callsame() ~ self!make-cid-ranges();
+    }
+
+    method make-cmake {
+        with $!nyi {
+            # We can yet rewrite this particular CMAP
+            warn "NYI writing of CMaps with $_";
+            self.cmap.decoded;
+        }
+        else {
+            callsame();
+        }
     }
 
     method !add-code($cid, $ord) {
         my $ok = True;
-        if valid-codepoint($ord) {
+        if @!cid-enc-map && ! @!cid-enc-map[$cid] {
+            $!nyi //= NYI::CIDMap;
+        }
+        elsif valid-codepoint($ord) {
             %!charset{$ord} = $cid;
             @!to-unicode[$cid] = $ord;
         }
