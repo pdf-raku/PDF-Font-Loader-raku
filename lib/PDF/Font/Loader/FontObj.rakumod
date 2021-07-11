@@ -344,25 +344,35 @@ sub charset-to-unicode(%charset) {
     @to-unicode;
 }
 
-method make-cmap-stream {
-    my PDF::COS::Name $CMapName .= COERCE: 'raku-cmap-' ~ $!font-name;
-    my PDF::COS::Name $Type .= COERCE: 'CMap';
+method CIDSystemInfo {
+    do with $!encoder.cmap {
+        .<CIDSystemInfo>
+    } // {
+        :Ordering<Identity>,
+        :Registry($!font-name),
+        :Supplement(0),
+    }
+}
 
-    my $dict = %(
-        :$Type,
-        :$CMapName,
-        :CIDSystemInfo{
-            :Ordering<Identity>,
-            :Registry($!font-name),
-            :Supplement(0),
-        },
-    );
+method make-cmap-stream {
+
+    $!encoder.cmap //= do {
+        my PDF::COS::Name $CMapName .= COERCE: 'raku-cmap-' ~ $!font-name;
+        my PDF::COS::Name $Type .= COERCE: 'CMap';
+
+        PDF::COS::Stream.COERCE: %( :dict{
+            :$Type,
+            :$CMapName,
+            :$.CIDSystemInfo,
+        });
+    }
 
     my $to-unicode := $!subset
         ?? charset-to-unicode($!encoder.charset)
         !! $!encoder.to-unicode;
 
-    $!encoder.make-cmap-stream: :$dict, :$to-unicode, :$.font-name;
+    $!encoder.cmap.decoded = $!encoder.make-cmap: :$to-unicode;
+    $!encoder.cmap;
 }
 
 # finalize the font, depending on how it's been used

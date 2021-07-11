@@ -5,6 +5,7 @@ use Font::FreeType::Error;
 use Font::FreeType::Raw::Defs;
 use PDF::Font::Loader::Glyph;
 use PDF::IO::Writer;
+use PDF::COS::Stream;
 
 enum <Width Height>;
 
@@ -13,6 +14,7 @@ has uint $.first-char;
 has uint16 @!widths;
 has Bool $.widths-updated is rw;
 has Bool $.encoding-updated is rw;
+has PDF::COS::Stream $.cmap is rw;
 submethod TWEAK(:$widths) {
     @!widths = .map(*.Int) with $widths;
 }
@@ -81,16 +83,19 @@ method !glyph-size($gid) {
     ($width * $scale, $height * $scale);
 }
 
-method make-cmap-stream(:$dict!, :$font-name!, :$to-unicode = self.to-unicode) {
+method make-cmap(:$to-unicode = self.to-unicode) {
     my @cmap-char;
     my @cmap-range;
+
+    fail 'unable to serialise without $.cmap'
+        without $!cmap;
 
     my $d = (self.is-wide ?? '4' !! '2');
     my \cid-fmt   := '<%%0%sX>'.sprintf: $d;
     my \char-fmt  := '<%%0%sX> <%%04X>'.sprintf: $d;
     my \range-fmt := cid-fmt ~ ' ' ~ char-fmt;
     my \last-char := $.last-char;
-    my Str:D $CMapName = $dict<CMapName>;
+    my Str:D $CMapName = $!cmap<CMapName>;
 
     loop (my uint16 $cid = $.first-char; $cid <= last-char; $cid++) {
         my uint32 $char-code = $to-unicode[$cid]
@@ -120,19 +125,15 @@ method make-cmap-stream(:$dict!, :$font-name!, :$to-unicode = self.to-unicode) {
 
     my PDF::IO::Writer $writer .= new;
     my $cmap-name = $writer.write: $CMapName.content;
-    my $postscript-name = $writer.write: :literal($font-name);
+    my $cid-system-info = $writer.write: $!cmap<CIDSystemInfo>.content;
 
-    my $decoded = qq:to<--END-->.chomp;
+    qq:to<--END-->.chomp;
         %% Custom
         %% CMap
         %%
         /CIDInit /ProcSet findresource begin
         12 dict begin begincmap
-        /CIDSystemInfo <<
-           /Registry $postscript-name
-           /Ordering (XYZ)
-           /Supplement 0
-        >> def
+        $cid-system-info
         /CMapName $cmap-name def
         1 begincodespacerange {$.first-char.fmt(cid-fmt)} {last-char.fmt(cid-fmt)} endcodespacerange
         {@cmap-char.join: "\n"}
@@ -140,5 +141,5 @@ method make-cmap-stream(:$dict!, :$font-name!, :$to-unicode = self.to-unicode) {
         endcmap CMapName currendict /CMap defineresource pop end end
         --END--
 
-        PDF::COS::Stream.COERCE: { :$dict, :$decoded };
 }
+
