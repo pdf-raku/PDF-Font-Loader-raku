@@ -4,15 +4,15 @@ DocLinker=../$(DocProj)/etc/resolve-links.raku
 
 all : doc
 
-doc : $(DocLinker) README.md
+doc : $(DocLinker) docs/index.md docs/PDF/Font/Loader.md docs/PDF/Font/Loader/FontObj.md docs/PDF/Font/Loader.md docs/PDF/Font/Loader/FontObj/CID.md docs/PDF/Font/Loader/Dict.md docs/PDF/Font/Loader/Enc.md docs/PDF/Font/Loader/Enc/Type1.md  docs/PDF/Font/Loader/Enc/Identity16.md  docs/PDF/Font/Loader/Enc/CMap.md
 
-README.md : lib/PDF/Font/Loader.rakumod
-	(\
-            echo '[![Actions Status](https://github.com/pdf-raku/PDF-Font-Loader-raku/workflows/test/badge.svg)](https://github.com/pdf-raku/PDF-Font-Loader-raku/actions)' ;\
-            echo '';\
-            raku -I . --doc=Markdown lib/PDF/Font/Loader.rakumod\
-            | TRAIL=PDF/Font/Loader raku -p -n $(DocLinker)\
-        ) > $@
+docs/index.md : README.md
+	cp $< $@
+
+docs/%.md : lib/%.rakumod
+	raku -I . --doc=Markdown $< \
+	| TRAIL=$* raku -p -n  $(DocLinker) \
+        > $@
 
 test :
 	@prove -e"raku -I ." t

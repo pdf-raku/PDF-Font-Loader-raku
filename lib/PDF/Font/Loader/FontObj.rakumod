@@ -1,5 +1,6 @@
 use PDF::Content::FontObj;
 
+#| Loaded font objects
 unit class PDF::Font::Loader::FontObj
     does PDF::Content::FontObj;
 
@@ -549,3 +550,88 @@ method has-encoding {
     so $!encoder.to-unicode.first: {$_}
 }
 
+=begin pod
+=head2 Methods
+
+### font-name
+
+The font name
+
+### height
+
+Overall font height
+
+### encode
+
+Encodes strings
+
+### decode
+
+Decodes buffers
+
+### kern
+
+Kern text via the font's kerning tables. Returns chunks of text separated by numeric kern widths.
+
+=begin code :lang<raku>
+say $font.kern("ABCD"); # ["AB", -18, "CD"]
+=end code
+
+### glyph-width
+
+Return the width of a glyph. This is a `rw` method that can be used to globally
+adjust a font's glyph spacing for rendering and string-width calculations:
+
+=begin code :lang<raku>
+say $vera.glyph-width('V'); # 684;
+$vera.glyph-width('V') -= 100;
+say $vera.glyph-width('V'); # 584;
+=end code
+
+=head3 to-dict
+
+Produces a draft PDF font dictionary.
+
+=head3 cb-finish
+
+Finishing hook for the PDF tool-chain. This produces a finalized PDF font dictionary, including embedded fonts, character widths and encoding mappings.
+
+=head3 is-embedded
+
+Whether a font-file is embedded.
+
+=head3 is-subset
+
+Whether the font has been subsetting
+
+=head3 is-core-font
+
+Whether the font is a core font
+
+=head3 has-encoding
+
+Whether the font has unicode encoding. This is needed to encode or extract text.
+
+=head3 face
+
+L<Font::FreeType::Face> object associated with the font.
+
+If the font was loaded from a `$dict` object and `is-embedded` is true, the `face` object has been loaded from the embedded font, otherwise its a system-loaded
+font, selected to match the font.
+
+=head3 glyphs
+=begin code :lang<raku>
+use PDF::Font::Loader::Glyph;
+my PDF::Font::Loader::Glyph @glyphs = $font.glyphs: "Hi";
+say "name:{.name} code:{.code-point} cid:{.cid} gid:{.gid} dx:{.dx} dy:{.dy}"
+    for @glyphs;
+=end code
+
+Maps a string to a set of glyphs:
+
+=item `name` is a glyph name
+=item `code-point` is a character code mapping
+=item `cid` is the encoded value
+=item `gid` is the font index of the glyph in the font object`s `face` attribute.
+=item `dx` and `dy` are unscaled font sizes. They should be multiplied by the current font-size/1000 to get the actual sizes.
+=end pod
