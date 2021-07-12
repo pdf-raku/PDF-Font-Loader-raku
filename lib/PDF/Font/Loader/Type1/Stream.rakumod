@@ -1,3 +1,4 @@
+#| Embedding class for Type1 Fonts
 class PDF::Font::Loader::Type1::Stream {
 
     use Native::Packing :Endian;
@@ -72,3 +73,11 @@ class PDF::Font::Loader::Type1::Stream {
         die "unable to handle postscript buffer. Not in 'PFA' or 'PFB' format";
     }
 }
+
+=begin pod
+
+=head3 Description
+
+Type1 fonts are embedded in PDF font-file streams as either `pfa` (ascii) or `pfb` binary formats. This class facilities reading or writing of these font streams.
+
+=end pod

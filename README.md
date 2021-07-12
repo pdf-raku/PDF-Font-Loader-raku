@@ -50,10 +50,11 @@ This module provides font loading and handling for [PDF::Lite](https://pdf-raku.
   - [PDF::Font::Loader::Enc::Type](https://pdf-raku.github.io/PDF-Font-Loader-raku/PDF/Font/Loader/Enc/Type1) - Typical type-1 encodings (win mac std)
   - [PDF::Font::Loader::Enc::Identity16](https://pdf-raku.github.io/PDF-Font-Loader-raku/PDF/Font/Loader/Enc/Identity16) - Identity-H/Identity-V 2 byte encoding
   - [PDF::Font::Loader::Enc::CMAP](https://pdf-raku.github.io/PDF-Font-Loader-raku/PDF/Font/Loader/Enc/Identity16) - CMap driven variable encoding
-  
+* [PDF::Font::Loader::Glyph](https://pdf-raku.github.io/PDF-Font-Loader-raku/PDF/Font/Loader/Glyph) - Glyph representation class
+ 
 ## Install
 
-- PDF::Font::Loader depends on the [Font::FreeType](https://pdf-raku.github.io/Font-FreeType-raku/) Rasku module which further depends on the [freetype](https://www.freetype.org/download.html) library, so you must install that prior to installing this module.
+- PDF::Font::Loader depends on the [Font::FreeType](https://pdf-raku.github.io/Font-FreeType-raku/) Raku module which further depends on the [freetype](https://www.freetype.org/download.html) library, so you must install that prior to installing this module.
 
 - Installation of the [fontconfig](https://www.freedesktop.org/wiki/Software/fontconfig/) library and command-line tools is strongly recommended.
 

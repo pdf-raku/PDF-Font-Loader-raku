@@ -1,3 +1,4 @@
+#| Font encoder/decoder base class
 unit class PDF::Font::Loader::Enc;
 
 use Font::AFM;
@@ -56,9 +57,12 @@ method glyph(UInt $cid) {
     $.set-width($cid, $dx);
     my str $name;
     if $code-point {
-        $name = $_ with %Font::AFM::Glyphs{$code-point.chr};
+        my $chr := $code-point.chr;
+        $name = %Font::AFM::Glyphs{$chr} // $chr.uniname.lc;
     }
-    $name ||= $_ with $.face.glyph-name-from-index($gid);
+    else {
+        $name = $_ with $.face.glyph-name-from-index($gid);
+    }
     PDF::Font::Loader::Glyph.new: :$name, :$code-point, :$cid, :$gid, :$dx;
 }
 
@@ -147,3 +151,42 @@ method make-cmap(|c) {
         --END--
 }
 
+=begin pod
+
+=head2 Description
+
+This is the base class for all encoding classes.
+
+=head2 Methods
+
+These methods are common to all encoding sub-clasess
+
+=head3 first-char
+
+The first L<CID|PDF::Font::Loader::Glyph#cid> in the fonts character-set.
+
+=head2 last-char
+
+The last L<CID|PDF::Font::Loader::Glyph#cid> in the fonts character-set.
+
+=head3 widths
+=begin code :lang<raku>
+method widths() returns Array[Uint]
+=end code
+
+The widths of all glyphs, indexed by CID, in the range `first-char` to `last-char`. The widths are in unscaled font units and should be multiplied by
+font-size / 1000 to compute actual widths.
+
+=head3 glyph
+
+=begin code :lang<raku>
+method glyph(UInt $cid) returns PDF::Font::Loader::Glyph
+=end code
+
+Returns a L<Glyph|PDF::Font::Loader::Glyph> object for the given CID index.
+
+=head3 make-cmap
+
+Generates a CMap for inclusion in a PDF. This method is typically called from the font object when an encoding has been added or updated for the encoder.
+
+=end pod
