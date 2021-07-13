@@ -75,6 +75,18 @@ Whether the font has unicode encoding. This is needed to encode or extract text.
 
 If the font was loaded from a `$dict` object and `is-embedded` is true, the `face` object has been loaded from the embedded font, otherwise its a system-loaded font, selected to match the font.
 
+### stringwidth
+
+```raku
+method stringwidth(Str $text, Numeric $point-size?, Bool :$kern) returns Numeric
+```
+
+Returns the width of the string passed as argument.
+
+By default the computed size is in 1000's of a font unit. Alternatively second `point-size` argument can be used to scale the width according to the font size.
+
+The `:kern` option can be used to adjust the stringwidth, using the font's horizontal kerning tables.
+
 ### glyphs
 
 ```raku

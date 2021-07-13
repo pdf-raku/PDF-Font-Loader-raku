@@ -23,17 +23,18 @@ class PDF::Font::Loader:ver<0.5.5> {
         Str  :$enc = $face.font-format eq 'Type 1' || !$embed || $face.num-glyphs <= 255
             ?? 'win'
             !! 'identity-h',
+        Bool :$cid = $enc.starts-with('identity') || $enc eq 'cmap',
         |c,
     ) {
-        my \class = $enc.starts-with('identity') || $enc eq 'cmap'
+        my \fontobj-class = $cid
             ?? PDF::Font::Loader::FontObj::CID
             !! PDF::Font::Loader::FontObj;
-        class.new: :$face, :$font-buf, :$enc, :$embed, |c;
+        fontobj-class.new: :$face, :$font-buf, :$enc, :$embed, |c;
     }
 
-    multi method load-font($?: Blob :$font-buf!, |c) is default {
+    multi method load-font($class = $?CLASS: Blob :$font-buf!, |c) is default {
         my Font::FreeType::Face $face = Font::FreeType.face($font-buf);
-        $.load-font( :$face, :$font-buf, |c);
+        $class.load-font( :$face, :$font-buf, |c);
     }
 
     # resolve font name via fontconfig

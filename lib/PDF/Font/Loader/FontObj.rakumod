@@ -46,7 +46,7 @@ enum <Width Height>;
 
 has Font::FreeType::Face:D $.face is required;
 use PDF::Font::Loader::Enc;
-has PDF::Font::Loader::Enc $!encoder handles <decode first-char last-char widths>;
+has PDF::Font::Loader::Enc $!encoder handles <decode first-char last-char widths has-encoding>;
 method encoder { $!encoder }
 has Blob $.font-buf;
 has PDF::COS::Dict $!dict;
@@ -390,7 +390,7 @@ method finish-font($dict, :$save-widths) {
 
         with self.encoding {
             %enc<BaseEncoding> = /($_)
-                unless $_ eq 'StandardEncoding'; # implied anyway
+                unless $_ ~~ 'CMap'|'StandardEncoding'; # implied anyway
         }
 
         $dict<Encoding> = %enc;
@@ -546,9 +546,6 @@ method is-embedded {
 }
 method is-subset { so ($!font-name ~~ m/^<[A..Z]>**6"+"/) }
 method is-core-font { ! self.font-descriptor.defined }
-method has-encoding {
-    so $!encoder.to-unicode.first: {$_}
-}
 
 =begin pod
 =head2 Methods
@@ -618,6 +615,16 @@ L<Font::FreeType::Face> object associated with the font.
 
 If the font was loaded from a `$dict` object and `is-embedded` is true, the `face` object has been loaded from the embedded font, otherwise its a system-loaded
 font, selected to match the font.
+
+=head3 stringwidth
+=begin code :lang<raku>
+method stringwidth(Str $text, Numeric $point-size?, Bool :$kern) returns Numeric
+=end code
+Returns the width of the string passed as argument.
+
+By default the computed size is in 1000's of a font unit. Alternatively second `point-size` argument can be used to scale the width according to the font size.
+
+The `:kern` option can be used to adjust the stringwidth, using the font's horizontal kerning tables.
 
 =head3 glyphs
 =begin code :lang<raku>

@@ -4,5 +4,8 @@
  :: [Enc](https://pdf-raku.github.io/PDF-Font-Loader-raku/PDF/Font/Loader/Enc)
  :: [Identity16](https://pdf-raku.github.io/PDF-Font-Loader-raku/PDF/Font/Loader/Enc/Identity16)
 
+class PDF::Font::Loader::Enc::Identity16
+----------------------------------------
 
+/Identity-H or /Identity-V encoded fonts
 

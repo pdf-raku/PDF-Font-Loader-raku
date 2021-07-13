@@ -46,6 +46,8 @@ method set-width($cid, $width) {
     }
 }
 
+method to-unicode {...}
+
 method glyph(UInt $cid) {
     my uint32 $code-point = $.to-unicode[$cid] || 0;
     my FT_UInt $gid = @!cid-to-gid-map[$cid]
@@ -85,6 +87,10 @@ method !glyph-size($gid) {
     }
 
     ($width * $scale, $height * $scale);
+}
+
+method has-encoding {
+    so @.to-unicode.first: {$_}
 }
 
 # may be overridden
@@ -159,7 +165,16 @@ This is the base class for all encoding classes.
 
 =head2 Methods
 
-These methods are common to all encoding sub-clasess
+These methods are common to all encoding sub-classes
+
+=head3 has-encoding
+
+True if the font has a Unicode mapping.
+
+The Unicode encoding layer is optional by design in the PDF standard.
+
+This method should be used on a font loaded from a PDF dictionary to ensure that it
+has an character encoding layer and `encode()` and `decode()` methods can be called on it.
 
 =head3 first-char
 
@@ -184,6 +199,33 @@ method glyph(UInt $cid) returns PDF::Font::Loader::Glyph
 =end code
 
 Returns a L<Glyph|PDF::Font::Loader::Glyph> object for the given CID index.
+
+=head3 method encode
+=begin code :lang<raku>
+multi method encode(Str $text, :cids($)!) returns Blob; # encode to CIDs
+multi method encode(Str $text) returns PDF::COS::ByteString;            # encode to a byte-string
+=end code
+Encode a font from a Unicode text string. By default to byte-string.
+
+The `:cids` option returns a Blob of CIDs, rather than a fully encoded bytes-string.
+
+=head3 method decode
+=begin code :lang<raku>
+multi method decode(Str $byte-string, :cids($)!) returns Seq; # decode to CIDs
+multi method decode(Str $byte-string, :ords($)!) returns Seq; # decode to code-points
+multi method decode(Str $byte-string) returns PDF::COS::ByteString;            # encode to a byte-string
+=end code
+
+Decodes a PDF byte string, by default to a Unicode text string.
+
+=head3 set-encoding
+=begin code :lang<raku>
+method set-encoding(UInt $code-point, UInt $cid)
+=end code
+
+Map a single Unicode code-point to a CID index. This method is most likely
+to be useful for manually setting up an encoding layer for a font loaded
+from a PDF that lacks an encoding layer(`has-encoding()` is `False`).
 
 =head3 make-cmap
 

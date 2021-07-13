@@ -1,3 +1,4 @@
+#| /Identity-H or /Identity-V encoded fonts
 use PDF::Font::Loader::Enc;
 class PDF::Font::Loader::Enc::Identity16
     is PDF::Font::Loader::Enc {

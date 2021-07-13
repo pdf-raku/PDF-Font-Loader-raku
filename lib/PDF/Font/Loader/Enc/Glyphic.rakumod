@@ -1,3 +1,4 @@
+#| Non CID (Glyphic based) encoding
 use PDF::Content::Font::Enc::Glyphic;
 
 role PDF::Font::Loader::Enc::Glyphic

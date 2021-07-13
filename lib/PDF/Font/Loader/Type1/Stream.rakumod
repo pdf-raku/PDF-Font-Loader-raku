@@ -6,15 +6,13 @@ class PDF::Font::Loader::Type1::Stream {
     has UInt @.length;
     has buf8 $.decoded;
 
-    constant Marker = 0x80;
-    constant Ascii  = 1;
-    constant Binary = 2;
+    enum (:Marker(0x80), :Ascii(1), :Binary(2));
 
     constant PFA-Header = ('%'.ord, '!'.ord);
     constant PFB-Header = (Marker, Ascii);
 
-    subset PFA-Buf of buf8 where { .[0..1] eqv PFA-Header }
-    subset PFB-Buf of buf8 where { .[0..1] eqv PFB-Header }
+    subset PFA-Buf of buf8 where { .[0..1] ~~ PFA-Header }
+    subset PFB-Buf of buf8 where { .[0..1] ~~ PFB-Header }
 
     class PFB-Section does Native::Packing[Vax] {
         has uint8 $.start-marker;

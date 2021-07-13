@@ -1,4 +1,7 @@
 {{$NEXT}}
+   - Tweak loading of CID fonts from font dictionaries.
+   - Documentation. README.md has been split into multiple *.md files and expanded
+     in the docs/ directory.
 
 0.5.5  2021-07-09T08:21:49+12:00
    - Implement reading of CMaps with variable encoding and

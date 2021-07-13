@@ -47,7 +47,7 @@ This module provides font loading and handling for [PDF::Lite](https://pdf-raku.
 * [PDF::Font::Loader::FontObj](https://pdf-raku.github.io/PDF-Font-Loader-raku/PDF/Font/Loader/FontObj) - Loaded basic font representation
   - [PDF::Font::Loader::FontObj::CID](https://pdf-raku.github.io/PDF-Font-Loader-raku/PDF/Font/Loader/FontObj/CID) - Loaded CID font representation
 * [PDF::Font::Loader::Enc](https://pdf-raku.github.io/PDF-Font-Loader-raku/PDF/Font/Loader/Enc) - Font encoder/decoder base class
-  - [PDF::Font::Loader::Enc::Type](https://pdf-raku.github.io/PDF-Font-Loader-raku/PDF/Font/Loader/Enc/Type1) - Typical type-1 encodings (win mac std)
+  - [PDF::Font::Loader::Enc::Type1](https://pdf-raku.github.io/PDF-Font-Loader-raku/PDF/Font/Loader/Enc/Type1) - Typical type-1 encodings (win mac std)
   - [PDF::Font::Loader::Enc::Identity16](https://pdf-raku.github.io/PDF-Font-Loader-raku/PDF/Font/Loader/Enc/Identity16) - Identity-H/Identity-V 2 byte encoding
   - [PDF::Font::Loader::Enc::CMAP](https://pdf-raku.github.io/PDF-Font-Loader-raku/PDF/Font/Loader/Enc/Identity16) - CMap driven variable encoding
 * [PDF::Font::Loader::Glyph](https://pdf-raku.github.io/PDF-Font-Loader-raku/PDF/Font/Loader/Glyph) - Glyph representation class

@@ -1,7 +1,7 @@
 use v6;
-use PDF::COS::Stream;
 use PDF::Font::Loader::Enc;
 
+#| CMap based encoding/decoding
 class PDF::Font::Loader::Enc::CMap
     is PDF::Font::Loader::Enc {
     use PDF::Font::Loader::Enc::Glyphic;
@@ -195,10 +195,10 @@ class PDF::Font::Loader::Enc::CMap
         $ok;
     }
 
-    method set-encoding($chr-code, $cid) {
-        unless @!to-unicode[$cid] ~~ $chr-code {
-            @!to-unicode[$cid] = $chr-code;
-            %!charset{$chr-code} = $cid;
+    method set-encoding($ord, $cid) {
+        unless @!to-unicode[$cid] ~~ $ord {
+            @!to-unicode[$cid] = $ord;
+            %!charset{$ord} = $cid;
             # we currently only allocate 2 byte CID encodings
             @!enc-width[$cid] = 1 + $!is-wide.ord;
             $.add-glyph-diff($cid);
@@ -217,10 +217,10 @@ class PDF::Font::Loader::Enc::CMap
     has UInt $!next-cid = 0;
     has %!used-cid;
     method use-cid($_) { %!used-cid{$_}++ }
-    method !allocate($chr-code) {
-        my $cid := %PreferredEnc{$chr-code};
+    method !allocate($ord) {
+        my $cid := %PreferredEnc{$ord};
         if $cid && !@!to-unicode[$cid] && !%!used-cid{$cid} && !self!ambigous-cid($cid) {
-            self.set-encoding($chr-code, $cid);
+            self.set-encoding($ord, $cid);
         }
         else {
             # sequential allocation
@@ -231,7 +231,7 @@ class PDF::Font::Loader::Enc::CMap
                 has $!out-of-gas //= warn "CID code-range is exhausted";
             }
             else {
-                self.set-encoding($chr-code, $cid);
+                self.set-encoding($ord, $cid);
             }
         }
         $cid;
@@ -311,3 +311,26 @@ class PDF::Font::Loader::Enc::CMap
         $buf;
     }
 }
+
+=begin pod
+
+=head3 Description
+
+This method maps to PDF font dictionaries with a `ToUnicode` entry that references
+a CMap.
+
+=head3 Caveats
+
+Most, but not all, CMap encoded fonts have a Unicode mapping. The `has-encoding()`
+method should be used to verify this before using the `encode()` or `decode()` methods
+on a dictionary loaded CMap encoding.
+
+=head2 Bugs / Limitations
+
+Currently, this class:
+
+=item can read, but not write variable width CMap encodings.
+
+=item only handles one or two byte encodings
+
+=end pod

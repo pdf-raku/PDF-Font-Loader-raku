@@ -1,4 +1,4 @@
-#| Loads a font from a PDF font dictionary (experimental)
+#| Loads a font from a PDF font dictionary
 class PDF::Font::Loader::Dict {
     use PDF::Content::Font::CoreFont;
     use PDF::COS::Stream;
@@ -78,7 +78,7 @@ class PDF::Font::Loader::Dict {
         ( $first-char, $last-char, @widths );
     }
 
-    method load-font-opts($?: FontDict :$dict! is copy, Bool :$embed = False, |c) is export(:load-font-opts) {
+    method load-font-opts($?: FontDict :$dict!, Bool :$embed = False --> Hash) is export(:load-font-opts) {
         my %opt = :!subset, :$embed, :$dict;
         my %encoder;
 
@@ -104,7 +104,8 @@ class PDF::Font::Loader::Dict {
             %encoder<cmap> //= $cmap;
         }
 
-        if $dict<Subtype> ~~ 'Type0' {
+        %opt<cid> = $dict<Subtype> ~~ 'Type0';
+        if %opt<cid> {
             # CiD Font
             given base-font($dict) {
                 with .<W> -> $W {
@@ -198,6 +199,7 @@ class PDF::Font::Loader::Dict {
 
 Loads fonts from PDF font dictionaries.
 
+This an internal class, usually invoked from the L<PDF::Font::Loader> `load-font` method to facilitate font loading from PDF font dictionaries.
 
 =head2 Example
 
@@ -238,6 +240,17 @@ Times-Roman               |    Type1    | win        | no  | no
 WenQuanYiMicroHei         |    TrueType | win        | no  | no 
 NimbusRoman-Regular       |    Type1    | win        | yes | no 
 Cantarell-Oblique         |    Type1    | win        | yes | no 
+=end code
+
+=head2 Methods
+
+=head3 load-font-opts
+=begin code :lang<raku>
+method load-font-opts(Hash :$dict!, Bool :$embed) returns Hash
+
+Produces a set of L<PDF::Font::Loader> `load-font()` options for
+the font dictionary.
+
 =end code
 
 =end pod

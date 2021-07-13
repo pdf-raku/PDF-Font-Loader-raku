@@ -6,12 +6,14 @@
 class PDF::Font::Loader::Dict
 -----------------------------
 
-Loads a font from a PDF font dictionary (experimental)
+Loads a font from a PDF font dictionary
 
 Description
 -----------
 
 Loads fonts from PDF font dictionaries.
+
+This an internal class, usually invoked from the [PDF::Font::Loader](https://pdf-raku.github.io/PDF-Font-Loader-raku/PDF/Font/Loader) `load-font` method to facilitate font loading from PDF font dictionaries.
 
 Example
 -------
@@ -53,4 +55,16 @@ Produces:
     WenQuanYiMicroHei         |    TrueType | win        | no  | no 
     NimbusRoman-Regular       |    Type1    | win        | yes | no 
     Cantarell-Oblique         |    Type1    | win        | yes | no
+
+Methods
+-------
+
+### load-font-opts
+
+```raku
+method load-font-opts(Hash :$dict!, Bool :$embed) returns Hash
+
+Produces a set of L<PDF::Font::Loader> `load-font()` options for
+the font dictionary.
+```
 

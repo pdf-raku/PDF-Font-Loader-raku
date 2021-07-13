@@ -1,5 +1,6 @@
 use PDF::Font::Loader::FontObj :FontFlags;
 
+#| Implements a PDF CID font
 unit class PDF::Font::Loader::FontObj::CID
     is PDF::Font::Loader::FontObj;
 
@@ -93,3 +94,15 @@ method make-dict {
     $dict<DescendantFonts>[0].is-indirect = True;
     $dict;
 }
+
+=begin pod
+
+=head2 Description
+
+This is a subclass of L<PDF::Font::Loader::FontObj> for representing PDF CID fonts, introduced with PDF v1.3.
+
+The main defining characteristic of CID font is their abililty to support multi-byte (usually 2-byte) encodings.
+
+Loading a font with a multi-byte (or potentially multi-byte) encoding such as `identity-h` or `cmap` with get created with a L<PDF::Font::Loader::FontObj::CID> object.
+
+=end pod
