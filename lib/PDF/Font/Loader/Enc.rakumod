@@ -52,9 +52,9 @@ method glyph(UInt $cid) {
     my uint32 $code-point = $.to-unicode[$cid] || 0;
     my FT_UInt $gid = @!cid-to-gid-map[$cid]
         if @!cid-to-gid-map;
-    $gid ||= $code-point
-        ?? $.face.glyph-index($code-point)
-        !! $cid;
+    $gid ||= $.face.glyph-index($code-point)
+        if $code-point;
+    $gid ||= $cid;
     my $dx = self!glyph-size($gid)[Width].round;
     $.set-width($cid, $dx);
     my str $name;

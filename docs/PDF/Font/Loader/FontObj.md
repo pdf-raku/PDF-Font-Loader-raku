@@ -96,15 +96,5 @@ say "name:{.name} code:{.code-point} cid:{.cid} gid:{.gid} dx:{.dx} dy:{.dy}"
     for @glyphs;
 ```
 
-Maps a string to a set of glyphs:
-
-  * `name` is a glyph name
-
-  * `code-point` is a character code mapping
-
-  * `cid` is the encoded value
-
-  * `gid` is the font index of the glyph in the font object`s `face` attribute.
-
-  * `dx` and `dy` are unscaled font sizes. They should be multiplied by the current font-size/1000 to get the actual sizes.
+Maps a string to glyphs, of type [PDF::Font::Loader::Glyph](https://pdf-raku.github.io/PDF-Font-Loader-raku/PDF/Font/Loader/Glyph).
 

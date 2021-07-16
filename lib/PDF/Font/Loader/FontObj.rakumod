@@ -634,11 +634,6 @@ say "name:{.name} code:{.code-point} cid:{.cid} gid:{.gid} dx:{.dx} dy:{.dy}"
     for @glyphs;
 =end code
 
-Maps a string to a set of glyphs:
+Maps a string to glyphs, of type L<PDF::Font::Loader::Glyph>.
 
-=item `name` is a glyph name
-=item `code-point` is a character code mapping
-=item `cid` is the encoded value
-=item `gid` is the font index of the glyph in the font object`s `face` attribute.
-=item `dx` and `dy` are unscaled font sizes. They should be multiplied by the current font-size/1000 to get the actual sizes.
 =end pod
