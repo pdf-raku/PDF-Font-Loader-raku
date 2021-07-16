@@ -1,11 +1,10 @@
 #| Represents a single glyph in a PDF
 unit class PDF::Font::Loader::Glyph
-    is repr('CStruct')
     is export(:Metrics);
 
 use Font::FreeType::Raw::Defs;
 
-has str $.name;
+has Str $.name;
 has uint32 $.code-point;  # unicode mapping (if known)
 has FT_UInt $.cid;    # encoding point
 has FT_UInt $.gid;    # font glyph index

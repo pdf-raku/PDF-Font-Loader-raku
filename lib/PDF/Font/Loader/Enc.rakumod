@@ -57,7 +57,7 @@ method glyph(UInt $cid) {
     $gid ||= $cid;
     my $dx = self!glyph-size($gid)[Width].round;
     $.set-width($cid, $dx);
-    my str $name;
+    my Str $name;
     if $code-point {
         my $chr := $code-point.chr;
         $name = %Font::AFM::Glyphs{$chr} // $chr.uniname.lc;
