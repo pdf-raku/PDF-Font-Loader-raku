@@ -47,6 +47,10 @@ method set-width($cid, $width) {
 }
 
 method to-unicode {...}
+method local-glyph-name($cid) {
+    # Overridden in PDF::Content::Font::Enc::Glyphic
+    PDF::COS::Name
+}
 
 method glyph(UInt $cid) {
     my uint32 $code-point = $.to-unicode[$cid] || 0;
@@ -55,15 +59,26 @@ method glyph(UInt $cid) {
     $gid ||= $.face.glyph-index($code-point)
         if $code-point;
     $gid ||= $cid;
-    my $dx = self!glyph-size($gid)[Width].round;
-    $.set-width($cid, $dx);
+    my $fc = self.first-char($cid);
+    my $dx = self.widths[$cid - $fc];
+    unless $dx {
+        $dx = self!glyph-size($gid)[Width].round;
+        $.set-width($cid, $dx);
+    }
     my Str $name;
     if $code-point {
+        # prefer standard names
         my $chr := $code-point.chr;
         $name = %Font::AFM::Glyphs{$chr} // $chr.uniname.lc;
     }
-    else {
-        $name = $_ with $.face.glyph-name-from-index($gid);
+    elsif $.local-glyph-name($cid) -> $_ {
+        # try for a dictionary name
+        $name = $_;
+    }
+    elsif $.face.glyph-name-from-index($gid) -> $_ {
+        # try for a name from the font program
+        $name = $_
+             unless .starts-with('.');
     }
     PDF::Font::Loader::Glyph.new: :$name, :$code-point, :$cid, :$gid, :$dx;
 }

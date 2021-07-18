@@ -167,6 +167,12 @@ multi method stringwidth(Str $text, :$kern) {
 multi method stringwidth(Str $text, $pointsize, :$kern) {
     self.stringwidth($text, :$kern) * $pointsize / 1000;
 }
+multi method stringwidth(@cids, $point-size?) {
+    my $width = [+] @cids.map: { self!glyph($_).dx };
+    $point-size
+        ?? $width  * $point-size / 1000
+        !! $width;
+}
 
 method decode-cids(Str $byte-str) {
     my @cids = $!encoder.decode($byte-str, :cids);
