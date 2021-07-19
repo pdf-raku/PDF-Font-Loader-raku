@@ -69,6 +69,7 @@ method glyph(UInt $cid) {
     $gid ||= $cid;
     my $dx = (self.width($cid) ||= self!glyph-size($gid)[Width].round);
     my Str $name;
+
     if $code-point {
         # prefer standard names
         my $chr := $code-point.chr;
@@ -78,7 +79,7 @@ method glyph(UInt $cid) {
         # try for a dictionary name
         $name = $_;
     }
-    elsif $.face.glyph-name-from-index($gid) -> $_ {
+    elsif try { $.face.glyph-name-from-index($gid) } -> $_ {
         # try for a name from the font program
         $name = $_
              unless .starts-with('.');
