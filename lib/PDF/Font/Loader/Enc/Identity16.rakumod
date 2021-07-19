@@ -20,7 +20,7 @@ class PDF::Font::Loader::Enc::Identity16
 
     multi method encode(Str $text, :cids($)!) {
         my $face-struct = $!face.raw;
-        buf16.new: $text.ords.map: {
+        blob16.new: $text.ords.map: {
             my uint $cid = $face-struct.FT_Get_Char_Index($_);
             @!to-unicode[$cid] ||= $_;
             %!charset{$cid} ||= $_;
@@ -29,7 +29,7 @@ class PDF::Font::Loader::Enc::Identity16
     }
 
     multi method encode(Str $text --> Str) {
-        my buf8 $buf := pack(self.encode($text, :cids), 16);
+        my blob8 $buf := pack(self.encode($text, :cids), 16);
         my $hex-string = $buf.decode: 'latin-1';
         PDF::COS.coerce: :$hex-string;
     }
