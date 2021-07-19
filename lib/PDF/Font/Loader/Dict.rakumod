@@ -139,7 +139,15 @@ class PDF::Font::Loader::Dict {
         %opt<font-descriptor> = font-descriptor($dict);
 
         with %opt<font-descriptor> {
-            %opt<font-name> = $_ with .<FontName>;
+             with .<FontName> {
+                 %opt<font-name> = $_;
+                 %opt<weight> = $0.lc
+                     if /:i (light|bold|heavy|book)/;
+                 %opt<width> = $0.lc
+                     if /:i (narrow|wide|condensed|expanded)/;
+                 %opt<slant> = $0.lc
+                     if /:i (italic|oblique)/;
+             }
 
             %opt<width> = .lc with .<FontStretch>;
             %opt<weight> = $_ with .<FontWeight>;
