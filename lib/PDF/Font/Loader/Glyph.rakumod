@@ -39,6 +39,10 @@ The Unicode code-point for the glyph.
 
 If the font has been loaded from a PDF dictionary. The glyph may not have a Unicode font mapping. In this case, `code-point` will be zero.
 
+=head3 name
+
+Glyph name.
+
 =head3 cid
 
 The PDF logical character identifier for the glyph

@@ -153,7 +153,8 @@ method glyph-width(Str $ch) is rw {
         FETCH => { .dx with self.glyphs($ch)[0] },
         STORE => -> $, UInt() $width {
             with $!encoder.encode($ch, :cids)[0] -> $cid {
-                $!encoder.set-width($cid, $width);
+                
+                $!encoder.width($cid) = $width;
                 self!glyph($cid).dx = $width;
             }
         }

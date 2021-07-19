@@ -38,10 +38,18 @@ The last [CID](PDF::Font::Loader::Glyph#cid) in the fonts character-set.
 ### widths
 
 ```raku
-method widths() returns Array[Uint]
+method widths() returns Array[UInt]
 ```
 
 The widths of all glyphs, indexed by CID, in the range `first-char` to `last-char`. The widths are in unscaled font units and should be multiplied by font-size / 1000 to compute actual widths.
+
+### width
+
+```raku
+method width($cid) returns UInt
+```
+
+R/w accessor to get or sey the width of a character.
 
 ### glyph
 

@@ -38,12 +38,20 @@ method last-char { $!first-char + @!widths - 1; }
 
 method widths is rw { @!widths }
 method is-wide { False  }
-method set-width($cid, $width) {
-    my $fc = self.first-char($cid);
-    @!widths[$cid - $fc] ||= do {
-        $!widths-updated = True;
-        $width;
-    }
+
+multi method width(Int $cid) is rw {
+    Proxy.new(
+        FETCH => {
+            my $idx := $cid - self.first-char;
+            0 <= $idx < +@!widths
+                ?? @!widths[$idx]
+                !! @!widths.of;
+        },
+        STORE => -> $, Int() $w {
+            my $fc = self.first-char($cid);
+            @!widths[$cid - $fc] = $w;
+            $!widths-updated = True;
+    });
 }
 
 method to-unicode {...}
@@ -59,12 +67,7 @@ method glyph(UInt $cid) {
     $gid ||= $.face.glyph-index($code-point)
         if $code-point;
     $gid ||= $cid;
-    my $fc = self.first-char($cid);
-    my $dx = self.widths[$cid - $fc];
-    unless $dx {
-        $dx = self!glyph-size($gid)[Width].round;
-        $.set-width($cid, $dx);
-    }
+    my $dx = (self.width($cid) ||= self!glyph-size($gid)[Width].round);
     my Str $name;
     if $code-point {
         # prefer standard names
@@ -201,11 +204,17 @@ The last L<CID|PDF::Font::Loader::Glyph#cid> in the fonts character-set.
 
 =head3 widths
 =begin code :lang<raku>
-method widths() returns Array[Uint]
+method widths() returns Array[UInt]
 =end code
 
 The widths of all glyphs, indexed by CID, in the range `first-char` to `last-char`. The widths are in unscaled font units and should be multiplied by
 font-size / 1000 to compute actual widths.
+
+=head3 width
+=begin code :lang<raku>
+method width($cid) returns UInt
+=end code
+R/w accessor to get or sey the width of a character.
 
 =head3 glyph
 
