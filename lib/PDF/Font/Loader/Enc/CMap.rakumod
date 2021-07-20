@@ -8,11 +8,13 @@ class PDF::Font::Loader::Enc::CMap
     also does PDF::Font::Loader::Enc::Glyphic;
 
     use PDF::IO::Util :&pack;
+    use Hash::int;
+
     has uint32 @.to-unicode;
     has Int %.charset{Int};
     has uint8 @!enc-width;
-    has uint16 @!cid-dec-map; # decoding mappings
-    has uint16 @!cid-enc-map; # encoding mappings
+    has %!code2cid is Hash::int; # decoding mappings
+    has %!cid2code is Hash::int; # encoding mappings
     has Bool $.is-wide = self.face.num-glyphs > 255;
     my enum NYI (
         :XWide("encodings > 2 bytes"),
@@ -70,8 +72,8 @@ class PDF::Font::Loader::Enc::CMap
                 elsif /:s^ \d+ beginbfrange/ ff /^endbfrange/ {
                     if /:s [ '<' $<r>=[<xdigit>+] '>' ] ** 3 / {
                         my uint ($from, $to, $ord) = @<r>.map: { :16(.Str) };
-                        for $from .. $to {
-                            last unless self!add-code($_, $ord++)
+                        for $from .. $to -> $cid {
+                            last unless self!add-code($cid, $ord++)
                         }
                     }
                 }
@@ -83,20 +85,20 @@ class PDF::Font::Loader::Enc::CMap
                 }
                 elsif /:s^ \d+ begincidrange/ ff /^endcidrange/ {
                     if /:s [ '<' $<r>=[<xdigit>+] '>' ] ** 2 $<c>=[<digit>+] / {
-                        my uint ($from, $to) = @<r>.map: { :16(.Str) };
-                        my $cid = $<c>.Int;
-                        for $from .. $to {
-                            @!cid-enc-map[$cid] = $_;
-                            @!cid-dec-map[$_] = $cid++;
+                        my Int ($from, $to) = @<r>.map: { :16(.Str) };
+                        my Int $cid = $<c>.Int;
+                        for $from .. $to -> $code {
+                            %!cid2code{$cid} = $code;
+                            %!code2cid{$code} = $cid++;
                         }
                     }
                 }
                 elsif /:s^ \d+ begincidchar/ ff /^endcidchar/ {
                     if /:s '<' $<r>=[<xdigit>+] '>' $<c>=[<digit>+] / {
-                        my uint $code = :16($<r>.Str);
-                        my $cid = $<c>.Int;
-                        @!cid-enc-map[$cid]  = $code;
-                        @!cid-dec-map[$code] = $cid++;
+                        my Int $code = :16($<r>.Str);
+                        my Int $cid = $<c>.Int;
+                        %!cid2code{$cid}  = $code;
+                        %!code2cid{$code} = $cid++;
                     }
                 }
             }
@@ -113,28 +115,28 @@ class PDF::Font::Loader::Enc::CMap
 
     method !make-cid-ranges {
         my @content;
-        if @!cid-dec-map {
+        if %!code2cid {
             my @cmap-char;
             my @cmap-range;
             my $d = (self.is-wide ?? '4' !! '2');
             my \cid-fmt   := '<%%0%sX>'.sprintf: $d;
             my \char-fmt  := '<%%0%sX> %%d'.sprintf: $d;
             my \range-fmt := cid-fmt ~ ' ' ~ char-fmt;
-            my \n = +@!cid-dec-map;
+            my uint32 @codes = %!code2cid.keys.sort;
+            my \n = +@codes;
 
-            loop (my uint16 $idx = 0; $idx <= n; $idx++) {
-                my uint32 $code = @!cid-dec-map[$idx]
-                    || next;
-                my uint16 $start-idx = $idx;
+            loop (my uint16 $i = 0; $i <= n; $i++) {
+                my uint32 $code = @codes[$i];
                 my uint32 $start-code = $code;
-                while $idx < n && @!cid-dec-map[$idx + 1] == $code+1 {
-                    $idx++; $code++;
+                my $start-i = $i;
+                while $i < n && @codes[$i+1] == $code+1 {
+                    $i++; $code++;
                 }
-                if $start-idx == $idx {
-                    @cmap-char.push: char-fmt.sprintf($idx, $code);
+                if $start-i == $i {
+                    @cmap-char.push: char-fmt.sprintf(%!code2cid{$i}, $code);
                 }
                 else {
-                    @cmap-range.push: range-fmt.sprintf($start-idx, $idx, $start-code);
+                    @cmap-range.push: range-fmt.sprintf(%!code2cid{$start-i}, %!code2cid{$i}, $start-code);
                 }
             }
 
@@ -170,9 +172,10 @@ class PDF::Font::Loader::Enc::CMap
         }
     }
 
-    method !add-code($cid, $ord) {
+    method !add-code(Int $cid, Int $ord) {
         my $ok = True;
-        if @!cid-enc-map && ! @!cid-enc-map[$cid] {
+        if ! %!cid2code{$cid} && %!cid2code.first {
+            $ok = False;
             $!nyi //= NYI::CIDMap;
         }
         elsif valid-codepoint($ord) {
@@ -242,8 +245,8 @@ class PDF::Font::Loader::Enc::CMap
         # variable encoding.
         so $!is-wide && $cid >= 256 && @!enc-width[$cid div 256] == 1;
     }
-    method !decode-cid($byte is raw) { @!cid-dec-map[$byte] || $byte }
-    method !encode-cid($byte is raw) { @!cid-enc-map[$byte] || $byte }
+    method !decode-cid(Int $code) { %!code2cid{$code} || $code }
+    method !encode-cid(Int $cid)  { %!cid2code{$cid}  || $cid }
 
     multi method decode(Str $byte-string, :cids($)!) {
         my uint8 @bytes = $byte-string.ords;
@@ -266,7 +269,7 @@ class PDF::Font::Loader::Enc::CMap
             }
             @cids;
         }
-        elsif @!cid-dec-map {
+        elsif %!code2cid {
             @bytes.map: {self!decode-cid($_)}
         }
         else {

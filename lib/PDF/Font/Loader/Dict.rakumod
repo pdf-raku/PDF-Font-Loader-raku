@@ -255,10 +255,9 @@ Cantarell-Oblique         |    Type1    | win        | yes | no
 =head3 load-font-opts
 =begin code :lang<raku>
 method load-font-opts(Hash :$dict!, Bool :$embed) returns Hash
+=end code
 
 Produces a set of L<PDF::Font::Loader> `load-font()` options for
 the font dictionary.
-
-=end code
 
 =end pod
