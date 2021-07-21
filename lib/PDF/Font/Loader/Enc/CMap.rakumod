@@ -15,13 +15,71 @@ class PDF::Font::Loader::Enc::CMap
     has uint8 @!enc-width;
     has %!code2cid is Hash::int; # decoding mappings
     has %!cid2code is Hash::int; # encoding mappings
-    has Bool $.is-wide = self.face.num-glyphs > 255;
-    my enum NYI (
-        :XWide("encodings > 2 bytes"),
-        :VarEnc("variable encoding"),
-        :CIDMap("CID mappings"),
-    );
-    has NYI $!nyi;
+    has uint8 $!max-width = 1;
+    method is-wide { $!max-width >= 2}
+    class CodeSpace {
+        has byte @.from;
+        has byte @.to;
+        method bytes { +@!from }
+        submethod TWEAK {
+            if +@!from != +@!to || @!from.pairs.first({.value > @!to[.key]}) {
+                die "bad CMAP Code Range range {@!from.raku} ... {@!to.raku}";
+            }
+        }
+        method iterate-range {
+            # Iterate a range such as <AaBbCc> <XxYyZz>.  Each of the hex
+            # digits are individually constrained to counting in the ranges
+            # Aa..Xx Bb..Yy Cc..Zz (inclusive)
+
+            my class Iteration  does Iterable does Iterator {
+                has CodeSpace:D $.codespace is required handles<from to bytes>;
+                has byte @!ctr = $!codespace.from.clone.List;
+                has Bool $!first = True;
+
+                method pull-one {
+                    unless $!first-- {
+                        loop (my $i = $.bytes - 1; $i >= 0; $i--) {
+                            if @!ctr[$i] < @.to[$i] {
+                                # increment
+                                @!ctr[$i]++;
+                                last;
+                            }
+                            elsif $i {
+                                # carry
+                                @!ctr[$i] = @.from[$i];
+                            }
+                            else {
+                                #end
+                                return IterationEnd;
+                            }
+                        }
+                    }
+
+                    my $val = 0;
+                    for @!ctr {
+                        $val *= 0x100;
+                        $val += $_;
+                    }
+                    $val;
+                }
+                method iterator { self }
+            }
+            Iteration.new: :codespace(self);
+        }
+        sub to-hex(@bytes) {
+            '<' ~ @bytes.map: {.fmt("%02X")}.join ~ '>';
+        }
+        method ACCEPTS(CodeSpace:D: Int:D $v is copy) {
+            for 0 ..^ $.bytes {
+                return False
+                    unless @!from[$_] <= $v mod 256 <= @!to[$_];
+                $v div= 256;
+            }
+            $v == 0;
+        }
+        method Str { to-hex(@!from) ~ ' ' ~ to-hex(@!to) }
+    }
+    has CodeSpace @!codespaces;
 
     sub valid-codepoint($_) {
         # not an exhaustive check
@@ -48,59 +106,21 @@ class PDF::Font::Loader::Enc::CMap
         }
     });
 
-    # Iterate a range such as <AaBbCc> <XxYyZz>
-    # each of the hex digits are individually constrained to counting
-    # in the ranges Aa..Xx Bb..Yy Cc..Zz (inclusive)
-    sub iterate-hex-ranges(@from,@to) {
-        class HexRangeIteration does Iterator does Iterable {
-            has UInt @.from;
-            has UInt @.to;
-            has Int @!ctr = @!from;
-
-            submethod TWEAK { @!ctr.tail--}
-
-            method pull-one {
-                loop (my $i = +@!from - 1; $i >= 0; $i--) {
-                    if @!ctr[$i] < @!to[$i] {
-                        # increment
-                        @!ctr[$i]++;
-                        last;
-                    }
-                    elsif $i {
-                        # carry
-                        @!ctr[$i] = @!from[$i];
-                    }
-                    else {
-                        #end
-                        return IterationEnd;
-                    }
-                }
-
-                my $val = 0;
-                for @!ctr {
-                    $val *= 0x100;
-                    $val += $_;
-                }
-                $val;
-            }
-            method iterator { self }
-        }
-        HexRangeIteration.new: :@from, :@to;
-    }
-
     submethod TWEAK {
         with self.cmap {
             for .decoded.Str.lines {
                 if /:s \d+ begincodespacerange/ ff /endcodespacerange/ {
                     if /:s [ '<' $<r>=[<xdigit>+] '>' ] ** 2 / {
-                        my $bytes = (@<r>[1].chars + 1) div 2;
-                        $!is-wide ||= $bytes >= 2;
 
                         my ($from, $to) = @<r>.map: { [.Str.comb(/../).map({ :16($_)})] };
+                        my CodeSpace $codespace .= new: :from(@$from), :to(@$to);
+                        my $bytes := $codespace.bytes;
+                        $!max-width = $bytes if $bytes > $!max-width;
 
-                        for iterate-hex-ranges($from, $to) -> $enc {
+                        for $codespace.iterate-range -> $enc {
                             @!enc-width[$enc] = $bytes;
                         }
+                        @!codespaces.push: $codespace;
                     }
                 }
                 elsif /:s^ \d+ beginbfrange/ ff /^endbfrange/ {
@@ -137,7 +157,10 @@ class PDF::Font::Loader::Enc::CMap
                 }
             }
         }
+    }
 
+    method make-cmap-codespaces {
+        @!codespaces>>.Str.join: "\n";
     }
 
     method !make-cid-ranges {
@@ -188,24 +211,9 @@ class PDF::Font::Loader::Enc::CMap
         callsame() ~ self!make-cid-ranges();
     }
 
-    method make-cmake {
-        with $!nyi {
-            # We can yet rewrite this particular CMAP
-            warn "NYI writing of CMaps with $_";
-            self.cmap.decoded;
-        }
-        else {
-            callsame();
-        }
-    }
-
     method !add-code(Int $cid, Int $ord) {
         my $ok = True;
-        if ! %!cid2code{$cid} && %!cid2code.first {
-            $ok = False;
-            $!nyi //= NYI::CIDMap;
-        }
-        elsif valid-codepoint($ord) {
+        if valid-codepoint($ord) {
             %!charset{$ord} = $cid;
             @!to-unicode[$cid] = $ord;
         }
@@ -230,7 +238,7 @@ class PDF::Font::Loader::Enc::CMap
             @!to-unicode[$cid] = $ord;
             %!charset{$ord} = $cid;
             # we currently only allocate 2 byte CID encodings
-            @!enc-width[$cid] = 1 + $!is-wide.ord;
+            @!enc-width[$cid] = 1 + $.is-wide.ord;
             $.add-glyph-diff($cid);
             $.encoding-updated = True;
         }
@@ -257,7 +265,7 @@ class PDF::Font::Loader::Enc::CMap
             repeat {
             } while %!used-cid{$!next-cid} || @!to-unicode[++$!next-cid] || self!ambigous-cid($!next-cid) ;
             $cid := $!next-cid;
-            if $cid >= 2 ** ($!is-wide ?? 16 !! 8)  {
+            if $cid >= 2 ** ($.is-wide ?? 16 !! 8)  {
                 has $!out-of-gas //= warn "CID code-range is exhausted";
             }
             else {
@@ -270,7 +278,7 @@ class PDF::Font::Loader::Enc::CMap
         # we can't use a wide encoding who's first byte conflicts with a
         # short encoding. Only possible when reusing a CMap with
         # variable encoding.
-        so $!is-wide && $cid >= 256 && @!enc-width[$cid div 256] == 1;
+        so $.is-wide && $cid >= 256 && @!enc-width[$cid div 256] == 1;
     }
     method !decode-cid(Int $code) { %!code2cid{$code} || $code }
     method !encode-cid(Int $cid)  { %!cid2code{$cid}  || $cid }
@@ -278,7 +286,7 @@ class PDF::Font::Loader::Enc::CMap
     multi method decode(Str $byte-string, :cids($)!) {
         my uint8 @bytes = $byte-string.ords;
 
-        if $!is-wide {
+        if $.is-wide {
             my $n := @bytes.elems;
             @bytes.push: 0;
             my uint16 @cids;
@@ -322,7 +330,7 @@ class PDF::Font::Loader::Enc::CMap
         my uint32 @cids = self.encode($text, :cids);
         my buf8 $buf;
 
-        if $!is-wide {
+        if $.is-wide {
             $buf .= new;
             for @cids -> $cid {
                 if @!enc-width[$cid] == 2 {

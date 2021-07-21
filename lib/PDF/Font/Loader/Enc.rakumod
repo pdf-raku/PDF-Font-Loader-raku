@@ -112,23 +112,32 @@ method has-encoding {
     so @.to-unicode.first: {$_}
 }
 
+method make-cmap-codespaces {
+    my $d = (self.is-wide ?? '4' !! '2');
+    my \cid-fmt   := '<%%0%sX>'.sprintf: $d;
+    my \mask = $.is-wide ?? 0x1000 !! 0x10;
+    my $first-char = $.first-char div mask * mask;
+    my $last-char = $.last-char div mask * mask + mask - 1;
+    $first-char.fmt(cid-fmt) ~ ' ' ~ $last-char.fmt(cid-fmt);
+}
+
 # may be overridden
 method make-cmap-content(:$to-unicode = self.to-unicode) {
+    my @content;
     my @cmap-char;
     my @cmap-range;
     my $d = (self.is-wide ?? '4' !! '2');
     my \cid-fmt   := '<%%0%sX>'.sprintf: $d;
     my \char-fmt  := '<%%0%sX> <%%04X>'.sprintf: $d;
     my \range-fmt := cid-fmt ~ ' ' ~ char-fmt;
-    my $first-char = $.first-char;
-    my $last-char  = $.last-char;
+    my \last-char  = $.last-char;
 
-    loop (my uint16 $cid = $.first-char; $cid <= $last-char; $cid++) {
+    loop (my uint16 $cid = $.first-char; $cid <= last-char; $cid++) {
         my uint32 $ord = $to-unicode[$cid]
           || next;
         my uint16 $start-cid = $cid;
         my uint32 $start-code = $ord;
-        while $cid < $last-char && $to-unicode[$cid + 1] == $ord+1 {
+        while $cid < last-char && $to-unicode[$cid + 1] == $ord+1 {
             $cid++; $ord++;
         }
         if $start-cid == $cid {
@@ -138,13 +147,6 @@ method make-cmap-content(:$to-unicode = self.to-unicode) {
             @cmap-range.push: range-fmt.sprintf($start-cid, $cid, $start-code);
         }
     }
-
-    if $.is-wide {
-        $first-char = $first-char div 256 * 256;
-        $last-char = $last-char div 256 * 256 + 0xFF;
-    }
-
-    my @content = "1 begincodespacerange {$first-char.fmt(cid-fmt)} {$last-char.fmt(cid-fmt)} endcodespacerange";
 
     if @cmap-char {
         @content.push: "{+@cmap-char} beginbfchar";
@@ -168,6 +170,7 @@ method make-cmap(|c) {
     my PDF::IO::Writer $writer .= new;
     my $cmap-name = $writer.write: $!cmap<CMapName>.content;
     my $cid-system-info = $writer.write: $!cmap<CIDSystemInfo>.content;
+    my @codespaces = self.make-cmap-codespaces;
 
     qq:to<--END-->.chomp;
         %% Custom
@@ -177,6 +180,9 @@ method make-cmap(|c) {
         12 dict begin begincmap
         $cid-system-info
         /CMapName $cmap-name def
+        {+ @codespaces} begincodespacerange
+        {@codespaces.join: "\n";}
+        endcodespacerange
         {self.make-cmap-content(|c)}
         endcmap CMapName currendict /CMap defineresource pop end end
         --END--
