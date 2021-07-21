@@ -1,4 +1,6 @@
 {{$NEXT}}
+
+0.5.8  2021-07-21T14:08:58+12:00
     - Fix reading and writing of CMap codespace ranges for conformance with
       https://adobe-type-tools.github.io/font-tech-notes/pdfs/5014.CIDFont_Spec.pdf
 
