@@ -120,14 +120,15 @@ method make-cmap-content(:$to-unicode = self.to-unicode) {
     my \cid-fmt   := '<%%0%sX>'.sprintf: $d;
     my \char-fmt  := '<%%0%sX> <%%04X>'.sprintf: $d;
     my \range-fmt := cid-fmt ~ ' ' ~ char-fmt;
-    my \last-char := $.last-char;
+    my $first-char = $.first-char;
+    my $last-char  = $.last-char;
 
-    loop (my uint16 $cid = $.first-char; $cid <= last-char; $cid++) {
+    loop (my uint16 $cid = $.first-char; $cid <= $last-char; $cid++) {
         my uint32 $ord = $to-unicode[$cid]
           || next;
         my uint16 $start-cid = $cid;
         my uint32 $start-code = $ord;
-        while $cid < last-char && $to-unicode[$cid + 1] == $ord+1 {
+        while $cid < $last-char && $to-unicode[$cid + 1] == $ord+1 {
             $cid++; $ord++;
         }
         if $start-cid == $cid {
@@ -138,7 +139,12 @@ method make-cmap-content(:$to-unicode = self.to-unicode) {
         }
     }
 
-    my @content = "1 begincodespacerange {$.first-char.fmt(cid-fmt)} {last-char.fmt(cid-fmt)} endcodespacerange";
+    if $.is-wide {
+        $first-char = $first-char div 256 * 256;
+        $last-char = $last-char div 256 * 256 + 0xFF;
+    }
+
+    my @content = "1 begincodespacerange {$first-char.fmt(cid-fmt)} {$last-char.fmt(cid-fmt)} endcodespacerange";
 
     if @cmap-char {
         @content.push: "{+@cmap-char} beginbfchar";

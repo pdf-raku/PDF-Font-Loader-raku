@@ -1,4 +1,6 @@
 {{$NEXT}}
+    - Fix reading and writing of CMap codespace ranges for conformance with
+      https://adobe-type-tools.github.io/font-tech-notes/pdfs/5014.CIDFont_Spec.pdf
 
 0.5.7  2021-07-17T09:50:01+12:00
     - Fix glyph lookup for an embedded font without a char-map.

@@ -48,23 +48,57 @@ class PDF::Font::Loader::Enc::CMap
         }
     });
 
+    # Iterate a range such as <AaBbCc> <XxYyZz>
+    # each of the hex digits are individually constrained to counting
+    # in the ranges Aa..Xx Bb..Yy Cc..Zz (inclusive)
+    sub iterate-hex-ranges(@from,@to) {
+        class HexRangeIteration does Iterator does Iterable {
+            has UInt @.from;
+            has UInt @.to;
+            has Int @!ctr = @!from;
+
+            submethod TWEAK { @!ctr.tail--}
+
+            method pull-one {
+                loop (my $i = +@!from - 1; $i >= 0; $i--) {
+                    if @!ctr[$i] < @!to[$i] {
+                        # increment
+                        @!ctr[$i]++;
+                        last;
+                    }
+                    elsif $i {
+                        # carry
+                        @!ctr[$i] = @!from[$i];
+                    }
+                    else {
+                        #end
+                        return IterationEnd;
+                    }
+                }
+
+                my $val = 0;
+                for @!ctr {
+                    $val *= 0x100;
+                    $val += $_;
+                }
+                $val;
+            }
+            method iterator { self }
+        }
+        HexRangeIteration.new: :@from, :@to;
+    }
+
     submethod TWEAK {
-        my uint @w;
         with self.cmap {
             for .decoded.Str.lines {
                 if /:s \d+ begincodespacerange/ ff /endcodespacerange/ {
                     if /:s [ '<' $<r>=[<xdigit>+] '>' ] ** 2 / {
                         my $bytes = (@<r>[1].chars + 1) div 2;
-                        $!is-wide ||= $bytes == 2;
-                        @w[$bytes]++;
-                        if $bytes > 2 {
-                            $!nyi //= NYI::XWide;
-                            $bytes = 2;
-                        }
+                        $!is-wide ||= $bytes >= 2;
 
-                        my ($low-enc, $high-enc) = @<r>.map: { :16(.Str) };
+                        my ($from, $to) = @<r>.map: { [.Str.comb(/../).map({ :16($_)})] };
 
-                        for $low-enc .. $high-enc -> $enc {
+                        for iterate-hex-ranges($from, $to) -> $enc {
                             @!enc-width[$enc] = $bytes;
                         }
                     }
@@ -102,13 +136,6 @@ class PDF::Font::Loader::Enc::CMap
                     }
                 }
             }
-        }
-
-        if $!nyi ~~ NYI::XWide {
-            warn "NYI reading of CMAPs with encodings > 2 bytes";
-        }
-        elsif @w[1] && @w[2] {
-            $!nyi //= NYI::VarEnc
         }
 
     }
