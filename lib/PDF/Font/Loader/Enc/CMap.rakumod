@@ -12,7 +12,7 @@ class PDF::Font::Loader::Enc::CMap
 
     has uint32 @.to-unicode;
     has Int %.charset{Int};
-    has uint8 @!enc-width;
+    has %!enc-width is Hash::int;
     has %!code2cid is Hash::int; # decoding mappings
     has %!cid2code is Hash::int; # encoding mappings
     has uint8 $!max-width = 1;
@@ -67,19 +67,22 @@ class PDF::Font::Loader::Enc::CMap
             Iteration.new: :codespace(self);
         }
         sub to-hex(@bytes) {
-            '<' ~ @bytes.map: {.fmt("%02X")}.join ~ '>';
+            '<' ~ @bytes.map({.fmt("%02X")}).join ~ '>';
         }
         method ACCEPTS(CodeSpace:D: Int:D $v is copy) {
-            for 0 ..^ $.bytes {
+            loop (my int $i = $.bytes; --$i >= 0;) {
                 return False
-                    unless @!from[$_] <= $v mod 256 <= @!to[$_];
+                    unless @!from[$i] <= $v mod 256 <= @!to[$i];
                 $v div= 256;
             }
             $v == 0;
         }
+        method width($v) {
+            self.ACCEPTS($v) ?? self.bytes !! 0;
+        }
         method Str { to-hex(@!from) ~ ' ' ~ to-hex(@!to) }
     }
-    has CodeSpace @!codespaces;
+    has CodeSpace @.codespaces is built;
 
     sub valid-codepoint($_) {
         # not an exhaustive check
@@ -106,6 +109,19 @@ class PDF::Font::Loader::Enc::CMap
         }
     });
 
+    sub first-byte($code) {
+        my $byte = $code;
+        $byte div= 256 while $byte > 256;
+        $byte;
+    }
+    method enc-width($code is raw) {
+       %!enc-width{$code} // do {
+            my $bytes = .bytes with @!codespaces.first({.ACCEPTS($code)})
+                || die "unable to accomodate code 0x{$code.base(16)}"; # todo: expand, vivify?
+            %!enc-width{$code} = $bytes;
+        }
+    }
+
     submethod TWEAK {
         with self.cmap {
             for .decoded.Str.lines {
@@ -117,9 +133,6 @@ class PDF::Font::Loader::Enc::CMap
                         my $bytes := $codespace.bytes;
                         $!max-width = $bytes if $bytes > $!max-width;
 
-                        for $codespace.iterate-range -> $enc {
-                            @!enc-width[$enc] = $bytes;
-                        }
                         @!codespaces.push: $codespace;
                     }
                 }
@@ -168,10 +181,6 @@ class PDF::Font::Loader::Enc::CMap
         if %!code2cid {
             my @cmap-char;
             my @cmap-range;
-            my $d = (self.is-wide ?? '4' !! '2');
-            my \cid-fmt   := '<%%0%sX>'.sprintf: $d;
-            my \char-fmt  := '<%%0%sX> %%d'.sprintf: $d;
-            my \range-fmt := cid-fmt ~ ' ' ~ char-fmt;
             my uint32 @codes = %!code2cid.keys.sort;
             my \n = +@codes;
 
@@ -179,7 +188,13 @@ class PDF::Font::Loader::Enc::CMap
                 my uint32 $code = @codes[$i];
                 my uint32 $start-code = $code;
                 my $start-i = $i;
-                while $i < n && @codes[$i+1] == $code+1 {
+                my $width = $.enc-width($code);
+                my $d = $width * 2;
+                my \cid-fmt   := '<%%0%sX>'.sprintf: $d;
+                my \char-fmt  := '<%%0%sX> %%d'.sprintf: $d;
+                my \range-fmt := cid-fmt ~ ' ' ~ char-fmt;
+
+                while $i < n && @codes[$i+1] == $code+1 && $.enc-width($code+1) == $width {
                     $i++; $code++;
                 }
                 if $start-i == $i {
@@ -237,8 +252,6 @@ class PDF::Font::Loader::Enc::CMap
         unless @!to-unicode[$cid] ~~ $ord {
             @!to-unicode[$cid] = $ord;
             %!charset{$ord} = $cid;
-            # we currently only allocate 2 byte CID encodings
-            @!enc-width[$cid] = 1 + $.is-wide.ord;
             $.add-glyph-diff($cid);
             $.encoding-updated = True;
         }
@@ -274,11 +287,12 @@ class PDF::Font::Loader::Enc::CMap
         }
         $cid;
     }
-    method !ambigous-cid($cid) {
+    method !ambigous-cid($cid is copy) {
         # we can't use a wide encoding who's first byte conflicts with a
         # short encoding. Only possible when reusing a CMap with
         # variable encoding.
-        so $.is-wide && $cid >= 256 && @!enc-width[$cid div 256] == 1;
+        $cid div= 256;
+        so $.is-wide && $cid && (@!codespaces.first({.ACCEPTS($cid)}) || self!ambigous-cid($cid));
     }
     method !decode-cid(Int $code) { %!code2cid{$code} || $code }
     method !encode-cid(Int $cid)  { %!cid2code{$cid}  || $cid }
@@ -292,14 +306,13 @@ class PDF::Font::Loader::Enc::CMap
             my uint16 @cids;
 
             loop (my int $i = 0; $i < $n; ) {
-                my $sample := @bytes[$i++];
-                my $sample2 := $sample * 256 + @bytes[$i];
+                my int $sample = 0;
+                my int $width = 0;
 
-                if @!enc-width[$sample2] == 2 {
-                    $sample := $sample2;
-                    $i++;
-                }
-
+                repeat {
+                    $sample = $sample * 256 + @bytes[$i++];
+                    $width++;
+                } until $width >= $!max-width || @!codespaces.first({.width($sample) == $width}); 
                 @cids.push: self!decode-cid($sample);
             }
             @cids;
@@ -333,12 +346,8 @@ class PDF::Font::Loader::Enc::CMap
         if $.is-wide {
             $buf .= new;
             for @cids -> $cid {
-                if @!enc-width[$cid] == 2 {
-                    $buf.push: $cid div 256;
-                    $buf.push: $cid mod 256;
-                }
-                else {
-                    $buf.push: $cid;
+                loop (my int $i = self.enc-width($cid); --$i >= 0;) {
+                    $buf.push: $cid div (256 ** $i) mod 256;
                 }
             }
         }

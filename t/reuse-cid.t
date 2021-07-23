@@ -4,7 +4,7 @@ use PDF::Lite;
 use PDF::Font::Loader;
 use PDF::Content::FontObj;
 
-plan 5;
+plan 9;
 # see if we can re-load the CID font that we wrote in pdf-text.align.t
 
 class FontLoader {
@@ -41,6 +41,10 @@ sub font-sanity($font) {
     ok( 1100 < $font.height < 1900, 'font height')
         or diag "unexpected font height: {$font.height}";
     # first few characters in the subset
+    is-deeply $font.encode('A', :str), "\0\x[24]";
+    is-deeply $font.decode("\0\x[24]", :str), 'A';
+    is-deeply $font.encode('♠', :str), "\x[F]\x[38]";
+    is-deeply $font.decode("\x[F]\x[38]", :str), '♠';
     my $text = "Abc♠♥♦♣b";
     my $enc = $font.encode($text, :str);
     is-deeply $enc, [~]("\0\x[24]", "\0\x[45]", "\0\x[46]", "\x[F]\x[38]", "\x[F]\x[3d]", "\x[F]\x[3e]", "\x[F]\x[3b]", "\0\x[45]"), 'encode';
