@@ -12,8 +12,8 @@ use PDF::COS::Stream;
 sub prefix:</>($name) { PDF::COS::Name.COERCE($name) };
 
 submethod TWEAK {
-    if self.encoding.starts-with('Identity') {
-        die "can't use {self.encoding} encoding with unembedded font {self.font-name}"
+    if self.enc ~~ m/^[identity|utf]/ {
+        die "can't use {self.enc} encoding with unembedded font {self.font-name}"
             unless self.is-embedded;
     }
 }
@@ -55,8 +55,12 @@ method !make-gid-map {
 }
 
 method finish-font($dict, :$save-widths, :$save-gids) {
-    $dict<ToUnicode> //= self.make-cmap-stream
-        if self.has-encoding;
+    if self.has-encoding {
+        my $entry = self.enc eq 'utf8'
+            ?? 'Encoding'
+            !! 'ToUnicode';
+        $dict{$entry} //= self.make-cmap-stream;
+    }
 
     $dict<DescendantFonts>[0]<W> = self!make-widths
         if $save-widths;
@@ -68,14 +72,15 @@ method finish-font($dict, :$save-widths, :$save-gids) {
 method make-dict {
     my $BaseFont = /($.font-name);
     my $Type = /<Font>;
-    my $Encoding = /(self.encoding);
     my $dict = PDF::COS::Dict.COERCE: %(
         :Type( /<Font> ),
         :Subtype( /<Type0> ),
         :$BaseFont,
-        :$Encoding,
     );
 
+    unless self.enc eq 'utf8' {
+        $dict<Encoding> = /(self.encoding);
+    }
 
     my $cid-font = {
         :$Type,

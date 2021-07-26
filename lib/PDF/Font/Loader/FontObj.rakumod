@@ -507,7 +507,7 @@ method !make-subset {
     # perform subsetting on the font
     my %ords := $!encoder.charset;
     my $buf := $!font-buf;
-    my %input = do if $!enc.starts-with('identity') {
+    my %input = do if $!enc ~~ m/^[identity|utf]/ {
         # need to retain gids for identity based encodings
         my @glyphs = %ords.keys;
         %( :@glyphs, :retain-gids)

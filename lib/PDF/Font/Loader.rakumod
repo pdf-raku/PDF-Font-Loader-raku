@@ -23,7 +23,7 @@ class PDF::Font::Loader:ver<0.5.8> {
         Str  :$enc = $face.font-format eq 'Type 1' || !$embed || $face.num-glyphs <= 255
             ?? 'win'
             !! 'identity-h',
-        Bool :$cid = $enc.starts-with('identity') || $enc eq 'cmap',
+        Bool :$cid = so $enc ~~ m/^[identity|cmap|utf8]/,
         |c,
     ) {
         my \fontobj-class = $cid

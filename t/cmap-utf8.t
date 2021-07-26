@@ -24,10 +24,10 @@ subtest 'unit-tests', {
     is @codespaces[2].bytes, 3;
     is @codespaces[3].bytes, 4;
 
-    is-deeply $encoder.encode("Hi", :cids), $(43, 76), "cid encoding sanitiy";
+    is-deeply $encoder.encode("Hi", :cids), $(43, 76), "cid encoding sanity";
     is-deeply $encoder.encode("Hi"), "Hi", "utf-8 encoding sanity";
-    is-deeply $encoder.encode("♥", :cids), $(3901, ), "cid multibyte encoding sanitiy";
-    is-deeply $encoder.encode("♥").ords, "♥".encode.list, "multibyte encoding sanitiy";
+    is-deeply $encoder.encode("♥", :cids), $(3901, ), "cid multibyte encoding sanity";
+    is-deeply $encoder.encode("♥").ords, "♥".encode.list, "multibyte encoding sanity";
 }
 
 subtest 'integration-tests', {
@@ -40,9 +40,7 @@ subtest 'integration-tests', {
     $pdf.add-page.text: {
         .font = $font, 12;
         .text-position = 10, 500;
-        .say: "H";
-        .say: "i";
-        .say: "♥";
+        .say: "Hi♥";
     }
     $pdf.save-as: "t/cmap-utf8.pdf";
 }
