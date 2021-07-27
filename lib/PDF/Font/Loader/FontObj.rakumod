@@ -14,7 +14,7 @@ use NativeCall;
 use PDF::Font::Loader::Enc::CMap;
 use PDF::Font::Loader::Enc::Identity16;
 use PDF::Font::Loader::Enc::Type1;
-use PDF::Font::Loader::Enc::Utf8;
+use PDF::Font::Loader::Enc::Unicode;
 use PDF::Font::Loader::Enc::Glyphic;
 use PDF::Font::Loader::Glyph;
 use PDF::Font::Loader::Type1::Stream;
@@ -52,7 +52,7 @@ has Blob $.font-buf;
 has PDF::COS::Dict $!dict;
 # Font descriptors are needed for all but core fonts
 has $.font-descriptor = PDF::COS::Dict.COERCE: %( :Type(/'FontDescriptor'));
-my subset EncodingScheme where 'mac'|'win'|'zapf'|'sym'|'identity'|'identity-h'|'identity-v'|'std'|'mac-extra'|'cmap'|'utf8';
+my subset EncodingScheme where 'mac'|'win'|'zapf'|'sym'|'identity'|'identity-h'|'identity-v'|'std'|'mac-extra'|'cmap'|'utf8'|'utf16'|'utf32';
 has EncodingScheme $.enc;
 has Bool $.embed = True;
 has Bool $.subset = False;
@@ -110,11 +110,11 @@ submethod TWEAK(
         if $!enc.starts-with('identity') && (%encoder<cid-to-gid-map>:delete);
 
     $!encoder = do {
+        when $!enc ~~ 'utf8'|'utf16'|'utf32' {
+            PDF::Font::Loader::Enc::Unicode.new: :$!face, :$!enc, |%encoder, :@cid-to-gid-map;
+        }
         when %encoder<cmap>.defined {
             PDF::Font::Loader::Enc::CMap.new: :$!face, |%encoder, :@cid-to-gid-map;
-        }
-        when $!enc ~~ 'utf8' {
-            PDF::Font::Loader::Enc::Utf8.new: :$!face, |%encoder;
         }
         when $!enc ~~ 'identity-h'|'identity-v' {
             PDF::Font::Loader::Enc::Identity16.new: :$!face, |%encoder;

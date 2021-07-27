@@ -6,16 +6,19 @@ use PDF::IO::IndObj;
 use PDF::Grammar::PDF;
 use PDF::Grammar::PDF::Actions;
 use PDF::Font::Loader::Enc::CMap :CodeSpace;
-use PDF::Font::Loader::Enc::Utf8;
+use PDF::Font::Loader::Enc::Unicode;
 use Font::FreeType;
+use PDF::Font::Loader::Glyph;
+
+my constant Glyph = PDF::Font::Loader::Glyph;
 
 my PDF::Grammar::PDF::Actions $actions .= new;
 my Font::FreeType $freetype .= new;
 my $face = $freetype.face('t/fonts/DejaVuSans.ttf');
 
 subtest 'unit-tests', {
-    plan 9;
-    my PDF::Font::Loader::Enc::Utf8 $encoder .= new: :$face;
+    plan 12;
+    my PDF::Font::Loader::Enc::Unicode $encoder .= new: :$face, :enc<utf8>;
     ok $encoder.is-wide;
 
     my CodeSpace @codespaces = $encoder.codespaces;
@@ -23,11 +26,15 @@ subtest 'unit-tests', {
     is @codespaces[1].bytes, 2;
     is @codespaces[2].bytes, 3;
     is @codespaces[3].bytes, 4;
+    enum ( :H-cid(43), :i-cid(76), :heart-cid(3901) );
 
-    is-deeply $encoder.encode("Hi", :cids), $(43, 76), "cid encoding sanity";
+    is-deeply $encoder.encode("Hi", :cids), $(+H-cid, +i-cid), "cid encoding sanity";
     is-deeply $encoder.encode("Hi"), "Hi", "utf-8 encoding sanity";
-    is-deeply $encoder.encode("♥", :cids), $(3901, ), "cid multibyte encoding sanity";
+    is-deeply $encoder.encode("♥", :cids), $(+heart-cid, ), "cid multibyte encoding sanity";
     is-deeply $encoder.encode("♥").ords, "♥".encode.list, "multibyte encoding sanity";
+    is-deeply $encoder.glyph(+H-cid), Glyph.new(:name<H>, :code-point("H".ord), :cid(+H-cid), :gid(+H-cid), :dx(752), :dy(0)), 'utf8 glyph "H"';
+    is-deeply $encoder.glyph(+i-cid), Glyph.new(:name<i>, :code-point("i".ord), :cid(+i-cid), :gid(+i-cid), :dx(278), :dy(0)), 'utf8 glyph "i"';
+    is-deeply $encoder.glyph(+heart-cid), Glyph.new(:name<heart>, :code-point("♥".ord), :cid(+heart-cid), :gid(+heart-cid), :dx(896), :dy(0)), 'utf8 glyph "♥"';
 }
 
 subtest 'integration-tests', {
@@ -36,7 +43,8 @@ subtest 'integration-tests', {
     use PDF::Lite;
     my PDF::Lite $pdf .= new;
     my PDF::Font::Loader::FontObj $font = load-font(:enc<utf8>, :file<t/fonts/DejaVuSans.ttf>);
-    isa-ok $font.encoder,  PDF::Font::Loader::Enc::Utf8, 'loaded utf8 encoder';
+    isa-ok $font.encoder,  PDF::Font::Loader::Enc::Unicode, 'loaded utf8 encoder';
+    is $font.encoder.enc, 'utf8';
     $pdf.add-page.text: {
         .font = $font, 12;
         .text-position = 10, 500;

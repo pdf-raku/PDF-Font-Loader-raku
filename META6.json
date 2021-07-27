@@ -27,7 +27,7 @@
     "PDF::Font::Loader::Enc::Glyphic": "lib/PDF/Font/Loader/Enc/Glyphic.rakumod",
     "PDF::Font::Loader::Enc::Identity16": "lib/PDF/Font/Loader/Enc/Identity16.rakumod",
     "PDF::Font::Loader::Enc::Type1": "lib/PDF/Font/Loader/Enc/Type1.rakumod",
-    "PDF::Font::Loader::Enc::Utf8": "lib/PDF/Font/Loader/Enc/Utf8.rakumod",
+    "PDF::Font::Loader::Enc::Unicode": "lib/PDF/Font/Loader/Enc/Unicode.rakumod",
     "PDF::Font::Loader::FontObj": "lib/PDF/Font/Loader/FontObj.rakumod",
     "PDF::Font::Loader::FontObj::CID": "lib/PDF/Font/Loader/FontObj/CID.rakumod",
     "PDF::Font::Loader::Glyph": "lib/PDF/Font/Loader/Glyph.rakumod",

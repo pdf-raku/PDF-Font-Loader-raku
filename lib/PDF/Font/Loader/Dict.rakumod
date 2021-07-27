@@ -14,7 +14,8 @@ class PDF::Font::Loader::Dict {
         base-font($dict)<FontDescriptor>;
     }
 
-    sub base-enc($_, :$dict!) {
+    sub base-enc($_) {
+        when !.defined           { Nil }
         when 'CMap'              { 'cmap' }
         when 'Identity-H'        { 'identity-h' }
         when 'Identity-V'        { 'identity-v' }
@@ -22,9 +23,13 @@ class PDF::Font::Loader::Dict {
         when 'MacRomanEncoding'  { 'mac' }
         when 'MacExpertEncoding' { 'mac-extra' }
         when 'StandardEncoding'  { 'std' }
+        when /(<<UTF[8|16|32]>>)/ {
+            # Predefined table, which we don't fully support
+            # We can, at least, detect the encoding
+            $0.lc;
+        }
         default {
-            warn "unimplemented font encoding: $_"
-                with $_;
+            warn "unimplemented font encoding: $_";
             Nil;
         }
     }
@@ -92,9 +97,9 @@ class PDF::Font::Loader::Dict {
                 }
                 when Hash {
                     %opt<differences> = $_ with .<Differences>;
-                    base-enc(.<BaseEncoding>, :$dict);
+                    base-enc(.<BaseEncoding>);
                 }
-                default { base-enc($_, :$dict); }
+                default { base-enc($_); }
             }
         }
 
