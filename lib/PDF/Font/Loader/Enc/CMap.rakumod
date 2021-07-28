@@ -1,5 +1,5 @@
 use v6;
-use PDF::Font::Loader::Enc;
+use PDF::Font::Loader::Enc :&code-batches;
 
 #| CMap based encoding/decoding
 unit class PDF::Font::Loader::Enc::CMap
@@ -174,7 +174,7 @@ submethod TWEAK {
 }
 
 method make-cmap-codespaces {
-    @!codespaces>>.Str.join: "\n";
+    @!codespaces>>.Str;
 }
 
 method !make-cid-ranges {
@@ -206,17 +206,8 @@ method !make-cid-ranges {
             }
         }
 
-        if @cmap-char {
-            @content.push: "{+@cmap-char} begincidchar";
-            @content.append: @cmap-char;
-            @content.push: 'endcidchar';
-        }
-
-        if @cmap-range {
-            @content.push: "{+@cmap-range} begincidrange";
-            @content.append: @cmap-range;
-            @content.push: 'endcidrange';
-        }
+        @content.append: code-batches('cidchar', @cmap-char);
+        @content.append: code-batches('cidrange', @cmap-range);
     }
 
     @content.unshift: '' if @content;

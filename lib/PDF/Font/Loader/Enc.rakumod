@@ -118,7 +118,22 @@ method make-cmap-codespaces {
     my \mask = $.is-wide ?? 0x1000 !! 0x10;
     my $first-char = $.first-char div mask * mask;
     my $last-char = $.last-char div mask * mask + mask - 1;
-    $first-char.fmt(cid-fmt) ~ ' ' ~ $last-char.fmt(cid-fmt);
+    ($first-char.fmt(cid-fmt) ~ ' ' ~ $last-char.fmt(cid-fmt), );
+}
+
+sub code-batches($name, @content) is export(:code-batches) {
+    my @lines;
+    if +@content > 100 {
+        @lines = code-batches($name, @content.head(100));
+        @lines.push: '';
+        @lines.append: code-batches($name, @content.tail(*-100));
+    }
+    elsif @content {
+        @lines.push: "{+@content} begin" ~ $name;
+        @lines.append: @content;
+        @lines.push: 'end' ~ $name;
+    }
+    @lines;
 }
 
 # may be overridden
@@ -148,18 +163,8 @@ method make-cmap-content(:$to-unicode = self.to-unicode) {
         }
     }
 
-    if @cmap-char {
-        @content.push: "{+@cmap-char} beginbfchar";
-        @content.append: @cmap-char;
-        @content.push: 'endbfchar';
-    }
-
-    if @cmap-range {
-        @content.push: "{+@cmap-range} beginbfrange";
-        @content.append: @cmap-range;
-        @content.push: 'endbfrange';
-    }
-
+    @content.append: code-batches('bfchar', @cmap-char);
+    @content.append: code-batches('bfrange', @cmap-range);
     @content.join: "\n";
 }
 
@@ -170,7 +175,7 @@ method make-cmap(|c) {
     my PDF::IO::Writer $writer .= new;
     my $cmap-name = $writer.write: $!cmap<CMapName>.content;
     my $cid-system-info = $writer.write: $!cmap<CIDSystemInfo>.content;
-    my @codespaces = self.make-cmap-codespaces;
+    my @codespaces = code-batches('codespacerange', self.make-cmap-codespaces);
 
     qq:to<--END-->.chomp;
         %% Custom
@@ -180,9 +185,7 @@ method make-cmap(|c) {
         12 dict begin begincmap
         $cid-system-info
         /CMapName $cmap-name def
-        {+ @codespaces} begincodespacerange
         {@codespaces.join: "\n";}
-        endcodespacerange
         {self.make-cmap-content(|c)}
         endcmap CMapName currendict /CMap defineresource pop end end
         --END--
