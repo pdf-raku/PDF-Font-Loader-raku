@@ -1,6 +1,6 @@
 use PDF::Font::Loader::Enc::CMap :CodeSpace;
 
-#| CMap based encoding/decoding
+#| UTF-8/16/32 based encoding and decoding
 unit class PDF::Font::Loader::Enc::Unicode
     is PDF::Font::Loader::Enc::CMap;
 

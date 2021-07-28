@@ -1,24 +1,24 @@
 use v6;
 use Test;
-plan 2;
+plan 3;
 
 use PDF::IO::IndObj;
-use PDF::Grammar::PDF;
-use PDF::Grammar::PDF::Actions;
+use PDF::Font::Loader :&load-font;
+use PDF::Font::Loader::FontObj;
 use PDF::Font::Loader::Enc::CMap :CodeSpace;
 use PDF::Font::Loader::Enc::Unicode;
-use Font::FreeType;
 use PDF::Font::Loader::Glyph;
+use Font::FreeType;
+use PDF::Lite;
 
 my constant Glyph = PDF::Font::Loader::Glyph;
 
-my PDF::Grammar::PDF::Actions $actions .= new;
 my Font::FreeType $freetype .= new;
 my $face = $freetype.face('t/fonts/DejaVuSans.ttf');
 
-subtest 'unit-tests', {
-    plan 12;
-    my PDF::Font::Loader::Enc::Unicode $encoder .= new: :$face, :enc<utf8>;
+sub utf8-checks($encoder) {
+    plan 13;
+    isa-ok $encoder, PDF::Font::Loader::Enc::Unicode;
     ok $encoder.is-wide;
 
     my CodeSpace @codespaces = $encoder.codespaces;
@@ -37,10 +37,11 @@ subtest 'unit-tests', {
     is-deeply $encoder.glyph(+heart-cid), Glyph.new(:name<heart>, :code-point("♥".ord), :cid(+heart-cid), :gid(+heart-cid), :dx(896), :dy(0)), 'utf8 glyph "♥"';
 }
 
+my PDF::Font::Loader::Enc::Unicode $encoder .= new: :$face, :enc<utf8>;
+subtest 'unit-tests', { utf8-checks($encoder) }
+
 subtest 'integration-tests', {
-    use PDF::Font::Loader :&load-font;
     use PDF::Font::Loader::FontObj;
-    use PDF::Lite;
     my PDF::Lite $pdf .= new;
     my PDF::Font::Loader::FontObj $font = load-font(:enc<utf8>, :file<t/fonts/DejaVuSans.ttf>);
     isa-ok $font.encoder,  PDF::Font::Loader::Enc::Unicode, 'loaded utf8 encoder';
@@ -53,5 +54,11 @@ subtest 'integration-tests', {
     $pdf.save-as: "t/cmap-utf8.pdf";
 }
 
+subtest 'reload-dict-tests', {
+    my PDF::Lite $pdf .= open:  "t/cmap-utf8.pdf";
+    my $dict = $pdf.page(1).resources('Font')<F1>;
+    my PDF::Font::Loader::FontObj $font = load-font(:$dict);
+    utf8-checks($font.encoder);
+}
 
 done-testing;

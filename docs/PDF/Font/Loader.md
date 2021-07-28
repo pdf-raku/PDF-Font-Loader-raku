@@ -83,6 +83,8 @@ parameters:
 
       * `identity-h` a degenerative two byte encoding mode
 
+      * *(Experimental)* `utf8`, `utf16` and `utf32` encodings 
+
     `win` is used as the default encoding for fonts with no more than 255 glyphs. `identity-h` is used otherwise.
 
     It is recommended that you set a single byte encoding such as `:enc<mac>` or `:enc<win>` when it known that no more that 255 distinct characters will actually be used from the font within the PDF.

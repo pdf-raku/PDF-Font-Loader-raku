@@ -1,6 +1,7 @@
 #| Loads a font from a PDF font dictionary
 class PDF::Font::Loader::Dict {
     use PDF::Content::Font::CoreFont;
+    use PDF::COS::Dict;
     use PDF::COS::Stream;
     use PDF::IO::Util :pack;
     my subset FontDict of Hash where .<Type> ~~ 'Font';
@@ -16,7 +17,6 @@ class PDF::Font::Loader::Dict {
 
     sub base-enc($_) {
         when !.defined           { Nil }
-        when 'CMap'              { 'cmap' }
         when 'Identity-H'        { 'identity-h' }
         when 'Identity-V'        { 'identity-v' }
         when 'WinAnsiEncoding'   { 'win' }
@@ -28,6 +28,7 @@ class PDF::Font::Loader::Dict {
             # We can, at least, detect the encoding
             $0.lc;
         }
+        when 'CMap'              { 'cmap' }
         default {
             warn "unimplemented font encoding: $_";
             Nil;
@@ -92,14 +93,14 @@ class PDF::Font::Loader::Dict {
                 when PDF::COS::Stream {
                     # assume CMAP. See PDF-32000 Table 121
                     # – Entries in a Type 0 font dictionary
-                    %encoder<cmap> = $_;
-                    'cmap';
+                    %encoder<cid-cmap> = $_;
+                    base-enc(.<CMapName>) // 'cmap';
                 }
-                when Hash {
+                when PDF::COS::Dict {
                     %opt<differences> = $_ with .<Differences>;
                     base-enc(.<BaseEncoding>);
                 }
-                default { base-enc($_); }
+                when Str { base-enc($_); }
             }
         }
 

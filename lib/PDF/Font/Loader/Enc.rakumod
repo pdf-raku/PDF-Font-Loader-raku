@@ -15,7 +15,7 @@ has uint $.first-char;
 has uint16 @!widths;
 has Bool $.widths-updated is rw;
 has Bool $.encoding-updated is rw;
-has PDF::COS::Stream $.cmap is rw;
+has PDF::COS::Stream $.cmap is rw; # /ToUnicode CMap
 submethod TWEAK(:$widths) {
     @!widths = .map(*.Int) with $widths;
 }
@@ -124,9 +124,10 @@ method make-cmap-codespaces {
 sub code-batches($name, @content) is export(:code-batches) {
     my @lines;
     if +@content > 100 {
-        @lines = code-batches($name, @content.head(100));
+        my $n = +@content div 100 * 100;
+        @lines = code-batches($name, @content.head($n));
         @lines.push: '';
-        @lines.append: code-batches($name, @content.tail(*-100));
+        @lines.append: code-batches($name, @content.tail(* - $n));
     }
     elsif @content {
         @lines.push: "{+@content} begin" ~ $name;
@@ -136,8 +137,7 @@ sub code-batches($name, @content) is export(:code-batches) {
     @lines;
 }
 
-# may be overridden
-method make-cmap-content(:$to-unicode = self.to-unicode) {
+method make-to-unicode-cmap(:$to-unicode = self.to-unicode) {
     my @content;
     my @cmap-char;
     my @cmap-range;
@@ -165,15 +165,12 @@ method make-cmap-content(:$to-unicode = self.to-unicode) {
 
     @content.append: code-batches('bfchar', @cmap-char);
     @content.append: code-batches('bfrange', @cmap-range);
-    @content.join: "\n";
 }
 
-method make-cmap(|c) {
-    fail 'unable to serialise without $.cmap'
-        without $!cmap;
+method make-cmap(PDF::COS::Stream $cmap, @content, |c) {
 
     my PDF::IO::Writer $writer .= new;
-    my $cmap-name = $writer.write: $!cmap<CMapName>.content;
+    my $cmap-name = $writer.write: $cmap<CMapName>.content;
     my $cid-system-info = $writer.write: $!cmap<CIDSystemInfo>.content;
     my @codespaces = code-batches('codespacerange', self.make-cmap-codespaces);
 
@@ -186,7 +183,7 @@ method make-cmap(|c) {
         $cid-system-info
         /CMapName $cmap-name def
         {@codespaces.join: "\n";}
-        {self.make-cmap-content(|c)}
+        {@content.join: "\n"}
         endcmap CMapName currendict /CMap defineresource pop end end
         --END--
 }

@@ -8,6 +8,8 @@ use PDF::COS::Name;
 use PDF::IO::Util :pack;
 use PDF::IO::Writer;
 use PDF::COS::Stream;
+use PDF::Font::Loader::Enc::CMap;
+use PDF::Font::Loader::Enc::Unicode;
 
 sub prefix:</>($name) { PDF::COS::Name.COERCE($name) };
 
@@ -54,12 +56,42 @@ method !make-gid-map {
     PDF::COS::Stream.COERCE: { :$decoded };
 }
 
+method make-encoding-stream {
+
+    $.encoder.cid-cmap //= do {
+        my $name = [~] (
+            $.font-name, '-Custom',
+            ($.encoder.isa(PDF::Font::Loader::Enc::Unicode)
+             ?? '-' ~ $.encoder.enc.uc
+             !! ''),
+            '-H'
+        );
+        
+        my PDF::COS::Name $CMapName .= COERCE: $name;
+        my PDF::COS::Name $Type .= COERCE: 'CMap';
+
+        PDF::COS::Stream.COERCE: %( :dict{
+            :$Type,
+            :$CMapName,
+            :$.CIDSystemInfo,
+        });
+    }
+
+    with $.encoder.cid-cmap {
+        when PDF::COS::Stream {
+            my @content = $.encoder.make-cid-content;
+            $.encoder.cid-cmap.decoded = $.encoder.make-cmap: $_, @content;
+        }
+    }
+    $.encoder.cid-cmap;
+}
+
 method finish-font($dict, :$save-widths, :$save-gids) {
     if self.has-encoding {
-        my $entry = self.enc eq 'utf8'
-            ?? 'Encoding'
-            !! 'ToUnicode';
-        $dict{$entry} //= self.make-cmap-stream;
+        $dict<ToUnicode> //= self.make-to-unicode-stream;
+    }
+    if $.encoder.isa(PDF::Font::Loader::Enc::CMap) && $.encoder.code2cid {
+        $dict<Encoding> //= self.make-encoding-stream;
     }
 
     $dict<DescendantFonts>[0]<W> = self!make-widths

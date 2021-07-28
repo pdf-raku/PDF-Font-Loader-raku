@@ -9,6 +9,7 @@ use PDF::Font::Loader::Enc::Glyphic;
 also does PDF::Font::Loader::Enc::Glyphic;
 
 use PDF::IO::Util :&pack;
+use PDF::COS::Stream;
 use Hash::int;
 
 has uint32 @.to-unicode;
@@ -16,6 +17,7 @@ has Int %.charset{Int};
 has %!enc-width is Hash::int;
 has %.code2cid is Hash::int; # decoding mappings
 has %.cid2code is Hash::int; # encoding mappings
+has PDF::COS::Stream $.cid-cmap is rw; # Type0 /Encoding CMap
 has uint8 $!max-width = 1;
 method is-wide { $!max-width >= 2}
 my class CodeSpace is export(:CodeSpace) {
@@ -123,50 +125,65 @@ method enc-width($code is raw) {
     }
 }
 
-submethod TWEAK {
-    with self.cmap {
-        for .decoded.Str.lines {
-            if /:s \d+ begincodespacerange/ ff /endcodespacerange/ {
-                if /:s [ '<' $<r>=[<xdigit>+] '>' ] ** 2 / {
+method load-cmap(Str:D $_) {
+    my int $i = 0;
+    for .lines {
+        if /:s \d+ begincodespacerange/ ff /endcodespacerange/ {
+            if /:s [ '<' $<r>=[<xdigit>+] '>' ] ** 2 / {
 
-                    my ($from, $to) = @<r>.map: { [.Str.comb(/../).map({ :16($_)})] };
-                    my CodeSpace $codespace .= new: :from(@$from), :to(@$to);
-                    my $bytes := $codespace.bytes;
-                    $!max-width = $bytes if $bytes > $!max-width;
+                my ($from, $to) = @<r>.map: { [.Str.comb(/../).map({ :16($_)})] };
+                my CodeSpace $codespace .= new: :from(@$from), :to(@$to);
+                my $bytes := $codespace.bytes;
+                $!max-width = $bytes if $bytes > $!max-width;
 
-                    @!codespaces.push: $codespace;
+                @!codespaces[$i++] = $codespace;
+            }
+        }
+        elsif /:s^ \d+ beginbfrange/ ff /^endbfrange/ {
+            if /:s [ '<' $<r>=[<xdigit>+] '>' ] ** 3 / {
+                my uint ($from, $to, $ord) = @<r>.map: { :16(.Str) };
+                for $from .. $to -> $cid {
+                    last unless self!add-code($cid, $ord++)
                 }
             }
-            elsif /:s^ \d+ beginbfrange/ ff /^endbfrange/ {
-                if /:s [ '<' $<r>=[<xdigit>+] '>' ] ** 3 / {
-                    my uint ($from, $to, $ord) = @<r>.map: { :16(.Str) };
-                    for $from .. $to -> $cid {
-                        last unless self!add-code($cid, $ord++)
-                    }
-                }
+        }
+        elsif /:s^ \d+ beginbfchar/ ff /^endbfchar/ {
+            if /:s [ '<' $<r>=[<xdigit>+] '>' ] ** 2 / {
+                my uint ($cid, $ord) = @<r>.map: { :16(.Str) };
+                self!add-code($cid, $ord);
             }
-            elsif /:s^ \d+ beginbfchar/ ff /^endbfchar/ {
-                if /:s [ '<' $<r>=[<xdigit>+] '>' ] ** 2 / {
-                    my uint ($cid, $ord) = @<r>.map: { :16(.Str) };
-                    self!add-code($cid, $ord);
-                }
-            }
-            elsif /:s^ \d+ begincidrange/ ff /^endcidrange/ {
-                if /:s [ '<' $<r>=[<xdigit>+] '>' ] ** 2 $<c>=[<digit>+] / {
-                    my Int ($from, $to) = @<r>.map: { :16(.Str) };
-                    my Int $cid = $<c>.Int;
-                    for $from .. $to -> $code {
-                        %!cid2code{$cid} = $code;
-                        %!code2cid{$code} = $cid++;
-                    }
-                }
-            }
-            elsif /:s^ \d+ begincidchar/ ff /^endcidchar/ {
-                if /:s '<' $<r>=[<xdigit>+] '>' $<c>=[<digit>+] / {
-                    my Int $code = :16($<r>.Str);
-                    my Int $cid = $<c>.Int;
-                    %!cid2code{$cid}  = $code;
+        }
+        elsif /:s^ \d+ begincidrange/ ff /^endcidrange/ {
+            if /:s [ '<' $<r>=[<xdigit>+] '>' ] ** 2 $<c>=[<digit>+] / {
+                my Int ($from, $to) = @<r>.map: { :16(.Str) };
+                my Int $cid = $<c>.Int;
+                for $from .. $to -> $code {
+                    %!cid2code{$cid} = $code;
                     %!code2cid{$code} = $cid++;
+                }
+            }
+        }
+        elsif /:s^ \d+ begincidchar/ ff /^endcidchar/ {
+            if /:s '<' $<r>=[<xdigit>+] '>' $<c>=[<digit>+] / {
+                my Int $code = :16($<r>.Str);
+                my Int $cid = $<c>.Int;
+                %!cid2code{$cid}  = $code;
+                %!code2cid{$code} = $cid++;
+            }
+        }
+    }
+}
+
+submethod TWEAK {
+    for self.cmap, self.cid-cmap {
+        with $_ {
+            self.load-cmap(.decoded.Str);
+            with .<UseCMap> {
+                when PDF::COS::Stream {
+                    self.load-cmap(.decoded.Str);
+                }
+                default {
+                    warn "todo: /UseCmap /$_";
                 }
             }
         }
@@ -177,7 +194,7 @@ method make-cmap-codespaces {
     @!codespaces>>.Str;
 }
 
-method !make-cid-ranges {
+method make-cid-content {
     my @content;
     if %!code2cid {
         my @cmap-char;
@@ -209,13 +226,6 @@ method !make-cid-ranges {
         @content.append: code-batches('cidchar', @cmap-char);
         @content.append: code-batches('cidrange', @cmap-range);
     }
-
-    @content.unshift: '' if @content;
-    @content.join: "\n";
-}
-
-method make-cmap-content {
-    callsame() ~ self!make-cid-ranges();
 }
 
 method !add-code(Int $cid, Int $ord) {

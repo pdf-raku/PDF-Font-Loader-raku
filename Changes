@@ -1,4 +1,9 @@
 {{$NEXT}}
+    - Add PDF::Font::Loader::Enc::Unicode encoder (experimental) for reading and
+      writing utf8, utf16 and utf32 encodings and CMaps
+    - Handle input and output of Type0 fonts with potentially seperate /ToUnicode
+      and /Encoding CMaps. Also secondary CMaps referenced via /UseCMap from the
+      main CMap.
 
 0.5.8  2021-07-21T14:08:58+12:00
     - Fix reading and writing of CMap codespace ranges for conformance with

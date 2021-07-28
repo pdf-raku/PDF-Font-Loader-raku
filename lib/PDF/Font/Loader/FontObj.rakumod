@@ -113,7 +113,7 @@ submethod TWEAK(
         when $!enc ~~ 'utf8'|'utf16'|'utf32' {
             PDF::Font::Loader::Enc::Unicode.new: :$!face, :$!enc, |%encoder, :@cid-to-gid-map;
         }
-        when %encoder<cmap>.defined {
+        when $!enc eq 'cmap' || %encoder<cmap>.defined {
             PDF::Font::Loader::Enc::CMap.new: :$!face, |%encoder, :@cid-to-gid-map;
         }
         when $!enc ~~ 'identity-h'|'identity-v' {
@@ -362,10 +362,10 @@ method CIDSystemInfo {
     }
 }
 
-method make-cmap-stream {
+method make-to-unicode-stream {
 
     $!encoder.cmap //= do {
-        my PDF::COS::Name $CMapName .= COERCE: 'raku-cmap-' ~ $!font-name;
+        my PDF::COS::Name $CMapName .= COERCE: 'to-unicode-' ~ $!font-name;
         my PDF::COS::Name $Type .= COERCE: 'CMap';
 
         PDF::COS::Stream.COERCE: %( :dict{
@@ -379,13 +379,14 @@ method make-cmap-stream {
         ?? charset-to-unicode($!encoder.charset)
         !! $!encoder.to-unicode;
 
-    $!encoder.cmap.decoded = $!encoder.make-cmap: :$to-unicode;
+    my @content = $!encoder.make-to-unicode-cmap(:$to-unicode);
+    $!encoder.cmap.decoded = $!encoder.make-cmap: $!encoder.cmap, @content;
     $!encoder.cmap;
 }
 
 # finalize the font, depending on how it's been used
 method finish-font($dict, :$save-widths) {
-    $dict<ToUnicode> //= self.make-cmap-stream
+    $dict<ToUnicode> //= self.make-to-unicode-stream
         if $!encoder.encoding-updated;
     if $save-widths {
         $dict<FirstChar> = $.first-char;

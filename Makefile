@@ -6,7 +6,7 @@ all : doc
 
 doc : $(DocLinker) docs/index.md docs/PDF/Font/Loader.md docs/PDF/Font/Loader/FontObj.md \
     docs/PDF/Font/Loader.md docs/PDF/Font/Loader/FontObj/CID.md docs/PDF/Font/Loader/Dict.md \
-    docs/PDF/Font/Loader/Enc.md docs/PDF/Font/Loader/Enc/Type1.md docs/PDF/Font/Loader/Enc/Identity16.md \
+    docs/PDF/Font/Loader/Enc.md docs/PDF/Font/Loader/Enc/Type1.md docs/PDF/Font/Loader/Enc/Identity16.md docs/PDF/Font/Loader/Enc/Unicode.md \
     docs/PDF/Font/Loader/Enc/CMap.md docs/PDF/Font/Loader/Glyph.md
 
 docs/index.md : README.md
