@@ -39,11 +39,11 @@ method allocate(Int $ord) {
 
     self.set-encoding($ord, $cid);
 
-    if $ord < 128 || self.enc eq 'utf32' {
+    if self.enc eq 'utf32' {
         $code = $ord;
     }
     else {
-        my utf8 $buf := $ord.chr.encode($!enc);
+        my Blob $buf := $ord.chr.encode($!enc);
         for $buf.list {
             $code *= $!width;
             $code += $_;

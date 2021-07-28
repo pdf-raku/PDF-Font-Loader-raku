@@ -29,7 +29,7 @@ sub utf8-checks($encoder) {
     enum ( :H-cid(43), :i-cid(76), :heart-cid(3901) );
 
     is-deeply $encoder.encode("Hi", :cids), $(+H-cid, +i-cid), "cid encoding sanity";
-    is-deeply $encoder.encode("Hi"), "Hi", "utf-8 encoding sanity";
+    is-deeply $encoder.encode("Hi"), "Hi", "utf8 encoding sanity";
     is-deeply $encoder.encode("♥", :cids), $(+heart-cid, ), "cid multibyte encoding sanity";
     is-deeply $encoder.encode("♥").ords, "♥".encode.list, "multibyte encoding sanity";
     is-deeply $encoder.glyph(+H-cid), Glyph.new(:name<H>, :code-point("H".ord), :cid(+H-cid), :gid(+H-cid), :dx(752), :dy(0)), 'utf8 glyph "H"';
@@ -51,6 +51,7 @@ subtest 'integration-tests', {
         .text-position = 10, 500;
         .say: "Hi♥";
     }
+    $pdf.id = $*PROGRAM-NAME.fmt('%-16.16s');
     $pdf.save-as: "t/cmap-utf8.pdf";
 }
 

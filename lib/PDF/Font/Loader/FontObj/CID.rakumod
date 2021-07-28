@@ -110,9 +110,8 @@ method make-dict {
         :$BaseFont,
     );
 
-    unless self.enc eq 'utf8' {
-        $dict<Encoding> = /(self.encoding);
-    }
+    $dict<Encoding> = /($_)
+        with self.encoding;
 
     my $cid-font = {
         :$Type,
