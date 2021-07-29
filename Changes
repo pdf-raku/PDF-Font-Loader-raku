@@ -1,4 +1,7 @@
 {{$NEXT}}
+    - Fix PDF::Font::Loader::Enc::Unicode decode() method
+
+0.5.9 
     - Add PDF::Font::Loader::Enc::Unicode encoder (experimental) for reading and
       writing utf8, utf16 and utf32 encodings and CMaps
     - Handle input and output of Type0 fonts with potentially seperate /ToUnicode

@@ -165,6 +165,8 @@ method make-to-unicode-cmap(:$to-unicode = self.to-unicode) {
 
     @content.append: code-batches('bfchar', @cmap-char);
     @content.append: code-batches('bfrange', @cmap-range);
+
+    $.make-cmap: $!cmap, @content;
 }
 
 method make-cmap(PDF::COS::Stream $cmap, @content, |c) {
@@ -264,8 +266,8 @@ Map a single Unicode code-point to a CID index. This method is most likely
 to be useful for manually setting up an encoding layer for a font loaded
 from a PDF that lacks an encoding layer(`has-encoding()` is `False`).
 
-=head3 make-cmap
+=head3 make-to-unicode-cmap
 
-Generates a CMap for inclusion in a PDF. This method is typically called from the font object when an encoding has been added or updated for the encoder.
+Generates a CMap for the /ToUnicode entry in a PDF font. This method is typically called from the font object when an encoding has been added or updated for the encoder.
 
 =end pod

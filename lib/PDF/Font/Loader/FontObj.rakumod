@@ -379,8 +379,7 @@ method make-to-unicode-stream {
         ?? charset-to-unicode($!encoder.charset)
         !! $!encoder.to-unicode;
 
-    my @content = $!encoder.make-to-unicode-cmap(:$to-unicode);
-    $!encoder.cmap.decoded = $!encoder.make-cmap: $!encoder.cmap, @content;
+    $!encoder.cmap.decoded = $!encoder.make-to-unicode-cmap(:$to-unicode);
     $!encoder.cmap;
 }
 

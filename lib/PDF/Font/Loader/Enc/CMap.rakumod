@@ -18,7 +18,7 @@ has %!enc-width is Hash::int;
 has %.code2cid is Hash::int; # decoding mappings
 has %.cid2code is Hash::int; # encoding mappings
 has PDF::COS::Stream $.cid-cmap is rw; # Type0 /Encoding CMap
-has uint8 $!max-width = 1;
+has uint8 $.max-width = 1;
 method is-wide { $!max-width >= 2}
 my class CodeSpace is export(:CodeSpace) {
     has byte @.from;
@@ -85,7 +85,15 @@ my class CodeSpace is export(:CodeSpace) {
     }
     method Str { to-hex(@!from) ~ ' ' ~ to-hex(@!to) }
 }
-has CodeSpace @.codespaces is built is rw;
+has CodeSpace @!codespaces;
+method codespaces is rw {
+    Proxy.new(
+        FETCH => -> $ { @!codespaces },
+        STORE => -> $, @!codespaces {
+            $!max-width = @!codespaces>>.bytes.max;
+        }
+    );
+}
 
 sub valid-codepoint($_) {
     # not an exhaustive check
@@ -194,7 +202,7 @@ method make-cmap-codespaces {
     @!codespaces>>.Str;
 }
 
-method make-cid-content {
+method make-encoding-cmap {
     my @content;
     if %!code2cid {
         my @cmap-char;
@@ -226,6 +234,7 @@ method make-cid-content {
         @content.append: code-batches('cidchar', @cmap-char);
         @content.append: code-batches('cidrange', @cmap-range);
     }
+    $.make-cmap: $!cid-cmap, @content;
 }
 
 method !add-code(Int $cid, Int $ord) {
@@ -313,9 +322,11 @@ multi method decode(Str $byte-string, :cids($)!) {
             repeat {
                 $sample = $sample * 256 + @bytes[$i++];
                 $width++;
-            } until $width >= $!max-width || @!codespaces.first({.width($sample) == $width}); 
+            } until $width >= $!max-width || @!codespaces.first({ .width($sample) == $width});
+
             @cids.push: self!decode-cid($sample);
         }
+
         @cids;
     }
     elsif %!code2cid {
@@ -330,8 +341,8 @@ multi method decode(Str $s, :ords($)!) {
     self.decode($s, :cids).map({ @!to-unicode[$_] }).grep: *.so;
 }
 
-multi method decode(Str $text --> Str) {
-    self.decode($text, :ords)».chr.join;
+multi method decode(Str $byte-string --> Str) {
+    self.decode($byte-string, :ords)».chr.join;
 }
 
 multi method encode(Str $text, :cids($)!) {
@@ -364,21 +375,25 @@ method !encode-buf(Str $text --> Buf:D) {
 
 =head3 Description
 
-This method maps to PDF font dictionaries with a `ToUnicode` entry that references
-a CMap.
+This method maps to PDF font dictionaries with a `ToUnicode` entry and Type0
+fonts with an `Encoding` entry that reference CMaps.
+
+This class extends the base-class L<PDF::Font::Loader::Enc>, adding the ability
+of reading existing CMaps. It also adds the ability the handle variable encoding.
+
+=head3 Methods
+
+This class inherits from L<PDF::Font::Loader::Enc> and has all its method available.
+
+=head3 make-encoding-cmap
+
+Generates a CMap for the /Encoding entry in a PDF Type0 font, which is used to implment custom variable and wide encodings.. This method is typically called from the font object when an encoding has been added or updated for the encoder.
+
 
 =head3 Caveats
 
 Most, but not all, CMap encoded fonts have a Unicode mapping. The `has-encoding()`
 method should be used to verify this before using the `encode()` or `decode()` methods
 on a dictionary loaded CMap encoding.
-
-=head2 Bugs / Limitations
-
-Currently, this class:
-
-=item can read, but not write variable width CMap encodings.
-
-=item only handles one or two byte encodings
 
 =end pod

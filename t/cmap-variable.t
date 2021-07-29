@@ -14,7 +14,7 @@ my constant Glyph = PDF::Font::Loader::Glyph;
 my PDF::Lite $pdf .= open: "t/pdf/cmap-variable.pdf";
 my PDF::Content::Font $dict = $pdf.page(1).resources('Font')<F2>;
 
-my PDF::Content::FontObj $font = load-font(:$dict);
+my PDF::Content::FontObj $font = quietly load-font(:$dict);
 my PDF::Font::Loader::Enc::CMap $encoder = $font.encoder;
 
 ok $encoder.is-wide;

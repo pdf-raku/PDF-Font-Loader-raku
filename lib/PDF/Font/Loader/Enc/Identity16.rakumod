@@ -63,3 +63,14 @@ class PDF::Font::Loader::Enc::Identity16
         $.decode($encoded, :ords)».chr.join;
     }
 }
+
+=begin pod
+
+=head2 Description
+
+This class implements`Identity-H` and `Identity-V` encoding.
+
+This is common 2 byte encoding that directly encodes font glyph identifiers as
+CIDs. It was introduced with PDF 1.3.
+
+=end pod

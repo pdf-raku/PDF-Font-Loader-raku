@@ -9,3 +9,10 @@ class PDF::Font::Loader::Enc::Identity16
 
 /Identity-H or /Identity-V encoded fonts
 
+Description
+-----------
+
+This class implements`Identity-H` and `Identity-V` encoding.
+
+This is common 2 byte encoding that directly encodes font glyph identifiers as CIDs. It was introduced with PDF 1.3.
+

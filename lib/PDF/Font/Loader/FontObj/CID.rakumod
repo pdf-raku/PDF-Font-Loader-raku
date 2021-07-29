@@ -79,8 +79,7 @@ method make-encoding-stream {
 
     with $.encoder.cid-cmap {
         when PDF::COS::Stream {
-            my @content = $.encoder.make-cid-content;
-            $.encoder.cid-cmap.decoded = $.encoder.make-cmap: $_, @content;
+            .decoded = $.encoder.make-encoding-cmap;
         }
     }
     $.encoder.cid-cmap;
@@ -137,8 +136,12 @@ method make-dict {
 
 This is a subclass of L<PDF::Font::Loader::FontObj> for representing PDF CID fonts, introduced with PDF v1.3.
 
-The main defining characteristic of CID font is their abililty to support multi-byte (usually 2-byte) encodings.
+The main defining characteristic of CID (Type0) fonts is their abililty to support multi-byte (usually 2-byte) encodings.
 
-Loading a font with a multi-byte (or potentially multi-byte) encoding such as `identity-h` or `cmap` with get created with a L<PDF::Font::Loader::FontObj::CID> object.
+This class is used for all fonts with a multi-byte (or potentially multi-byte) encoding such as `identity-h` or `cmap`.
+
+=head3 Methods
+
+This class inherits from L<PDF::Font::Loader::FontObj> and has all its methods available.
 
 =end pod

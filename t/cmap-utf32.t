@@ -17,11 +17,11 @@ my Font::FreeType $freetype .= new;
 my $face = $freetype.face('t/fonts/DejaVuSans.ttf');
 
 sub utf32-checks($encoder) {
-    plan 10;
+    plan 11;
     isa-ok $encoder, PDF::Font::Loader::Enc::Unicode;
     ok $encoder.is-wide;
 
-    my CodeSpace @codespaces = $encoder.codespaces;
+    my CodeSpace @codespaces = $encoder.codespaces.List;
     is @codespaces[0].bytes, 4;
 
     enum ( :H-cid(43), :i-cid(76), :heart-cid(3901) );
@@ -30,6 +30,7 @@ sub utf32-checks($encoder) {
     is-deeply $encoder.encode("Hi"), flat(0.chr xx 3, 'H', 0.chr xx 3, 'i').join, "utf32 encoding sanity";
     is-deeply $encoder.encode("♥", :cids), $(+heart-cid, ), "cid multibyte encoding sanity";
     is-deeply $encoder.encode("♥").ords, (0, 0, "♥".ord div 256, "♥".ord mod 256), "multibyte encoding sanity";
+    is $encoder.decode($encoder.encode("Hi♥")), "Hi♥", "encode/decode round-trip";
     is-deeply $encoder.glyph(+H-cid), Glyph.new(:name<H>, :code-point("H".ord), :cid(+H-cid), :gid(+H-cid), :dx(752), :dy(0)), 'utf32 glyph "H"';
     is-deeply $encoder.glyph(+i-cid), Glyph.new(:name<i>, :code-point("i".ord), :cid(+i-cid), :gid(+i-cid), :dx(278), :dy(0)), 'utf32 glyph "i"';
     is-deeply $encoder.glyph(+heart-cid), Glyph.new(:name<heart>, :code-point("♥".ord), :cid(+heart-cid), :gid(+heart-cid), :dx(896), :dy(0)), 'utf32 glyph "♥"';

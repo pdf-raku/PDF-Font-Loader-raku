@@ -88,7 +88,7 @@ method set-encoding(UInt $code-point, UInt $cid)
 
 Map a single Unicode code-point to a CID index. This method is most likely to be useful for manually setting up an encoding layer for a font loaded from a PDF that lacks an encoding layer(`has-encoding()` is `False`).
 
-### make-cmap
+### make-to-unicode-cmap
 
-Generates a CMap for inclusion in a PDF. This method is typically called from the font object when an encoding has been added or updated for the encoder.
+Generates a CMap for the /ToUnicode entry in a PDF font. This method is typically called from the font object when an encoding has been added or updated for the encoder.
 

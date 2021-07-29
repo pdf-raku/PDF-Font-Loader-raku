@@ -31,7 +31,15 @@ submethod TWEAK {
     }
 }
 
-method is-wide { True }
+# cheat for the codespace-driven base method
+method enc-width($_ is raw) {
+    when $!enc eq 'utf32' { 4 }
+    when * >= 1 +< 24     { 4 }
+    when * >= 1 +< 16     { 3 }
+    when $!enc eq 'utf16' { 2 }
+    when * >= 1 +< 8      { 2 }
+    default { 1 }
+}
 
 method allocate(Int $ord) {
     my uint $cid = $.face.raw.FT_Get_Char_Index($ord);
@@ -39,7 +47,7 @@ method allocate(Int $ord) {
 
     self.set-encoding($ord, $cid);
 
-    if self.enc eq 'utf32' {
+    if $ord < 256 || self.enc eq 'utf32' {
         $code = $ord;
     }
     else {
@@ -55,3 +63,15 @@ method allocate(Int $ord) {
 
     $cid;
 }
+
+=begin pod
+
+=head2 Description
+
+This is an experimental class which implements UTF-8, UTF-16 and UTF-32 encoding.
+
+=head3 Methods
+
+This class is based on L<PDF::Font::Loader::Enc::CMap> and has all its methods available.
+
+=end pod

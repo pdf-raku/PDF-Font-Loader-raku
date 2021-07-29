@@ -14,7 +14,11 @@ Description
 
 This is a subclass of [PDF::Font::Loader::FontObj](https://pdf-raku.github.io/PDF-Font-Loader-raku/PDF/Font/Loader/FontObj) for representing PDF CID fonts, introduced with PDF v1.3.
 
-The main defining characteristic of CID font is their abililty to support multi-byte (usually 2-byte) encodings.
+The main defining characteristic of CID (Type0) fonts is their abililty to support multi-byte (usually 2-byte) encodings.
 
-Loading a font with a multi-byte (or potentially multi-byte) encoding such as `identity-h` or `cmap` with get created with a [PDF::Font::Loader::FontObj::CID](https://pdf-raku.github.io/PDF-Font-Loader-raku/PDF/Font/Loader/FontObj/CID) object.
+This class is used for all fonts with a multi-byte (or potentially multi-byte) encoding such as `identity-h` or `cmap`.
+
+### Methods
+
+This class inherits from [PDF::Font::Loader::FontObj](https://pdf-raku.github.io/PDF-Font-Loader-raku/PDF/Font/Loader/FontObj) and has all its methods available.
 
