@@ -137,28 +137,35 @@ sub code-batches($name, @content) is export(:code-batches) {
     @lines;
 }
 
+method encoded-width($) {
+    # number of output bytes. trivial for fixed encodings
+    self.is-wide ?? 2 !! 1;
+}
+
 method make-to-unicode-cmap(:$to-unicode = self.to-unicode) {
     my @content;
     my @cmap-char;
     my @cmap-range;
-    my $d = (self.is-wide ?? '4' !! '2');
-    my \cid-fmt   := '<%%0%sX>'.sprintf: $d;
-    my \char-fmt  := '<%%0%sX> <%%04X>'.sprintf: $d;
-    my \range-fmt := cid-fmt ~ ' ' ~ char-fmt;
     my \last-char  = $.last-char;
 
     loop (my uint16 $cid = $.first-char; $cid <= last-char; $cid++) {
         my uint32 $ord = $to-unicode[$cid]
           || next;
         my uint16 $start-cid = $cid;
+        my uint8 $start-byte = $start-cid div 256;
         my uint32 $start-code = $ord;
-        while $cid < last-char && $to-unicode[$cid + 1] == $ord+1 {
+        while $cid < last-char && $to-unicode[$cid + 1] == $ord+1 && ($cid+1) div 256 == $start-byte {
             $cid++; $ord++;
         }
-        if $start-cid == $cid {
+        my $d = 2 * self.encoded-width($start-code);
+        my \char-fmt  := '<%%0%sX> <%%04X>'.sprintf: $d;
+
+        if $start-cid == $cid && $start-byte == $cid div 256 {
             @cmap-char.push: char-fmt.sprintf($cid, $start-code);
         }
         else {
+            my \cid-fmt   := '<%%0%sX>'.sprintf: $d;
+            my \range-fmt := cid-fmt ~ ' ' ~ char-fmt;
             @cmap-range.push: range-fmt.sprintf($start-cid, $cid, $start-code);
         }
     }
@@ -194,7 +201,11 @@ method make-cmap(PDF::COS::Stream $cmap, @content, |c) {
 
 =head2 Description
 
-This is the base class for all encoding classes.
+This is the base class for all encoding classes. It is suitable for fixed
+length encodings only such as `mac`, `win` (single byte) or `identity-h`.
+
+L< PDF::Font::Loader::Enc::CMap>, which inherits from this class, is the
+base class for variable length encodings
 
 =head2 Methods
 

@@ -41,6 +41,11 @@ method enc-width($_ is raw) {
     default { 1 }
 }
 
+# another cheat for slower base method
+method encoded-width(Int $ord) {
+    $!enc eq 'utf32' ?? 4 !! $ord.chr.encode($!enc).bytes;
+}
+
 method allocate(Int $ord) {
     my uint $cid = $.face.raw.FT_Get_Char_Index($ord);
     my uint32 $code = 0;

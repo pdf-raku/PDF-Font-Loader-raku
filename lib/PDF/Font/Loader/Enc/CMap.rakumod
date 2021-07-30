@@ -17,6 +17,7 @@ has Int %.charset{Int};
 has %!enc-width is Hash::int;
 has %.code2cid is Hash::int; # decoding mappings
 has %.cid2code is Hash::int; # encoding mappings
+has uint8 @cid-width;
 has PDF::COS::Stream $.cid-cmap is rw; # Type0 /Encoding CMap
 has uint8 $!max-width = 1;
 method is-wide { $!max-width >= 2}
@@ -118,13 +119,12 @@ constant %Ligatures = %(do {
         }
         $k => .value;
     }
-});
+                           });
 
-sub first-byte($code) {
-    my $byte = $code;
-    $byte div= 256 while $byte > 256;
-    $byte;
+method encoded-width(Int $ord) {
+    self.enc-width: self.encode($ord.chr, :cids).head;
 }
+
 method enc-width($code is raw) {
    %!enc-width{$code} // do {
         my $bytes = .bytes with @!codespaces.first({.ACCEPTS($code)})

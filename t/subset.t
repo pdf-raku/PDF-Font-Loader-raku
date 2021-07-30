@@ -18,11 +18,12 @@ if $! {
 
 my PDF::Content::FontObj $ttf-font = load-font( :file<t/fonts/Vera.ttf>, :subset);
 my PDF::Content::FontObj $otf-font = load-font( :file<t/fonts/Cantarell-Oblique.otf>, :enc<win>, :subset);
-my PDF::Content::FontObj $ttc-font = load-font( :file<t/fonts//wqy-microhei.ttc>, :subset);
+my PDF::Content::FontObj $ttc-font = load-font( :file<t/fonts/wqy-microhei.ttc>, :subset);
+my PDF::Content::FontObj $uni-font = load-font( :file<t/fonts/DejaVuSans.ttf>,  :enc<utf16>, :subset);
 
 sub check-fonts($whence) {
     subtest $whence => {
-        plan 17;
+        plan 22;
         ok $ttf-font.is-subset, '$ttf-font.is-subset';
         like $ttf-font.font-name, /^<[A..Z]>**6 '+BitstreamVeraSans-Roman'$/, 'font-name';
         is $ttf-font.encoding, 'Identity-H', '$ttf-font.encoding';
@@ -46,6 +47,13 @@ sub check-fonts($whence) {
         @shape = $ttc-font.glyphs("Ab");
         is-deeply @shape.head, Glyph.new(:name<A>, :code-point(65), :cid(36), :gid(36), :dx(608), :dy(0)), 'ttc-font glyph "A"';
         is-deeply @shape.tail, Glyph.new(:name<b>, :code-point(98), :cid(69), :gid(69), :dx(586), :dy(0)), 'ttc-font glyph "b"';
+
+        ok $uni-font.is-subset, '$uni-font.is-subset';
+        like $uni-font.font-name, /^<[A..Z]>**6 '+DejaVuSans'$/, 'font-name';
+        is $uni-font.enc, 'utf16', 'uni-font.encoding';
+        @shape = $uni-font.glyphs("Ab");
+        is-deeply @shape.head, Glyph.new(:name<A>, :code-point(65), :cid(36), :gid(36), :dx(684), :dy(0)), 'ttc-font glyph "A"';
+        is-deeply @shape.tail, Glyph.new(:name<b>, :code-point(98), :cid(69), :gid(69), :dx(635), :dy(0)), 'ttc-font glyph "b"';
     }
 }
 
@@ -61,11 +69,14 @@ $pdf.add-page.gfx.text: {
     .say: '';
     .font = $ttc-font;
     .say: "ttc font { $ttc-font.font-name } {$ttc-font.encoding} subset ABCxyz";
+    .say: '';
+    .font = $uni-font;
+    .say: "uni font { $uni-font.font-name } {$uni-font.enc} subset ABCxyz";
 }
 
 check-fonts('created fonts');
 
-# Don't save PDF files. They have randomly varying font-name prefixs
+# Don't save PDF files. They have randomly varying font-name prefixes
 mkdir 'tmp';
 
 $pdf.save-as: "tmp/subset.pdf";
@@ -77,6 +88,7 @@ my %fonts = $pdf.page(1).resources('Font');
 $ttf-font = load-font( dict => %fonts<F1> );
 $otf-font = load-font( dict => %fonts<F2> );
 $ttc-font = load-font( dict => %fonts<F3> );
+$uni-font = load-font( dict => %fonts<F4> );
 
 check-fonts('re-read fonts');
 
