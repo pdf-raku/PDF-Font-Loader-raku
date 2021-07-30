@@ -1,5 +1,7 @@
 {{$NEXT}}
     - Fix PDF::Font::Loader::Enc::Unicode decode() method
+    - Fix CMap ligature handling
+    - Fix inverted Identity-H %cmap
 
 0.5.9 
     - Add PDF::Font::Loader::Enc::Unicode encoder (experimental) for reading and

@@ -347,8 +347,9 @@ method encoding {
 
 sub charset-to-unicode(%charset) {
     my uint32 @to-unicode;
-    @to-unicode[.key] = .value
-        for %charset.pairs;
+    for %charset.kv -> $ord, $cid {
+        @to-unicode[$cid] = $ord;
+    }
     @to-unicode;
 }
 
@@ -509,11 +510,11 @@ method !make-subset {
     my $buf := $!font-buf;
     my %input = do if $!enc ~~ m/^[identity|utf]/ {
         # need to retain gids for identity based encodings
-        my @glyphs = %ords.keys;
+        my @glyphs = %ords.values;
         %( :@glyphs, :retain-gids)
     }
     else {
-        my @unicodes = %ords.values;
+        my @unicodes = %ords.keys;
         %( :@unicodes );
     }
     my $subset = subsetter().new: :%input, :face{ :$buf };

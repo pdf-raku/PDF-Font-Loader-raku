@@ -20,10 +20,10 @@ class PDF::Font::Loader::Enc::Identity16
 
     multi method encode(Str $text, :cids($)!) {
         my $face-struct = $!face.raw;
-        blob16.new: $text.ords.map: {
-            my uint $cid = $face-struct.FT_Get_Char_Index($_);
-            @!to-unicode[$cid] ||= $_;
-            %!charset{$cid} ||= $_;
+        blob16.new: $text.ords.map: -> $ord {
+            my uint $cid = $face-struct.FT_Get_Char_Index($ord);
+            @!to-unicode[$cid] ||= $ord;
+            %!charset{$ord} ||= $cid;
             $cid;
         }
     }
