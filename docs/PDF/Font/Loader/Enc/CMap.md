@@ -21,7 +21,7 @@ This class inherits from [PDF::Font::Loader::Enc](https://pdf-raku.github.io/PDF
 
 ### make-encoding-cmap
 
-Generates a CMap for the /Encoding entry in a PDF Type0 font, which is used to implment custom variable and wide encodings.. This method is typically called from the font object when an encoding has been added or updated for the encoder.
+Generates a CMap for the /Encoding entry in a PDF Type0 font, which is used to implement custom variable and wide encodings.. This method is typically called from the font object when an encoding has been added or updated for the encoder.
 
 ### Caveats
 

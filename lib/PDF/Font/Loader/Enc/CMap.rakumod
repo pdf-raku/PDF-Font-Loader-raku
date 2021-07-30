@@ -18,7 +18,7 @@ has %!enc-width is Hash::int;
 has %.code2cid is Hash::int; # decoding mappings
 has %.cid2code is Hash::int; # encoding mappings
 has PDF::COS::Stream $.cid-cmap is rw; # Type0 /Encoding CMap
-has uint8 $.max-width = 1;
+has uint8 $!max-width = 1;
 method is-wide { $!max-width >= 2}
 my class CodeSpace is export(:CodeSpace) {
     has byte @.from;
@@ -246,7 +246,7 @@ method !add-code(Int $cid, Int $ord) {
     else {
         with %Ligatures{$ord} -> $lig {
             %!charset{$lig} = $cid;
-            @!to-unicode[$_] = $lig;
+            @!to-unicode[$cid] = $lig;
         }
         elsif 0xFFFF < $ord < 0xFFFFFFFF {
             warn sprintf("skipping possible unmapped ligature: U+%X...", $ord);
@@ -387,7 +387,7 @@ This class inherits from L<PDF::Font::Loader::Enc> and has all its method availa
 
 =head3 make-encoding-cmap
 
-Generates a CMap for the /Encoding entry in a PDF Type0 font, which is used to implment custom variable and wide encodings.. This method is typically called from the font object when an encoding has been added or updated for the encoder.
+Generates a CMap for the /Encoding entry in a PDF Type0 font, which is used to implement custom variable and wide encodings.. This method is typically called from the font object when an encoding has been added or updated for the encoder.
 
 
 =head3 Caveats
