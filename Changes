@@ -1,4 +1,6 @@
 {{$NEXT}}
+
+0.5.10  2021-07-31T10:50:31+12:00
     - Fix PDF::Font::Loader::Enc::Unicode decode() method
     - Fix CMap ligature handling
     - Fix inverted Identity-H %.charset attribute

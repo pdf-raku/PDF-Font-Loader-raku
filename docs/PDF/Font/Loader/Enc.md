@@ -11,7 +11,9 @@ Font encoder/decoder base class
 Description
 -----------
 
-This is the base class for all encoding classes.
+This is the base class for all encoding classes. It is suitable for fixed length encodings only such as `mac`, `win` (single byte) or `identity-h`.
+
+[PDF::Font::Loader::Enc::CMap](https://pdf-raku.github.io/PDF-Font-Loader-raku/PDF/Font/Loader/Enc/CMap), which inherits from this class, is the base class for variable length encodings
 
 Methods
 -------

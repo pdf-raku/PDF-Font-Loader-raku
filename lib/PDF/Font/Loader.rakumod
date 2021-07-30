@@ -1,6 +1,6 @@
 use v6;
 
-class PDF::Font::Loader:ver<0.5.9> {
+class PDF::Font::Loader:ver<0.5.10> {
 
     use Font::FreeType;
     use Font::FreeType::Face;
