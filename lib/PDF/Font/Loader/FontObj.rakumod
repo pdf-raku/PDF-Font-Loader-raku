@@ -523,6 +523,7 @@ method !make-subset {
 
 method cb-finish {
     my $dict := self.to-dict;
+
     if $.first-char.defined {
         
         my $widths-updated = $!encoder.widths-updated;

@@ -113,33 +113,40 @@ method has-encoding {
 }
 
 method make-cmap-codespaces {
-    my $d = (self.is-wide ?? '4' !! '2');
-    my \cid-fmt   := '<%%0%sX>'.sprintf: $d;
-    my \mask = $.is-wide ?? 0x1000 !! 0x10;
-    my $first-char = $.first-char div mask * mask;
-    my $last-char = $.last-char div mask * mask + mask - 1;
-    ($first-char.fmt(cid-fmt) ~ ' ' ~ $last-char.fmt(cid-fmt), );
+    self.is-wide
+        ?? ['<0000> <FFFF>']
+        !! ['<00> <FF>'];
 }
 
 sub code-batches($name, @content) is export(:code-batches) {
     my @lines;
-    if +@content > 100 {
-        my $n = +@content div 100 * 100;
-        @lines = code-batches($name, @content.head($n));
+    my int $n = +@content;
+
+    loop (my int $i = 0; $i < $n;) {
+        my int $size = min($n - $i, 100);
+        my int $end = $i + $size;
         @lines.push: '';
-        @lines.append: code-batches($name, @content.tail(* - $n));
-    }
-    elsif @content {
-        @lines.push: "{+@content} begin" ~ $name;
-        @lines.append: @content;
+        @lines.push: "{$size} begin" ~ $name;
+
+        loop (my int $j = $i; $j < $end;) {
+            @lines.push: @content[$j++];
+        }
+
         @lines.push: 'end' ~ $name;
+        $i = $end;
     }
+
     @lines;
 }
 
-method encoded-width($) {
-    # number of output bytes. trivial for fixed encodings
-    self.is-wide ?? 2 !! 1;
+sub codepoint-to-utf16(UInt $_) {
+    my $buf = .chr.encode("utf16");
+    my \words = +$buf;
+    my $fmt = words > 1 || $buf[0] >= 256 ?? '%04X' !! '%02X';
+    my $s = $buf[0].fmt($fmt);
+    $buf == words > 1
+        ?? $s ~ $buf[1].fmt("%04X") # 4 byte
+        !! $s;                      # variable bytes
 }
 
 method make-to-unicode-cmap(:$to-unicode = self.to-unicode) {
@@ -147,37 +154,33 @@ method make-to-unicode-cmap(:$to-unicode = self.to-unicode) {
     my @cmap-char;
     my @cmap-range;
     my \last-char  = $.last-char;
+    my \char-fmt  := '<%04X> <%s>';
 
     loop (my uint16 $cid = $.first-char; $cid <= last-char; $cid++) {
         my uint32 $ord = $to-unicode[$cid]
-          || next;
+            || next;
         my uint16 $start-cid = $cid;
         my uint8 $start-byte = $start-cid div 256;
         my uint32 $start-code = $ord;
         while $cid < last-char && $to-unicode[$cid + 1] == $ord+1 && ($cid+1) div 256 == $start-byte {
             $cid++; $ord++;
         }
-        my $d = 2 * self.encoded-width($start-code);
-        my \char-fmt  := '<%%0%sX> <%%04X>'.sprintf: $d;
+        my $code-hex = codepoint-to-utf16($start-code);
 
         if $start-cid == $cid && $start-byte == $cid div 256 {
-            @cmap-char.push: char-fmt.sprintf($cid, $start-code);
+            @cmap-char.push: char-fmt.sprintf($cid, $code-hex);
         }
         else {
-            my \cid-fmt   := '<%%0%sX>'.sprintf: $d;
-            my \range-fmt := cid-fmt ~ ' ' ~ char-fmt;
-            @cmap-range.push: range-fmt.sprintf($start-cid, $cid, $start-code);
+            @cmap-range.push: $start-cid.fmt('<%04X> ') ~ char-fmt.sprintf($cid, $code-hex);
         }
     }
 
     @content.append: code-batches('bfchar', @cmap-char);
     @content.append: code-batches('bfrange', @cmap-range);
-
     $.make-cmap: $!cmap, @content;
 }
 
 method make-cmap(PDF::COS::Stream $cmap, @content, |c) {
-
     my PDF::IO::Writer $writer .= new;
     my $cmap-name = $writer.write: $cmap<CMapName>.content;
     my $cid-system-info = $writer.write: $!cmap<CIDSystemInfo>.content;

@@ -17,7 +17,7 @@ my Font::FreeType $freetype .= new;
 my $face = $freetype.face('t/fonts/DejaVuSans.ttf');
 
 sub utf32-checks($encoder) {
-    plan 13;
+    plan 11;
     isa-ok $encoder, PDF::Font::Loader::Enc::Unicode;
     ok $encoder.is-wide;
 
@@ -26,10 +26,7 @@ sub utf32-checks($encoder) {
 
     enum ( :H-cid(43), :i-cid(76), :heart-cid(3901) );
 
-    is $encoder.encoded-width('H'.ord), 4;
-    is $encoder.encoded-width('♥'.ord), 4;
-
-     is-deeply $encoder.encode("Hi", :cids), $(+H-cid, +i-cid), "cid encoding sanity";
+    is-deeply $encoder.encode("Hi", :cids), $(+H-cid, +i-cid), "cid encoding sanity";
     is-deeply $encoder.encode("Hi"), flat(0.chr xx 3, 'H', 0.chr xx 3, 'i').join, "utf32 encoding sanity";
     is-deeply $encoder.encode("♥", :cids), $(+heart-cid, ), "cid multibyte encoding sanity";
     is-deeply $encoder.encode("♥").ords, (0, 0, "♥".ord div 256, "♥".ord mod 256), "multibyte encoding sanity";

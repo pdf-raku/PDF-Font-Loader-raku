@@ -11,20 +11,23 @@ my PDF::Content::FontObj $cff-font = load-font( :file<t/fonts/NimbusRoman-Regula
 # True collections don't embed without subsetting
 my PDF::Content::FontObj $ttc-font = load-font( :file<t/fonts/wqy-microhei.ttc>, :!embed, :!subset );
 
+my $n = 0;
+my $all-chars;
+
+$deja.face.forall-chars: :!load, -> $_ {
+    $all-chars ~= .char-code.chr;
+    $all-chars ~= ' ' if ++$n %% 100;
+};
+
 $pdf.add-page.text: {
    .font = $deja;
    .text-position = [10, 760];
    .say: 'Hello, world';
    .say: 'WAV', :kern;
-   my $s;
    my $n = 0;
    .font = $deja, 8;
-   $deja.face.forall-chars: :!load, -> $_ {
-       last if .char-code > 19900;
-       $s ~= .char-code.chr;
-       $s ~= ' ' if $n++ %% 10
-   };
-   .say: $s, :width(400);
+
+   .say: $all-chars, :width(400);
 }
 
 $pdf.add-page.text: {

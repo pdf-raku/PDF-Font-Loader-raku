@@ -101,35 +101,50 @@ sub valid-codepoint($_) {
     $_ <= 0x10FFFF && ! (0xD800 <= $_ <= 0xDFFF);
 }
 
-constant %Ligatures = %(do {
-    (
-        [0x66,0x66]       => 0xFB00, # ff
-        [0x66,0x69]       => 0xFB01, # fi
-        [0x66,0x6C]       => 0xFB02, # fl
-        [0x66,0x66,0x69]  => 0xFB03, # ffi
-        [0x66,0x66,0x6C]  => 0xFB04, # ffl
-        [0x66,0x74]       => 0xFB05, # ft
-        [0x73,0x74]       => 0xFB06, # st
-        # .. + more, see https://en.wikipedia.org/wiki/Orthographic_ligature
-    ).map: {
-        my $k = 0;
-        for .key {
-            $k +<= 16;
-            $k += $_;
+constant %Ligatures = %(
+    do {
+        (
+            [0x66,0x66]       => 0xFB00, # ff
+            [0x66,0x69]       => 0xFB01, # fi
+            [0x66,0x6C]       => 0xFB02, # fl
+            [0x66,0x66,0x69]  => 0xFB03, # ffi
+            [0x66,0x66,0x6C]  => 0xFB04, # ffl
+            [0x66,0x74]       => 0xFB05, # ft
+            [0x73,0x74]       => 0xFB06, # st
+            # .. + more, see https://en.wikipedia.org/wiki/Orthographic_ligature
+        ).map: {
+            my $k = 0;
+            for .key {
+                $k +<= 16;
+                $k += $_;
+            }
+            $k => .value;
         }
-        $k => .value;
     }
-                           });
-
-method encoded-width(Int $ord) {
-    self.enc-width: self.encode($ord.chr, :cids).head;
-}
+);
 
 method enc-width($code is raw) {
    %!enc-width{$code} // do {
         my $bytes = .bytes with @!codespaces.first({.ACCEPTS($code)})
             || die "unable to accomodate code 0x{$code.base(16)}"; # todo: expand, vivify?
         %!enc-width{$code} = $bytes;
+    }
+}
+
+sub utf16-to-codepoint(Str() $x is copy) {
+    if $x.chars > 4 {
+        # utf16 encoding semantics
+        unless  $x.chars %% 4 {
+            my \pad = 4  -  $x.chars % 4;
+            $x = '0' x pad  ~  $x;
+        }
+
+        my int16 @words = $x.comb(/..../).map({ :16($_) });
+        my utf16 $buf .= new(@words);
+        $buf.decode.ord;
+    }
+    else {
+        :16($x);
     }
 }
 
@@ -148,8 +163,10 @@ method load-cmap(Str:D $_) {
             }
         }
         elsif /:s^ \d+ beginbfrange/ ff /^endbfrange/ {
-            if /:s [ '<' $<r>=[<xdigit>+] '>' ] ** 3 / {
-                my uint ($from, $to, $ord) = @<r>.map: { :16(.Str) };
+            if /:s [ '<' $<r>=[<xdigit>+] '>' ] ** 3/ {
+                my uint $from = :16(@<r>[0].Str);
+                my uint $to   = :16(@<r>[1].Str);
+                my $ord = utf16-to-codepoint(@<r>[2]);
                 for $from .. $to -> $cid {
                     last unless self!add-code($cid, $ord++)
                 }
@@ -157,7 +174,8 @@ method load-cmap(Str:D $_) {
         }
         elsif /:s^ \d+ beginbfchar/ ff /^endbfchar/ {
             if /:s [ '<' $<r>=[<xdigit>+] '>' ] ** 2 / {
-                my uint ($cid, $ord) = @<r>.map: { :16(.Str) };
+                my $cid = :16(@<r>[0].Str);
+                my uint $ord = utf16-to-codepoint(@<r>[1]);
                 self!add-code($cid, $ord);
             }
         }

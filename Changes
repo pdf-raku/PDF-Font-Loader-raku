@@ -1,4 +1,6 @@
 {{$NEXT}}
+    - Fix CMap code ranges to encode and decode as UTF16BE. See
+      ISO-32000 9.10.3 ToUnicode CMaps
 
 0.5.10  2021-07-31T10:50:31+12:00
     - Fix PDF::Font::Loader::Enc::Unicode decode() method
