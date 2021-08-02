@@ -169,7 +169,6 @@ Selects the encoding mode: common modes are `win`, `mac` and `identity-h`.
 =item `mac` Macintosh platform single byte encoding
 =item `win` Windows platform single byte encoding
 =item `identity-h` a degenerative two byte encoding mode
-=item *(Experimental)* `utf8`, `utf16` and `utf32` encodings 
 
 `win` is used as the default encoding for fonts with no more than 255 glyphs. `identity-h` is used otherwise.
 

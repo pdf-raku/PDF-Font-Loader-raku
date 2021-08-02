@@ -202,10 +202,10 @@ method load-cmap(Str:D $_) {
 
 submethod TWEAK {
     for self.cmap, self.cid-cmap {
-        with $_ {
+        when PDF::COS::Stream:D {
             self.load-cmap(.decoded.Str);
             with .<UseCMap> {
-                when PDF::COS::Stream {
+                when PDF::COS::Stream:D {
                     self.load-cmap(.decoded.Str);
                 }
                 default {

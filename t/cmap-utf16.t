@@ -41,6 +41,9 @@ sub utf16-checks($encoder) {
 my PDF::Font::Loader::Enc::Unicode $encoder .= new: :$face, :enc<utf16>;
 subtest 'unit-tests', { utf16-checks($encoder) }
 
+skip-rest "Writing of PDFs with UTF16 encoded text is NYI";
+exit 0;
+
 subtest 'integration-tests', {
     use PDF::Font::Loader::FontObj;
     my PDF::Lite $pdf .= new;

@@ -1,6 +1,9 @@
 {{$NEXT}}
     - Fix CMap code ranges to encode and decode as UTF16BE. See
       ISO-32000 9.10.3 ToUnicode CMaps
+    - Disable writing of experimental utf8, utf16 and utf32 encodings
+      for now. Sticking point is creating a ToUnicode CMap that works
+      across all code ranges.
 
 0.5.10  2021-07-31T10:50:31+12:00
     - Fix PDF::Font::Loader::Enc::Unicode decode() method

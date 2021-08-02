@@ -1,6 +1,6 @@
 use PDF::Font::Loader::Enc::CMap :CodeSpace;
 
-#| UTF-8/16/32 based encoding and decoding
+#| UTF-8/16/32 based encoding and decoding (Experimental)
 unit class PDF::Font::Loader::Enc::Unicode
     is PDF::Font::Loader::Enc::CMap;
 
@@ -64,14 +64,21 @@ method allocate(Int $ord) {
     $cid;
 }
 
+method make-to-unicode-cmap {
+    fail X::NYI.new;
+}
+
 =begin pod
 
 =head2 Description
 
-This is an experimental class which implements UTF-8, UTF-16 and UTF-32 encoding.
+This is an experimental class which implements partial support UTF-8, UTF-16 and UTF-32 encoding.
+
+At this stage it only support named encodings with `UTF8`, `UTF16` and `UTF32` in the name.
 
 =head3 Methods
 
-This class is based on L<PDF::Font::Loader::Enc::CMap> and has all its methods available.
+This class is based on L<PDF::Font::Loader::Enc::CMap> and has all its methods available, except for `make-to-unicode-cmap`, which dies with a X::NYI error.
+
 
 =end pod
