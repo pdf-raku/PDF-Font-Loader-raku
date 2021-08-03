@@ -24,8 +24,8 @@ $pdf.page(1).gfx.text: -> $gfx {
     my @glyphs = $f1.glyphs(@cids);
     todo "glyph test needs PDF::Content v0.5.6+"
         unless PDF::Content.^ver >= v0.5.6;
-    is-deeply @glyphs[0], PDF::Font::Loader::Glyph.new(:name<square>, :cid(1), :gid(1), :dx(1000) );
-    is $f1.stringwidth(@cids), @glyphs>>.dx.sum;
+    is-deeply @glyphs[0], PDF::Font::Loader::Glyph.new(:name<square>, :cid(1), :gid(1), :ax(1000) );
+    is $f1.stringwidth(@cids), @glyphs>>.ax.sum;
 
     lives-ok {
         $gfx.font = $f1;

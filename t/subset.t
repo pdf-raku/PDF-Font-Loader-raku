@@ -27,8 +27,8 @@ sub check-fonts($whence) {
         like $ttf-font.font-name, /^<[A..Z]>**6 '+BitstreamVeraSans-Roman'$/, 'font-name';
         is $ttf-font.encoding, 'Identity-H', '$ttf-font.encoding';
         my Glyph @shape = $ttf-font.glyphs("Ab");
-        is-deeply @shape.head, Glyph.new(:name<A>, :code-point(65), :cid(36), :gid(36), :dx(684), :dy(0)), 'ttf-font glyph "A"';
-        is-deeply @shape.tail, Glyph.new(:name<b>, :code-point(98), :cid(69), :gid(69), :dx(635), :dy(0)), 'ttf-font glyph "b"';
+        is-deeply @shape.head, Glyph.new(:name<A>, :code-point(65), :cid(36), :gid(36), :ax(684), :ay(0)), 'ttf-font glyph "A"';
+        is-deeply @shape.tail, Glyph.new(:name<b>, :code-point(98), :cid(69), :gid(69), :ax(635), :ay(0)), 'ttf-font glyph "b"';
 
         ok $otf-font.is-subset, '$otf-font.is-subset';
         like $otf-font.font-name, /^<[A..Z]>**6 '+Cantarell-Oblique'$/, 'font-name';
@@ -36,16 +36,16 @@ sub check-fonts($whence) {
         @shape = $otf-font.glyphs("Ab");
         # CIDs change, after reloading font face
         is @shape.head.code-point, 'A'.ord, 'otf-font glyph "A" cord-point';
-        is @shape.head.dx, 575, 'otf-font glyph "A" dx';
+        is @shape.head.ax, 575, 'otf-font glyph "A" ax';
         is @shape.tail.code-point, 'b'.ord, 'otf-font glyph "b" cord-point';
-        is @shape.tail.dx, 535, 'otf-font glyph "b" dx';
+        is @shape.tail.ax, 535, 'otf-font glyph "b" ax';
 
         ok $ttc-font.is-subset, '$ttc-font.is-subset';
         like $ttc-font.font-name, /^<[A..Z]>**6 '+WenQuanYiMicroHei'$/, 'font-name';
         is $ttc-font.encoding, 'Identity-H', '$ttc-font.encoding';
         @shape = $ttc-font.glyphs("Ab");
-        is-deeply @shape.head, Glyph.new(:name<A>, :code-point(65), :cid(36), :gid(36), :dx(608), :dy(0)), 'ttc-font glyph "A"';
-        is-deeply @shape.tail, Glyph.new(:name<b>, :code-point(98), :cid(69), :gid(69), :dx(586), :dy(0)), 'ttc-font glyph "b"';
+        is-deeply @shape.head, Glyph.new(:name<A>, :code-point(65), :cid(36), :gid(36), :ax(608), :ay(0)), 'ttc-font glyph "A"';
+        is-deeply @shape.tail, Glyph.new(:name<b>, :code-point(98), :cid(69), :gid(69), :ax(586), :ay(0)), 'ttc-font glyph "b"';
 
     }
 }

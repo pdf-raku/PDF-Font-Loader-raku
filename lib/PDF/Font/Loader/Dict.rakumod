@@ -142,7 +142,8 @@ class PDF::Font::Loader::Dict {
 
         enum (:SymbolicFlag(1 +< 5), :ItalicFlag(1 +< 6));
 
-        %opt<font-descriptor> = font-descriptor($dict);
+        %opt<font-descriptor> = $_
+            with font-descriptor($dict);
 
         with %opt<font-descriptor> {
              with .<FontName> {

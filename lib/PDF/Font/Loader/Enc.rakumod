@@ -67,7 +67,7 @@ method glyph(UInt $cid) {
     $gid ||= $.face.glyph-index($code-point)
         if $code-point;
     $gid ||= $cid;
-    my $dx = (self.width($cid) ||= self!glyph-size($gid)[Width].round);
+    my $ax = (self.width($cid) ||= self!glyph-size($gid)[Width].round);
     my Str $name;
 
     if $code-point {
@@ -84,7 +84,7 @@ method glyph(UInt $cid) {
         $name = $_
              unless .starts-with('.');
     }
-    PDF::Font::Loader::Glyph.new: :$name, :$code-point, :$cid, :$gid, :$dx;
+    PDF::Font::Loader::Glyph.new: :$name, :$code-point, :$cid, :$gid, :$ax;
 }
 
 method !glyph-size($gid) {

@@ -1,4 +1,6 @@
 {{$NEXT}}
+    - Change Glyph width and height attributes from dx(), dy() to ax() ay()
+      for consistanyt with HarfBuzz module.
 
 0.5.11  2021-08-03T12:24:32+12:00
     - Fix CMap code ranges to encode and decode as UTF16BE. See

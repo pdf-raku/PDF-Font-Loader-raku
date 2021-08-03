@@ -51,7 +51,7 @@ method encoder { $!encoder }
 has Blob $.font-buf;
 has PDF::COS::Dict $!dict;
 # Font descriptors are needed for all but core fonts
-has $.font-descriptor = PDF::COS::Dict.COERCE: %( :Type(/'FontDescriptor'));
+has PDF::COS::Dict $.font-descriptor .= COERCE: %( :Type(/'FontDescriptor'));
 my subset EncodingScheme where 'mac'|'win'|'zapf'|'sym'|'identity'|'identity-h'|'identity-v'|'std'|'mac-extra'|'cmap'|'utf8'|'utf16'|'utf32';
 has EncodingScheme $.enc;
 has Bool $.embed = True;
@@ -150,26 +150,26 @@ method height($pointsize = 1000, Bool :$from-baseline, Bool :$hanging) {
 
 method glyph-width(Str $ch) is rw {
     Proxy.new(
-        FETCH => { .dx with self.glyphs($ch)[0] },
+        FETCH => { .ax with self.glyphs($ch)[0] },
         STORE => -> $, UInt() $width {
             with $!encoder.encode($ch, :cids)[0] -> $cid {
                 
                 $!encoder.width($cid) = $width;
-                self!glyph($cid).dx = $width;
+                self!glyph($cid).ax = $width;
             }
         }
     );
 }
 
 multi method stringwidth(Str $text, :$kern) {
-    ([+] $!encoder.encode($text, :cids).map: { self!glyph($_).dx })
+    ([+] $!encoder.encode($text, :cids).map: { self!glyph($_).ax })
     + ($kern ?? self!font-kerning($text)[Width] !! 0);
 }
 multi method stringwidth(Str $text, $pointsize, :$kern) {
     self.stringwidth($text, :$kern) * $pointsize / 1000;
 }
 multi method stringwidth(@cids, $point-size?) {
-    my $width = [+] @cids.map: { self!glyph($_).dx };
+    my $width = [+] @cids.map: { self!glyph($_).ax };
     $point-size
         ?? $width  * $point-size / 1000
         !! $width;
@@ -426,7 +426,9 @@ method make-dict {
     $dict;
 }
 
-method to-dict { $!dict //= PDF::Content::Font.make-font(self.make-dict, self) }
+method to-dict {
+    $!dict //= PDF::Content::Font.make-font(self.make-dict, self);
+}
 
 method !font-kerning(Str $text is copy) {
     my FT_UInt $prev-idx = 0;

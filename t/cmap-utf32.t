@@ -31,9 +31,9 @@ sub utf32-checks($encoder) {
     is-deeply $encoder.encode("♥", :cids), $(+heart-cid, ), "cid multibyte encoding sanity";
     is-deeply $encoder.encode("♥").ords, (0, 0, "♥".ord div 256, "♥".ord mod 256), "multibyte encoding sanity";
     is $encoder.decode($encoder.encode("Hi♥")), "Hi♥", "encode/decode round-trip";
-    is-deeply $encoder.glyph(+H-cid), Glyph.new(:name<H>, :code-point("H".ord), :cid(+H-cid), :gid(+H-cid), :dx(752), :dy(0)), 'utf32 glyph "H"';
-    is-deeply $encoder.glyph(+i-cid), Glyph.new(:name<i>, :code-point("i".ord), :cid(+i-cid), :gid(+i-cid), :dx(278), :dy(0)), 'utf32 glyph "i"';
-    is-deeply $encoder.glyph(+heart-cid), Glyph.new(:name<heart>, :code-point("♥".ord), :cid(+heart-cid), :gid(+heart-cid), :dx(896), :dy(0)), 'utf32 glyph "♥"';
+    is-deeply $encoder.glyph(+H-cid), Glyph.new(:name<H>, :code-point("H".ord), :cid(+H-cid), :gid(+H-cid), :ax(752)), 'utf32 glyph "H"';
+    is-deeply $encoder.glyph(+i-cid), Glyph.new(:name<i>, :code-point("i".ord), :cid(+i-cid), :gid(+i-cid), :ax(278)), 'utf32 glyph "i"';
+    is-deeply $encoder.glyph(+heart-cid), Glyph.new(:name<heart>, :code-point("♥".ord), :cid(+heart-cid), :gid(+heart-cid), :ax(896)), 'utf32 glyph "♥"';
 }
 
 my PDF::Font::Loader::Enc::Unicode $encoder .= new: :$face, :enc<utf32>;

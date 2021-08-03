@@ -19,8 +19,8 @@ use PDF::Font::Loader::Glyph;
 
 # load from character encodings
 my PDF::Font::Loader::Glyph @glyphs = $font.glyphs: "Hi";
-say @glyphs[0].raku; # Glyph.new(:name<H>, :code-point(72),  :cid(48), :gid(26), :dx(823), :dy(0))
-say @glyphs[1].raku; # Glyph.new(:name<i>, :code-point(105), :cid(4),  :gid(21), :dx(334), :dy(0)
+say @glyphs[0].raku; # Glyph.new(:name<H>, :code-point(72),  :cid(48), :gid(26), :ax(823), :ay(0))
+say @glyphs[1].raku; # Glyph.new(:name<i>, :code-point(105), :cid(4),  :gid(21), :ax(334), :ay(0)
 
 # load from CIDs
 @glyphs = $font.glyphs: [48, 4];
@@ -48,7 +48,7 @@ Actual glyph identifier for the glyph. This is the index into the font's associa
 
 For `Identity-H` and `Identity-V` encoded fonts and other fonts without a `cid-to-gid-map` table, the `gid` will be the same as the `cid`.
 
-### dx
+### ax
 
 The width (horizontal displacement to the next glyph). The value should be multiplied by font-size / 1000 to compute the actual displacement.
 
@@ -56,7 +56,7 @@ Note that the width of a glyph can be indirectly set or altered via the font obj
 
 `$font.glyph-width('i') -= 100`
 
-### dy
+### ay
 
 The height (vertical displacement to the next glyph) for a vertically written glyph. This method is not-yet-implemented, and always returns zero.
 
