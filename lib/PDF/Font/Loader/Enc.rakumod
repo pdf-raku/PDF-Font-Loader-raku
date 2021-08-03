@@ -139,7 +139,7 @@ sub code-batches($name, @content) is export(:code-batches) {
     @lines;
 }
 
-sub codepoint-to-utf16(UInt $_) {
+sub codepoint-to-hex(UInt $_) {
     my $buf = .chr.encode("utf16");
     my \words = +$buf;
     my $fmt = words > 1 || $buf[0] >= 256 ?? '%04X' !! '%02X';
@@ -165,7 +165,7 @@ method make-to-unicode-cmap(:$to-unicode = self.to-unicode) {
         while $cid < last-char && $to-unicode[$cid + 1] == $ord+1 && ($cid+1) div 256 == $start-byte {
             $cid++; $ord++;
         }
-        my $code-hex = codepoint-to-utf16($start-code);
+        my $code-hex = codepoint-to-hex($start-code);
 
         if $start-cid == $cid && $start-byte == $cid div 256 {
             @cmap-char.push: char-fmt.sprintf($cid, $code-hex);

@@ -131,7 +131,7 @@ method enc-width($code is raw) {
     }
 }
 
-sub utf16-to-codepoint(Str() $x is copy) {
+sub hex-to-codepoint(Str() $x is copy) {
     if $x.chars > 4 {
         # utf16 encoding semantics
         unless  $x.chars %% 4 {
@@ -166,7 +166,7 @@ method load-cmap(Str:D $_) {
             if /:s [ '<' $<r>=[<xdigit>+] '>' ] ** 3/ {
                 my uint $from = :16(@<r>[0].Str);
                 my uint $to   = :16(@<r>[1].Str);
-                my $ord = utf16-to-codepoint(@<r>[2]);
+                my $ord = hex-to-codepoint(@<r>[2]);
                 for $from .. $to -> $cid {
                     last unless self!add-code($cid, $ord++)
                 }
@@ -175,7 +175,7 @@ method load-cmap(Str:D $_) {
         elsif /:s^ \d+ beginbfchar/ ff /^endbfchar/ {
             if /:s [ '<' $<r>=[<xdigit>+] '>' ] ** 2 / {
                 my $cid = :16(@<r>[0].Str);
-                my uint $ord = utf16-to-codepoint(@<r>[1]);
+                my uint $ord = hex-to-codepoint(@<r>[1]);
                 self!add-code($cid, $ord);
             }
         }
@@ -203,7 +203,8 @@ method load-cmap(Str:D $_) {
 submethod TWEAK {
     for self.cmap, self.cid-cmap {
         when PDF::COS::Stream:D {
-            self.load-cmap(.decoded.Str);
+            my $cmap = .decoded || die "Unable to use {.self.WHAT.raku} decoder";
+            self.load-cmap($cmap.Str);
             with .<UseCMap> {
                 when PDF::COS::Stream:D {
                     self.load-cmap(.decoded.Str);
