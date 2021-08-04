@@ -11,7 +11,7 @@ use PDF::COS::Stream;
 use PDF::Font::Loader::Enc::CMap;
 use PDF::Font::Loader::Enc::Unicode;
 
-sub prefix:</>($name) { PDF::COS::Name.COERCE($name) };
+sub prefix:</>($name) { with $name {PDF::COS::Name.COERCE($_)} else { Any } };
 
 submethod TWEAK {
     if self.enc ~~ m/^[identity|utf]/ {
@@ -100,32 +100,34 @@ method finish-font($dict, :$save-widths, :$save-gids) {
         if $save-gids && !self.enc.starts-with('identity');    
 }
 
+method font-descriptor {
+    given callsame() {
+        .<Flags> +|= FontFlags::Symbolic;
+        $_;
+    }
+}
+
 method make-dict {
     my $BaseFont = /($.font-name);
     my $Type = /<Font>;
-    my $dict = PDF::COS::Dict.COERCE: %(
-        :Type( /<Font> ),
-        :Subtype( /<Type0> ),
-        :$BaseFont,
-    );
-
-    $dict<Encoding> = /($_)
-        with self.encoding;
-
+    my $FontDescriptor = self.font-descriptor;
     my $cid-font = {
         :$Type,
         :Subtype(/(self!cid-font-type-entry)),
         :$BaseFont,
+        :$FontDescriptor,
         :CIDToGIDMap( /<Identity> ),
         :$.CIDSystemInfo
     };
 
-    with self.font-descriptor {
-        .<Flags> +|= FontFlags::Symbolic;
-        $cid-font<FontDescriptor> = $_;
-    }
+    my $dict = PDF::COS::Dict.COERCE: %(
+        :Type( /<Font> ),
+        :Subtype( /<Type0> ),
+        :$BaseFont,
+        :DescendantFonts[ $cid-font ],
+        :Encoding(/(self.encoding)),
+    );
 
-    $dict<DescendantFonts> = [ $cid-font ];
     $dict<DescendantFonts>[0].is-indirect = True;
     $dict;
 }
