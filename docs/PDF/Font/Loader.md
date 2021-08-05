@@ -11,7 +11,7 @@ Synopsis
 ========
 
     # load a font from a file
-    use PDF::Font::Loader :load-font;
+    use PDF::Font::Loader :&load-font;
     use PDF::Content::FontObj;
 
     my PDF::Content::FontObj $deja;
@@ -29,7 +29,7 @@ Synopsis
     use PDF::Lite;
     my PDF::Lite $pdf .= new;
     $pdf.add-page.text: {
-       .font = $deja;
+       .font = $deja, 12;
        .text-position = [10, 600];
        .say: 'Hello, world';
     }
@@ -71,7 +71,7 @@ parameters:
 
     Subset the font for compaction. The font is reduced to the set of characters that have actually been encoded. This can greatly reduce the output size when the font is embedded in a PDF file.
 
-    This feature currently works on OpenType or TrueType fonts and requires installation of the experimental [HarfBuzz::Subset](HarfBuzz::Subset) module.
+    This feature currently works on OpenType, TrueType and CFF fonts and requires installation of the experimental [HarfBuzz::Subset](HarfBuzz::Subset) module.
 
   * `:$enc`
 
