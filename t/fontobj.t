@@ -55,7 +55,7 @@ $pdf.add-page.text: {
 # ensure consistant document ID generation
 $pdf.id = $*PROGRAM-NAME.fmt('%-16.16s');
 
-lives-ok { $pdf.save-as: "t/freetype.pdf"; };
+lives-ok { $pdf.save-as: "t/fontobj.pdf"; };
 
 done-testing;
 

@@ -1,7 +1,8 @@
 {{$NEXT}}
+    - Detect WOFF fonts and disable embedding.
 
 0.5.13  2021-08-05T12:36:58+12:00
-    - Fix PDF::Class compatibility by ensuring /Type0 fonts
+    - Fix PDF::Class compatibility by ensuring /Type0 (CID) font
       dictionaries are created with all mandatory fields in place.
 
 0.5.12  2021-08-03T17:31:00+12:00

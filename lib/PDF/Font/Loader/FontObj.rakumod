@@ -84,14 +84,21 @@ submethod TWEAK(
         $!subset = False;
     }
 
-    if $!embed
-    && self!font-type-entry eq 'TrueType'
-    && $!font-buf.subbuf(0,4).decode('latin-1') eq 'ttcf' {
-        # Its a TrueType collection which is not directly supported as a format,
-        # however, HarfBuzz::Subset will convert it for us.
-        unless $!subset {
-            warn "unable to embed TrueType Collections font $!font-name without subsetting";
-            $!embed = False;
+    if $!embed && self!font-type-entry eq 'TrueType' {
+        given $!font-buf.subbuf(0,4).decode('latin-1') {
+            when 'ttcf' {
+                # Its a TrueType collection which is not directly supported as a format,
+                # however, HarfBuzz::Subset will convert it for us.
+                unless $!subset {
+                    warn "unable to embed TrueType Collections font $!font-name without subsetting";
+                    $!embed = False;
+                }
+            }
+            when 'wOFF' {
+                # This embeds, but browser support is patchy
+                warn "unable to embed wOFF font $!font-name";
+                $!embed = False;
+            }
         }
     }
 

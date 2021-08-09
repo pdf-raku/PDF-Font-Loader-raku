@@ -5,7 +5,7 @@ use PDF::Lite;
 use PDF::Font::Loader;
 use PDF::Content::FontObj;
 
-my PDF::Lite $pdf .= open: "t/freetype.pdf";
+my PDF::Lite $pdf .= open: "t/fontobj.pdf";
 
 my PDF::Lite::Page $page = $pdf.page(2);
 
