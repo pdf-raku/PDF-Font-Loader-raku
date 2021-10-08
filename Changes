@@ -1,4 +1,6 @@
 {{$NEXT}}
+
+0.5.14  2021-10-09T09:02:52+13:00
     - Detect WOFF fonts and disable embedding.
     - Performance improvement to CID fonts
 
