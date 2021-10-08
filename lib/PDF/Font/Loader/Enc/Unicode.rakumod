@@ -74,7 +74,7 @@ method make-to-unicode-cmap {
 
 This is an experimental class which implements partial support UTF-8, UTF-16 and UTF-32 encoding.
 
-At this stage it only support named encodings with `UTF8`, `UTF16` and `UTF32` in the name.
+At this stage it only support is to read with `UTF8`, `UTF16` and `UTF32` in the name.
 
 =head3 Methods
 

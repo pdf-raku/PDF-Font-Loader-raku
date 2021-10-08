@@ -65,7 +65,7 @@ class PDF::Font::Loader::Dict {
                     my $a := $_;
                     # format: code [W1 W2 ...]
                     @widths[$code + $_ - $first-char] = $a[$_]
-                        for 0 ..^ $a.elems;
+                        for ^$a.elems;
                 }
                 when Numeric {
                     # format: code code2 W

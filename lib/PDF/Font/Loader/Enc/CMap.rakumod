@@ -357,7 +357,7 @@ multi method decode(Str $byte-string, :cids($)!) {
 }
 
 multi method decode(Str $s, :ords($)!) {
-    self.decode($s, :cids).map({ @!to-unicode[$_] }).grep: *.so;
+    self.decode($s, :cids).map({ @!to-unicode[$_] || Empty});
 }
 
 multi method decode(Str $byte-string --> Str) {

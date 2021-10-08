@@ -33,17 +33,18 @@ method !make-widths {
     my @W;
     my uint $j = -2;
     my $chars = [];
-    my uint16 $n = $.last-char - $.first-char;
+    my @widths := @.widths;
+    my uint16 $fc = $.first-char;
+    my uint16 $n = $.last-char - $fc;
     loop (my uint16 $i = 0; $i <= $n; $i++) {
-        my uint $w = @.widths[$i];
-        if $w {
+        if @widths[$i] -> $w {
             if ++$j == $i {
                 $chars.push: $w;
             }
             else {
-                $chars = $w.Array;
+                $chars = [$w, ];
                 $j = $i;
-                @W.append: ($i + $.first-char, $chars);
+                @W.append: ($i + $fc, $chars);
             }
         }
     }
@@ -97,7 +98,7 @@ method finish-font($dict, :$save-widths, :$save-gids) {
         if $save-widths;
             
     $dict<CIDToGIDMap> = self!make-gid-map
-        if $save-gids && !self.enc.starts-with('identity');    
+        if $save-gids && !self.enc.starts-with('identity');
 }
 
 method font-descriptor {

@@ -56,7 +56,7 @@ class PDF::Font::Loader::Enc::Identity16
 
     multi method decode(Str $encoded, :ords($)!) {
         my @to-unicode := self.to-unicode;
-        self.decode($encoded, :cids).map({@to-unicode[$_]}).grep: {$_};
+        self.decode($encoded, :cids).map({@to-unicode[$_] || Empty});
     }
 
     multi method decode(Str $encoded --> Str) {

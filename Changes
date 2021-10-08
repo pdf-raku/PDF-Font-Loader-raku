@@ -1,5 +1,6 @@
 {{$NEXT}}
     - Detect WOFF fonts and disable embedding.
+    - Performance improvement to CID fonts
 
 0.5.13  2021-08-05T12:36:58+12:00
     - Fix PDF::Class compatibility by ensuring /Type0 (CID) font
