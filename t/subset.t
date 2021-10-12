@@ -1,5 +1,5 @@
 use Test;
-plan 2;
+plan 3;
 
 use PDF::Lite;
 use PDF::Font::Loader :&load-font;
@@ -10,15 +10,20 @@ my constant Glyph = PDF::Font::Loader::Glyph;
 
 try {require HarfBuzz::Subset;}
 if $! {
-    skip-rest 'HarfBuzz::Subset required to run canvas tests';
+    skip-rest 'HarfBuzz::Subset required to run subset tests';
     exit;
+}
+
+given load-font( :file<t/fonts/Vera.ttf>, :subset) {
+   # since the remaining tests hard-code the prefix
+   like .font-name, /^<[A..Z]>**6 '+BitstreamVeraSans-Roman'$/, 'font prefix generation';
 }
 
 # Try various fonts and encodings
 
-my PDF::Content::FontObj $ttf-font = load-font( :file<t/fonts/Vera.ttf>, :subset);
-my PDF::Content::FontObj $otf-font = load-font( :file<t/fonts/Cantarell-Oblique.otf>, :enc<win>, :subset);
-my PDF::Content::FontObj $ttc-font = load-font( :file<t/fonts/wqy-microhei.ttc>, :subset);
+my PDF::Content::FontObj $ttf-font = load-font( :file<t/fonts/Vera.ttf>, :subset, :prefix<XBCDEF>);
+my PDF::Content::FontObj $otf-font = load-font( :file<t/fonts/Cantarell-Oblique.otf>, :enc<win>, :subset, :prefix<YBCDEF>);
+my PDF::Content::FontObj $ttc-font = load-font( :file<t/fonts/wqy-microhei.ttc>, :subset, :prefix<ZBCDEF>);
 
 sub check-fonts($whence) {
     subtest $whence => {
@@ -69,7 +74,9 @@ check-fonts('created fonts');
 # Don't save PDF files. They have randomly varying font-name prefixes
 mkdir 'tmp';
 
-$pdf.save-as: "tmp/subset.pdf";
+# ensure consistant document ID generation
+$pdf.id = $*PROGRAM-NAME.fmt('%-16.16s');
+$pdf.save-as: "t/subset.pdf";
 
 # check our subsets survive serialization;
 $pdf .= open: "tmp/subset.pdf";

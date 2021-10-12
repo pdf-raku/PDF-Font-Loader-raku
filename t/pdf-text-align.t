@@ -13,10 +13,7 @@ my $width = 100;
 my $height = 80;
 my $x = 110;
 
-my PDF::Content::FontObj $font = PDF::Font::Loader.load-font: :file<t/fonts/DejaVuSans.ttf>, :!subset;
-
-# unrandomize so that saved PDF doesn't change
-$font.font-name ~~ s/^<[A..Z]>**6'+'/ABCDEF+/;
+my PDF::Content::FontObj $font = PDF::Font::Loader.load-font: :file<t/fonts/DejaVuSans.ttf>, :!subset, :prefix<ABCDEF>;
 
 is-deeply $font.encode("Abc♠♥♦♣b").ords, (0,36, 0,69, 0,70, 15,56, 15,61, 15,62, 15,59, 0,69), 'encode (identity-h)';
 

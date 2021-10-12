@@ -13,7 +13,8 @@ $pdf.page(2).gfx.text: -> $gfx {
     my PDF::COS::Dict %fonts = $gfx.resources('Font');
     $gfx.text-position = 10, 400;
     is-deeply %fonts.keys.sort, ("F1", "F2", "F3", "F4");
-    my PDF::Content::FontObj $f1 =  PDF::Font::Loader.load-font: :dict(%fonts<F1>), :embed;
+    my $dict = %fonts<F1>;
+    my PDF::Content::FontObj $f1 = PDF::Font::Loader.load-font: :$dict, :embed;
     is $f1.font-name, 'Cantarell-Oblique', 'font-name';
     is $f1.enc, 'win', 'enc';
     ok $f1.is-embedded, 'is embedded';

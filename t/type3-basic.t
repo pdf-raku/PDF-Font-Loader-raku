@@ -15,7 +15,8 @@ $pdf.page(1).gfx.text: -> $gfx {
     my PDF::COS::Dict %fonts = $gfx.resources('Font');
     $gfx.text-position = 10, 400;
     is-deeply %fonts.keys.sort, ("F1",);
-    my PDF::Content::FontObj $f1 =  PDF::Font::Loader.load-font: :dict(%fonts<F1>);
+    my $dict = %fonts<F1>;
+    my PDF::Content::FontObj $f1 =  PDF::Font::Loader.load-font: :$dict;
     is $f1.font-name, 'courier', 'font-name';
     is $f1.enc, 'std', 'enc';
     nok $f1.is-embedded, "isn't embedded";

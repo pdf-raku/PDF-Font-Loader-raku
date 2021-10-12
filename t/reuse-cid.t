@@ -23,8 +23,7 @@ class FontLoader {
         }
     }
     method render($content) {
-        my &callback = self.callback;
-        $content.render(:&callback);
+        $content.render(:$.callback);
     }
     method SetFont(Str $font-key, Numeric $font-size) {
         with $*gfx.resource-entry('Font', $font-key) -> $dict {

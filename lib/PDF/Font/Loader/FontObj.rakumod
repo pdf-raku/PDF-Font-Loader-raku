@@ -74,6 +74,7 @@ submethod TWEAK(
     :@cid-to-gid-map,
     :@differences,
     :%encoder,
+    Str :$prefix is copy,
 ) {
 
     $!subset = False
@@ -104,7 +105,8 @@ submethod TWEAK(
 
     if $!subset {
         if $!face.font-format ~~ 'TrueType'|'OpenType'|'CFF' {
-            $!font-name ~~ s/^[<[A..Z]>**6"+"]?/{(("A".."Z").pick xx 6).join ~ "+"}/;
+            $prefix ||= (("A".."Z").pick xx 6).join;
+            $!font-name ~~ s/^[<[A..Z]>**6"+"]?/{$prefix ~ "+"}/;
         }
         else {
            warn  "unable to subset font $!font-name of type {$!face.font-format}";
