@@ -15,6 +15,7 @@ use Hash::int;
 has uint32 @.to-unicode;
 has Int %.charset{Int};
 has %!enc-width is Hash::int;
+has %!dec-width is Hash::int;
 has %.code2cid is Hash::int; # decoding mappings
 has %.cid2code is Hash::int; # encoding mappings
 has uint8 @cid-width;
@@ -164,19 +165,29 @@ method load-cmap(Str:D $_) {
         }
         elsif /:s^ \d+ beginbfrange/ ff /^endbfrange/ {
             if /:s [ '<' $<r>=[<xdigit>+] '>' ] ** 3/ {
-                my uint $from = :16(@<r>[0].Str);
-                my uint $to   = :16(@<r>[1].Str);
+                my $srcLo = @<r>[0].Str;
+                my $srcHi = @<r>[1].Str;
+                my $bytes = $srcLo.chars div 2;
+                my uint $lo = :16($srcLo);
+                my uint $hi = :16($srcHi);
                 my $ord = hex-to-codepoint(@<r>[2]);
-                for $from .. $to -> $cid {
-                    last unless self!add-code($cid, $ord++)
+                for $lo .. $hi -> $cid {
+                    last unless self!add-code($cid, $ord);
+                    %!dec-width{$cid} = $bytes;
+                    %!enc-width{$ord++} = $bytes;
                 }
             }
         }
         elsif /:s^ \d+ beginbfchar/ ff /^endbfchar/ {
             if /:s [ '<' $<r>=[<xdigit>+] '>' ] ** 2 / {
-                my $cid = :16(@<r>[0].Str);
-                my uint $ord = hex-to-codepoint(@<r>[1]);
-                self!add-code($cid, $ord);
+                my $srcCode = @<r>[0].Str;
+                my $bytes = $srcCode.chars div 2;
+                my $code = :16($srcCode);
+                my $ord = hex-to-codepoint(@<r>[1]);
+                if self!add-code($code, $ord) {
+                    %!dec-width{$code} = $bytes;
+                    %!enc-width{$ord} = $bytes;
+                }
             }
         }
         elsif /:s^ \d+ begincidrange/ ff /^endcidrange/ {
@@ -335,15 +346,17 @@ multi method decode(Str $byte-string, :cids($)!) {
         my uint16 @cids;
 
         loop (my int $i = 0; $i < $n; ) {
-            my int $sample = 0;
+            my int $code = 0;
             my int $width = 0;
 
             repeat {
-                $sample = $sample * 256 + @bytes[$i++];
+                $code = $code * 256 + @bytes[$i++];
                 $width++;
-            } until $width >= $!max-width || @!codespaces.first({ .width($sample) == $width});
+            } until $width >= $!max-width
+              || %!dec-width{$code} ~~ $width
+              || @!codespaces.first({ .width($code) == $width});
 
-            @cids.push: self!decode-cid($sample);
+            @cids.push: self!decode-cid($code);
         }
 
         @cids;
