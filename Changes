@@ -1,7 +1,10 @@
 {{$NEXT}}
+
+0.5.15  2021-10-15T07:45:19+13:00
     - Add load-font(:$prefix) option. To enable a pre-determined prefix (6
       upppercase letters) for subsetted fonts. Used in the test-suite to
       create stable PDF files, without any random characters.
+    - Fix font encoding issue #12
 
 0.5.14  2021-10-09T09:02:52+13:00
     - Detect WOFF fonts and disable embedding.

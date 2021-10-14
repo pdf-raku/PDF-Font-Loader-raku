@@ -14,7 +14,7 @@ Description
 
 This is an experimental class which implements partial support UTF-8, UTF-16 and UTF-32 encoding.
 
-At this stage it only support named encodings with `UTF8`, `UTF16` and `UTF32` in the name.
+At this stage it only provides the ability to read CMap encodings with `UTF8`, `UTF16` and `UTF32` in the name.
 
 ### Methods
 
