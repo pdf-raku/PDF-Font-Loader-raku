@@ -47,7 +47,7 @@ say $vera.glyph-width('V'); # 584;
 
 ### to-dict
 
-Produces a draft PDF font dictionary.
+Produces a draft PDF font dictionary. cb-finish() needs to be called to finalize it.
 
 ### cb-finish
 
@@ -68,6 +68,14 @@ Whether the font is a core font
 ### has-encoding
 
 Whether the font has unicode encoding. This is needed to encode or extract text.
+
+### underline-position
+
+Position, from the baseline where an underline should be drawn. This is usually negative and should be multipled by the font-size/1000 to get the actual position.
+
+### underline-thickness
+
+Recommended underline thickness for the font. This should be multipled by font-size/1000.
 
 ### face
 

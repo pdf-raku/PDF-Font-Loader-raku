@@ -11,6 +11,9 @@ my PDF::Content::FontObj $cff-font = load-font( :file<t/fonts/NimbusRoman-Regula
 # True collections don't embed without subsetting
 my PDF::Content::FontObj $ttc-font = load-font( :file<t/fonts/wqy-microhei.ttc>, :!embed, :!subset );
 
+is $deja.underline-position, -175;
+is $deja.underline-thickness, 90;
+
 my $n = 0;
 my $all-chars;
 

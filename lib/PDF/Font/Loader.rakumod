@@ -7,7 +7,7 @@ class PDF::Font::Loader:ver<0.5.15> {
     use PDF::Font::Loader::FontObj;
     use PDF::Font::Loader::FontObj::CID;
     use PDF::Content::Font;
-    use PDF::Font::Loader::Dict :&is-core-font, :&load-font-opts;
+    use PDF::Font::Loader::Dict :&load-font-opts;
 
     proto method load-font($?: |c) is export(:load-font) {*};
 

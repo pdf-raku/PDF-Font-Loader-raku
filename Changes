@@ -1,4 +1,5 @@
 {{$NEXT}}
+    - Add FontObj underline-position() and underline-thickness() methods
 
 0.5.15  2021-10-15T07:45:19+13:00
     - Add load-font(:$prefix) option. To enable a pre-determined prefix (6

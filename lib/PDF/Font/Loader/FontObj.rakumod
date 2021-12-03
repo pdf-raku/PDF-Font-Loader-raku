@@ -44,7 +44,7 @@ my enum FontFlags is export(:FontFlags) «
     »;
 enum <Width Height>;
 
-has Font::FreeType::Face:D $.face is required;
+has Font::FreeType::Face:D $.face is required handles<underline-thickness underline-position>;
 use PDF::Font::Loader::Enc;
 has PDF::Font::Loader::Enc $!encoder handles <decode first-char last-char widths has-encoding>;
 method encoder { $!encoder }
@@ -607,7 +607,7 @@ say $vera.glyph-width('V'); # 584;
 
 =head3 to-dict
 
-Produces a draft PDF font dictionary.
+Produces a draft PDF font dictionary. cb-finish() needs to be called to finalize it.
 
 =head3 cb-finish
 
@@ -628,6 +628,15 @@ Whether the font is a core font
 =head3 has-encoding
 
 Whether the font has unicode encoding. This is needed to encode or extract text.
+
+=head3 underline-position
+
+Position, from the baseline where an underline should be drawn. This is usually
+negative and should be multipled by the font-size/1000 to get the actual position.
+
+=head3 underline-thickness
+
+Recommended underline thickness for the font. This should be multipled by font-size/1000.
 
 =head3 face
 
