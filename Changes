@@ -1,4 +1,6 @@
 {{$NEXT}}
+
+0.5.16  2021-12-18T07:38:03+13:00
     - Add FontObj underline-position() and underline-thickness() methods
     - Fix load-font() handling of :$dict option
 
