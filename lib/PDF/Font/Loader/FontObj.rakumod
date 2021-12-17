@@ -171,7 +171,7 @@ method glyph-width(Str $ch) is rw {
 }
 
 multi method stringwidth(Str $text, :$kern) {
-    ([+] $!encoder.encode($text, :cids).map: { self!glyph($_).ax })
+    (sum $!encoder.encode($text, :cids).map: { self!glyph($_).ax })
     + ($kern ?? self!font-kerning($text)[Width] !! 0);
 }
 multi method stringwidth(Str $text, $pointsize, :$kern) {

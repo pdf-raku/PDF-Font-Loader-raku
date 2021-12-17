@@ -21,13 +21,11 @@ sub encoding-checks($encoder) {
     is +@codespaces, 1;
     is @codespaces[0].bytes, 2;
 
-    dd $encoder.encode("Hi");
     # identity mappings
     enum ( :H-cid('H'.ord), :i-cid('i'.ord) );
     enum ( :H-gid(32), :i-gid(60) );
     is-deeply $encoder.encode("Hi", :cids), $(+H-cid, +i-cid), "cid encoding sanity";
     is-deeply $encoder.encode("Hi"), 'Hi', "str encoding sanity";
-    note $encoder.decode("Hi", :cids);
     is-deeply $encoder.encode("Hi"), "Hi", "win encoding sanity";
     is-deeply $encoder.glyph(+H-cid), Glyph.new(:name<H>, :code-point("H".ord), :cid(+H-cid), :gid(+H-gid), :ax(652)), 'glyph "H"';
     is-deeply $encoder.glyph(+i-cid), Glyph.new(:name<i>, :code-point("i".ord), :cid(+i-cid), :gid(+i-gid), :ax(234)), 'glyph "i"';

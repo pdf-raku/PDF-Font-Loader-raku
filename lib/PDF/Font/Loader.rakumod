@@ -4,9 +4,10 @@ class PDF::Font::Loader:ver<0.5.15> {
 
     use Font::FreeType;
     use Font::FreeType::Face;
+    use PDF::Content::Font;
+    use PDF::COS::Dict;
     use PDF::Font::Loader::FontObj;
     use PDF::Font::Loader::FontObj::CID;
-    use PDF::Content::Font;
     use PDF::Font::Loader::Dict :&load-font-opts;
 
     proto method load-font($?: |c) is export(:load-font) {*};
@@ -38,7 +39,7 @@ class PDF::Font::Loader:ver<0.5.15> {
     }
 
     # resolve font name via fontconfig
-    multi method load-font($class = $?CLASS: Str :$family!, :$dict, :$quiet, |c) {
+    multi method load-font($class = $?CLASS: Str :$family!, PDF::COS::Dict :$dict, :$quiet, |c) {
         my $file = $class.find-font: :$family, |c;
         my $font := $class.load-font: :$file, :$dict, |c;
         unless $quiet {
