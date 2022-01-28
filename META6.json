@@ -8,10 +8,11 @@
   "depends": [
     "Font::AFM",
     "Font::FreeType:ver<0.3.8+>",
+    "FontConfig", 
     "Hash::int",
     "Native::Packing",
-    "PDF::Lite:ver<0.0.8+>",
     "PDF::Content:ver<0.5.4+>",
+    "PDF::Lite:ver<0.0.8+>",
     "PDF:ver<0.4.15+>"
   ],
   "description": "Font loading and embedding for the PDF tool-chain",

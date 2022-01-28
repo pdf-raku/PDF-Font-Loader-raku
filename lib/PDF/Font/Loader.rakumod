@@ -2,6 +2,7 @@ use v6;
 
 class PDF::Font::Loader:ver<0.5.16> {
 
+    use FontConfig;
     use Font::FreeType;
     use Font::FreeType::Face;
     use PDF::Content::Font;
@@ -65,25 +66,23 @@ class PDF::Font::Loader:ver<0.5.16> {
                      Slant   :$slant = 'normal',
                      Str     :$lang,
                     ) is export(:find-font) {
-        my $pat = '';
-        $pat ~= $_ with $family;
+
         with $weight {
             # convert CSS/PDF numeric weights for fontconfig
             #      000  100        200   300  400     500    600      700  800       900
             $_ =  <thin extralight light book regular medium semibold bold extrabold black>[.substr(0,1).Int]
                 if /^<[0..9]>/;
         }
-        $pat ~= ':weight=' ~ $weight  unless $weight eq 'medium';
-        $pat ~= ':width='  ~ $stretch unless $stretch eq 'normal';
-        $pat ~= ':slant='  ~ $slant   unless $slant eq 'normal';
-        $pat ~= ':lang=' ~ $_ with $lang;
 
-        my $cmd = run('fc-match', '-f', '%{file}', $pat, :out, :err);
-        given $cmd.err.slurp {
-            note $_ if $_;
-        }
-        $cmd.out.slurp
-          || die "unable to resolve font: '$pat'"
+        my FontConfig:D $patt .= new;
+        $patt.family = $_ with $family;
+        $patt.weight = $weight  unless $weight eq 'medium';
+        $patt.width  = $stretch unless $stretch eq 'normal';
+        $patt.slant  = $slant   unless $slant eq 'normal';
+        $patt.lang   = $_ with $lang;
+
+        my FontConfig:D $match = $patt.match;
+        $match.file;
     }
 
 }
