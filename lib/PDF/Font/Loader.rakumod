@@ -21,7 +21,7 @@ class PDF::Font::Loader:ver<0.5.16> {
         $?: Font::FreeType::Face :$face!,
         Blob :$font-buf!,
         Bool :$embed = True,
-        Str  :$enc = $face.font-format eq 'Type 1' || !$embed || $face.num-glyphs <= 255
+        Str  :$enc = $face.font-format ~~ 'Type 1'|'CFF' || !$embed || $face.num-glyphs <= 255
             ?? 'win'
             !! 'identity-h',
         Bool :$cid = so $enc ~~ m/^[identity|cmap|utf]/,
@@ -42,9 +42,9 @@ class PDF::Font::Loader:ver<0.5.16> {
     multi method load-font($class = $?CLASS: Str :$family!, PDF::COS::Dict :$dict, :$quiet, |c) {
         my $file = $class.find-font: :$family, |c;
         my $font := $class.load-font: :$file, :$dict, |c;
-        unless $quiet {
+        unless $quiet // !$dict {
             my $name = c<font-name> // $family;
-            note "loading font: $name -> $file" with $dict;
+            note "loading font: $name -> $file";
         }
         $font;
     }

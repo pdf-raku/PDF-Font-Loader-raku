@@ -1,4 +1,5 @@
 {{$NEXT}}
+    - Fix dictionary construction of CFF fonts #13
 
 0.5.16  2021-12-18T07:38:03+13:00
     - Add FontObj underline-position() and underline-thickness() methods

@@ -105,7 +105,7 @@ submethod TWEAK(
 
     if $!subset {
         if $!face.font-format ~~ 'TrueType'|'OpenType'|'CFF' {
-            $prefix ||= (("A".."Z").pick xx 6).join;
+            $prefix ||= ("A".."Z").pick(6).join;
             $!font-name ~~ s/^[<[A..Z]>**6"+"]?/{$prefix ~ "+"}/;
         }
         else {
