@@ -408,7 +408,7 @@ method !encode-buf(Str $text --> Buf:D) {
 =head3 Description
 
 This method maps to PDF font dictionaries with a `ToUnicode` entry and Type0
-fonts with an `Encoding` entry that reference CMaps.
+(CID) fonts with an `Encoding` entry that reference CMaps.
 
 This class extends the base-class L<PDF::Font::Loader::Enc>, adding the ability
 of reading existing CMaps. It also adds the ability the handle variable encoding.
@@ -419,7 +419,9 @@ This class inherits from L<PDF::Font::Loader::Enc> and has all its method availa
 
 =head3 make-encoding-cmap
 
-Generates a CMap for the /Encoding entry in a PDF Type0 font, which is used to implement custom variable and wide encodings.. This method is typically called from the font object when an encoding has been added or updated for the encoder.
+Generates a CMap for the /Encoding entry in a PDF Type0 font, which is used to implement
+custom variable and wide encodings. This method is typically called from the font object
+when an encoding has been added or updated for the encoder.
 
 
 =head3 Caveats

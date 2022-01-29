@@ -18,16 +18,23 @@ class PDF::Font::Loader:ver<0.6.0> {
         $class.load-font(:$font-buf, |c);
     }
 
+    my subset Type1 where .font-format ~~ 'Type 1'|'CFF';
+    my subset CIDEncoding of Str where m/^[identity|utf]/;
     multi method load-font(
         $?: Font::FreeType::Face :$face!,
         Blob :$font-buf!,
         Bool :$embed = True,
-        Str  :$enc = $face.font-format ~~ 'Type 1'|'CFF' || !$embed || $face.num-glyphs <= 255
+        Str  :$enc = $face ~~ Type1 || !$embed || $face.num-glyphs <= 255
             ?? 'win'
             !! 'identity-h',
-        Bool :$cid = so $enc ~~ m/^[identity|cmap|utf]/,
+        Bool :$cid = $face !~~ Type1 && $enc ~~ 'cmap'|CIDEncoding,
         |c,
     ) {
+        fail "Type1 fonts cannot be used as a CID font"
+            if $cid && $face ~~ Type1;
+        fail "'$enc' encoding can only be used with CID fonts"
+                if !$cid && $enc ~~ CIDEncoding;
+
         my \fontobj-class = $cid
             ?? PDF::Font::Loader::FontObj::CID
             !! PDF::Font::Loader::FontObj;
