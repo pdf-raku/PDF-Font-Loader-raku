@@ -1,4 +1,6 @@
 {{$NEXT}}
+
+0.6.0  2022-01-30T13:36:52+13:00
     - Fix dictionary construction of CFF fonts #13
     - Use FontConfig module for font resolution
 
