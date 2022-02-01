@@ -76,7 +76,7 @@ mkdir 'tmp';
 
 # ensure consistant document ID generation
 $pdf.id = $*PROGRAM-NAME.fmt('%-16.16s');
-$pdf.save-as: "t/subset.pdf";
+$pdf.save-as: "tmp/subset.pdf";
 
 # check our subsets survive serialization;
 $pdf .= open: "tmp/subset.pdf";
