@@ -71,7 +71,7 @@ class PDF::Font::Loader::Dict {
                     # format: code code2 W
                     my $code2 := $_;
                     my $width := $W[$i++];
-                    @widths[$_ - $first-char] = $width
+                    @widths[$_ - $first-char] = $width.round
                        for $code .. $code2;
                 }
                 default {
