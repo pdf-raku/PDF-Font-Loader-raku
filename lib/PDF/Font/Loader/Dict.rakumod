@@ -64,7 +64,7 @@ class PDF::Font::Loader::Dict {
                 when Array {
                     my $a := $_;
                     # format: code [W1 W2 ...]
-                    @widths[$code + $_ - $first-char] = $a[$_].round
+                    @widths[$code + $_ - $first-char] = $a[$_]
                         for ^$a.elems;
                 }
                 when Numeric {
