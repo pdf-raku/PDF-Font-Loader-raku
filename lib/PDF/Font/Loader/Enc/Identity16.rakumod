@@ -14,17 +14,19 @@ class PDF::Font::Loader::Enc::Identity16
     has UInt %.charset{UInt};
     has UInt $.min-index;
     has UInt $.max-index;
-    has Bool $!init;
+    has atomicint $!init = 0;
 
     method is-wide {True}
 
     multi method encode(Str $text, :cids($)!) {
         my $face-struct = $!face.raw;
-        blob16.new: $text.ords.map: -> $ord {
-            my uint $cid = $face-struct.FT_Get_Char_Index($ord);
-            @!to-unicode[$cid] ||= $ord;
-            %!charset{$ord} ||= $cid;
-            $cid;
+        $.lock.protect: {
+            blob16.new: $text.ords.map: -> $ord {
+                my uint $cid = $face-struct.FT_Get_Char_Index($ord);
+                @!to-unicode[$cid] ||= $ord;
+                %!charset{$ord} ||= $cid;
+                $cid;
+            }
         }
     }
 
@@ -35,18 +37,23 @@ class PDF::Font::Loader::Enc::Identity16
     }
 
     method !setup-decoding {
-        my FT_Face $struct = $!face.raw;
-        my FT_UInt $glyph-idx;
-        my FT_ULong $char-code = $struct.FT_Get_First_Char( $glyph-idx);
-        @!to-unicode[$!face.num-glyphs] = 0;
-        while $glyph-idx {
-            @!to-unicode[ $glyph-idx ] = $char-code;
-            $char-code = $struct.FT_Get_Next_Char( $char-code, $glyph-idx);
+        $.lock.protect: {
+            unless $!init {
+                my FT_Face $struct = $!face.raw;
+                my FT_UInt $glyph-idx;
+                my FT_ULong $char-code = $struct.FT_Get_First_Char( $glyph-idx);
+                @!to-unicode[$!face.num-glyphs] = 0;
+                while $glyph-idx {
+                    @!to-unicode[ $glyph-idx ] = $char-code;
+                    $char-code = $struct.FT_Get_Next_Char( $char-code, $glyph-idx);
+                }
+                $!init ⚛= 1;
+            }
         }
     }
 
     method to-unicode {
-        $!init //= do { self!setup-decoding; True }
+        $!init || self!setup-decoding();
         @!to-unicode;
     }
 
@@ -56,7 +63,7 @@ class PDF::Font::Loader::Enc::Identity16
 
     multi method decode(Str $encoded, :ords($)!) {
         my @to-unicode := self.to-unicode;
-        self.decode($encoded, :cids).map({@to-unicode[$_] || Empty});
+        $.lock.protect: {self.decode($encoded, :cids).map({@to-unicode[$_] || Empty})};
     }
 
     multi method decode(Str $encoded --> Str) {

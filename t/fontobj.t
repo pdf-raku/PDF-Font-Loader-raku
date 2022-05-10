@@ -1,5 +1,5 @@
 use v6;
-use PDF::Font::Loader :load-font;
+use PDF::Font::Loader :&load-font;
 use PDF::Content::FontObj;
 use PDF::Lite;
 use Test;

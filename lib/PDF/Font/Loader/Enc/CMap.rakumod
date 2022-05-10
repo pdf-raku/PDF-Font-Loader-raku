@@ -345,24 +345,26 @@ multi method decode(Str $byte-string, :cids($)!) {
         @bytes.push: 0;
         my uint16 @cids;
 
-        loop (my int $i = 0; $i < $n; ) {
-            my int $code = 0;
-            my int $width = 0;
+        $.protect: {
+            loop (my int $i = 0; $i < $n; ) {
+                my int $code = 0;
+                my int $width = 0;
 
-            repeat {
-                $code = $code * 256 + @bytes[$i++];
-                $width++;
-            } until $width >= $!max-width
-              || %!dec-width{$code} ~~ $width
-              || @!codespaces.first({ .width($code) == $width});
+                repeat {
+                    $code = $code * 256 + @bytes[$i++];
+                    $width++;
+                } until $width >= $!max-width
+                || %!dec-width{$code} ~~ $width
+                || @!codespaces.first({ .width($code) == $width});
 
-            @cids.push: self!decode-cid($code);
+                @cids.push: self!decode-cid($code);
+            }
         }
 
         @cids;
     }
     elsif %!code2cid {
-        @bytes.map: {self!decode-cid($_)}
+        @.protect: { @bytes.map: {self!decode-cid($_)} }
     }
     else {
         @bytes;
@@ -370,7 +372,7 @@ multi method decode(Str $byte-string, :cids($)!) {
 }
 
 multi method decode(Str $s, :ords($)!) {
-    self.decode($s, :cids).map({ @!to-unicode[$_] || Empty});
+    @.protect: {self.decode($s, :cids).map({ @!to-unicode[$_] || Empty})};
 }
 
 multi method decode(Str $byte-string --> Str) {
@@ -378,7 +380,7 @@ multi method decode(Str $byte-string --> Str) {
 }
 
 multi method encode(Str $text, :cids($)!) {
-    $text.ords.map: { %!charset{$_} // self.allocate: $_ }
+    @.protect: {$text.ords.map: { %!charset{$_} // self.allocate: $_ }}
 }
 multi method encode(Str $text --> Str) {
     self!encode-buf($text).decode: 'latin-1';
@@ -389,10 +391,12 @@ method !encode-buf(Str $text --> Buf:D) {
 
     if $.is-wide {
         $buf .= new;
-        for @cids -> $cid {
-            my $code = %!cid2code{$cid} || $cid;
-            loop (my int $i = self.enc-width($code); --$i >= 0;) {
-                $buf.push: $code div (256 ** $i) mod 256;
+        $.protect: {
+            for @cids -> $cid {
+                my $code = %!cid2code{$cid} || $cid;
+                loop (my int $i = self.enc-width($code); --$i >= 0;) {
+                    $buf.push: $code div (256 ** $i) mod 256;
+                }
             }
         }
     }

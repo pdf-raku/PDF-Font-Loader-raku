@@ -30,11 +30,12 @@ class PDF::Font::Loader:ver<0.6.0> {
         Bool :$cid = $face !~~ Type1 && $enc ~~ 'cmap'|CIDEncoding,
         |c,
     ) {
-        fail "Type1 fonts cannot be used as a CID font"
-            if $cid && $face ~~ Type1;
-        fail "'$enc' encoding can only be used with CID fonts"
+        unless c<dict>.defined {
+            fail "Type1 fonts cannot be used as a CID font"
+                if $cid && $face ~~ Type1;
+            fail "'$enc' encoding can only be used with CID fonts"
                 if !$cid && $enc ~~ CIDEncoding;
-
+        }
         my \fontobj-class = $cid
             ?? PDF::Font::Loader::FontObj::CID
             !! PDF::Font::Loader::FontObj;

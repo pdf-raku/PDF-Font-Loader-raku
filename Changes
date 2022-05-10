@@ -1,4 +1,9 @@
 {{$NEXT}}
+    Initial page-level thread-safety
+    - Bump PDF and PDF::Content to thread-safe versions
+    - Lock dynamic module loading
+    - Lock font encoding and dictionary creation
+    - Add t/threads.t
 
 0.6.0  2022-01-30T13:36:52+13:00
     - Fix dictionary construction of CFF fonts #13

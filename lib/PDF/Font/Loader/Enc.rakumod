@@ -16,6 +16,7 @@ has uint16 @!widths;
 has Bool $.widths-updated is rw;
 has Bool $.encoding-updated is rw;
 has PDF::COS::Stream $.cmap is rw; # /ToUnicode CMap
+has Lock $.lock handles<protect> .= new;
 submethod TWEAK(:$widths) {
     @!widths = .map(*.Int) with $widths;
 }

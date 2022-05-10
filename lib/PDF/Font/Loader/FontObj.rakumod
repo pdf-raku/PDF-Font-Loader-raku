@@ -65,7 +65,7 @@ my constant Glyph = PDF::Font::Loader::Glyph;
 has Glyph %!glyphs{Int};
 
 sub subsetter {
-    require ::("HarfBuzz::Subset")
+    PDF::COS.required.("HarfBuzz::Subset")
 }
 
 submethod TWEAK(
@@ -145,7 +145,7 @@ submethod TWEAK(
 }
 
 method load-font(|c) {
-    (require ::('PDF::Font::Loader')).load-font: |c;
+    PDF::COS.required('PDF::Font::Loader').load-font: |c;
 }
 
 method height($pointsize = 1000, Bool :$from-baseline, Bool :$hanging) {
@@ -254,7 +254,7 @@ method !make-font-file($buf) {
 }
 
 method !glyph($cid is raw) {
-    %!glyphs{$cid} //= $!encoder.glyph($cid);
+    $!encoder.protect: { %!glyphs{$cid} //= $!encoder.glyph($cid); }
 }
 
 multi method glyphs(Str:D $text) {
@@ -436,7 +436,9 @@ method make-dict {
 }
 
 method to-dict {
-    $!dict //= PDF::Content::Font.make-font(self.make-dict, self);
+     $!encoder.protect: {
+         $!dict //= PDF::Content::Font.make-font(self.make-dict, self);
+     }
 }
 
 method !font-kerning(Str $text is copy) {
