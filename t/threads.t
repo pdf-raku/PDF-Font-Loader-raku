@@ -5,15 +5,18 @@ plan 2;
 use PDF::Lite;
 use PDF::Font::Loader :&load-font;
 
-my PDF::Lite $pdf .= new;
 my PDF::Content::Page @pages;
+my PDF::Lite $pdf .= new;
+my $core-font = $pdf.core-font('Courier');
 
 my PDF::Content::FontObj @fonts = <t/fonts/TimesNewRomPS.pfb t/fonts/DejaVuSans.ttf t/fonts/Cantarell-Oblique.otf t/fonts/NimbusRoman-Regular.cff>.map: -> $file { load-font :$file }
+@fonts.push: $core-font;
 
 lives-ok {
-    @pages = (1..20).race(:batch(1)).map: -> $page-num {
+    @pages = (1..20).hyper(:batch(1)).map: -> $page-num {
         my PDF::Content::Page:D $page = PDF::Content::PageTree.page-fragment;
         $page.graphics: {
+            .font = $core-font;
             .say: "Page $page-num", :position[50, 700]; # using a core font
             my $y = 650;
             @fonts.map: -> $font {
