@@ -34,6 +34,7 @@
     "PDF::Font::Loader::Type1::Stream": "lib/PDF/Font/Loader/Type1/Stream.rakumod"
   },
   "resources": [
+    "font/FreeMono.ttf"
   ],
   "source-url": "git://github.com/pdf-raku/PDF-Font-Loader-raku.git",
   "tags": [

@@ -49,12 +49,18 @@ class PDF::Font::Loader:ver<0.6.2> {
 
     # resolve font name via fontconfig
     multi method load-font($class = $?CLASS: Str :$family!, PDF::COS::Dict :$dict, :$quiet, |c) {
-        my $file = $class.find-font: :$family, |c;
-        my $font := $class.load-font: :$file, :$dict, |c;
-        unless $quiet // !$dict {
-            my $name = c<font-name> // $family;
-            note "loading font: $name -> $file";
+	my Str $file = $class.find-font(:$family, |c);
+	$file ||= do {
+          note "unable to locate font. Falling back to mono-spaced font"
+	      unless $quiet;
+          %?RESOURCES<font/FreeMono.ttf>.absolute;
         }
+
+        my PDF::Font::Loader::FontObj:D $font := $class.load-font: :$file, :$dict, |c;
+	unless $quiet // !$dict {
+	    my $name = c<font-name> // $family;
+            note "loading font: $name -> $file";
+	}
         $font;
     }
 
@@ -89,8 +95,12 @@ class PDF::Font::Loader:ver<0.6.2> {
         $patt.slant  = $slant   unless $slant eq 'normal';
         $patt.lang   = $_ with $lang;
 
-        my FontConfig:D $match = $patt.match;
-        $match.file;
+        with $patt.match -> FontConfig $match {
+            $match.file;
+	}
+	else {
+	    Str;
+	}
     }
 
 }

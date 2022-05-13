@@ -36,8 +36,6 @@ $pdf.page(1).gfx.text: -> $gfx {
 # ensure consistant document ID generation
 $pdf.id =  $*PROGRAM-NAME.fmt('%-16.16s');
 
-note "saving";
 $pdf.save-as: "t/type3-basic.pdf";
-note "saved";
 
 done-testing;

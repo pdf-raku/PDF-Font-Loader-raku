@@ -43,8 +43,6 @@ $pdf.page(2).gfx.text: -> $gfx {
 # ensure consistant document ID generation
 $pdf.id =  $*PROGRAM-NAME.fmt('%-16.16s');
 
-note "saving";
 $pdf.save-as: "t/reuse-unembedded.pdf";
-note "saved";
 
 done-testing;
