@@ -23,8 +23,6 @@ $pdf.page(1).gfx.text: -> $gfx {
     nok $f1.is-subset, "isn't subset";
     my @cids = 1, 2, 3;
     my @glyphs = $f1.glyphs(@cids);
-    todo "glyph test needs PDF::Content v0.5.6+"
-        unless PDF::Content.^ver >= v0.5.6;
     is-deeply @glyphs[0], PDF::Font::Loader::Glyph.new(:name<square>, :cid(1), :gid(1), :ax(1000) );
     is $f1.stringwidth(@cids), @glyphs>>.ax.sum;
 
@@ -38,6 +36,8 @@ $pdf.page(1).gfx.text: -> $gfx {
 # ensure consistant document ID generation
 $pdf.id =  $*PROGRAM-NAME.fmt('%-16.16s');
 
+note "saving";
 $pdf.save-as: "t/type3-basic.pdf";
+note "saved";
 
 done-testing;
