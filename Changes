@@ -1,8 +1,5 @@
 {{$NEXT}}
 
-0.6.2  2022-05-12T08:55:48+12:00
-    - Move from CPAN to zef module repository
-
 0.6.1  2022-05-12T08:23:14+12:00
     Initial page-level thread-safety
     - Bump PDF and PDF::Content to thread-safe versions
