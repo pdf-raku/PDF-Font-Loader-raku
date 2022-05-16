@@ -37,7 +37,6 @@ class PDF::Font::Loader::Dict {
     }
 
     method is-core-font($?: FontDict :$dict! ) is export(:is-core-font) {
-        warn [$dict<Subtype>, font-descriptor($dict)].raku;
         $dict<Subtype> ~~ 'Type1'
         && ! font-descriptor($dict).defined
     }

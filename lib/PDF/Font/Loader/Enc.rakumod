@@ -70,7 +70,6 @@ method glyph(UInt $cid) {
         if @!cid-to-gid-map;
     $gid ||= $.face.glyph-index($code-point)
         if $code-point;
-    $gid ||= $cid;
     my FT_UInt $ax;
     if self.width($cid) -> $width {
         $ax = $width;
@@ -79,7 +78,10 @@ method glyph(UInt $cid) {
     $ax ||= .stringwidth($chr).round
         with $!core-metrics;
 
-    my FT_UInt $sx = self!glyph-size($gid)[Width].round || $ax;
+    my FT_UInt $sx = self!glyph-size($gid)[Width].round
+        if $gid;
+    $sx  ||= $ax;
+    $gid ||= $cid;
 
     if $sx && !$ax {
         $ax = $sx;
@@ -99,6 +101,7 @@ method glyph(UInt $cid) {
         $name = $_
              unless .starts-with('.');
     }
+
     PDF::Font::Loader::Glyph.new: :$name, :$code-point, :$cid, :$gid, :$ax, :$sx;
 }
 
