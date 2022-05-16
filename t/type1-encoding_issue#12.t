@@ -27,8 +27,8 @@ sub encoding-checks($encoder) {
     is-deeply $encoder.encode("Hi", :cids), $(+H-cid, +i-cid), "cid encoding sanity";
     is-deeply $encoder.encode("Hi"), 'Hi', "str encoding sanity";
     is-deeply $encoder.encode("Hi"), "Hi", "win encoding sanity";
-    is-deeply $encoder.glyph(+H-cid), Glyph.new(:name<H>, :code-point("H".ord), :cid(+H-cid), :gid(+H-gid), :ax(652)), 'glyph "H"';
-    is-deeply $encoder.glyph(+i-cid), Glyph.new(:name<i>, :code-point("i".ord), :cid(+i-cid), :gid(+i-gid), :ax(234)), 'glyph "i"';
+    is-deeply $encoder.glyph(+H-cid), Glyph.new(:name<H>, :code-point("H".ord), :cid(+H-cid), :gid(+H-gid), :ax(652), :sx(652)), 'glyph "H"';
+    is-deeply $encoder.glyph(+i-cid), Glyph.new(:name<i>, :code-point("i".ord), :cid(+i-cid), :gid(+i-gid), :ax(234), :sx(234)), 'glyph "i"';
 }
 
 my PDF::Lite $pdf .= open:  "t/pdf/type1-encoding_issue#12.pdf";

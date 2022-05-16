@@ -8,8 +8,10 @@ has Str $.name;
 has uint32 $.code-point;  # unicode mapping (if known)
 has FT_UInt $.cid;    # encoding point
 has FT_UInt $.gid;    # font glyph index
-has FT_UInt $.ax is rw;     # unscaled x advance x 1000
-has FT_UInt $.ay is rw = 0; # unscaled y advance x 1000 (not yet used)
+has FT_UInt $.ax is rw;     # actual unscaled x advance x 1000
+has FT_UInt $.ay is rw = 0; # actual unscaled y advance x 1000 (not yet used)
+has FT_UInt $.sx is rw;     # substituted font x advance
+has FT_UInt $.sy is rw = 0; # substituted font y advance
 
 method dx is DEPRECATED<ax> { $.ax }
 

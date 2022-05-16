@@ -16,7 +16,7 @@ sub prefix:</>($name) { with $name {PDF::COS::Name.COERCE($_)} else { Any } };
 submethod TWEAK {
     if self.enc ~~ m/^[identity|utf]/ {
         die "can't use {self.enc} encoding with unembedded font {self.font-name}"
-            unless self.is-embedded;
+            unless self.embed || self.is-embedded;
     }
 }
 

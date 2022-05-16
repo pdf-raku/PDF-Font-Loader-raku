@@ -52,12 +52,12 @@ has Blob $.font-buf;
 has PDF::COS::Dict $!dict;
 my subset EncodingScheme where 'mac'|'win'|'zapf'|'sym'|'identity'|'identity-h'|'identity-v'|'std'|'mac-extra'|'cmap'|'utf8'|'utf16'|'utf32';
 has EncodingScheme $.enc;
-has Bool $.embed = True;
 has Bool $.subset = False;
 has Str:D $.family          = $!face.family-name;
 has Str:D $.font-name is rw = $!face.postscript-name // $!family;
 # Font descriptors are needed for all but core fonts
 has PDF::COS::Dict $.font-descriptor .= COERCE: %( :Type(/'FontDescriptor'), :FontName(/$!font-name));
+has Bool $.embed = $!font-descriptor.defined;
 has Bool $!finished;
 has Bool $!gids-updated;
 has Bool $!build-widths;
@@ -285,6 +285,9 @@ method font-descriptor {
         my UInt $Flags;
         $Flags +|= FixedPitch if $!face.is-fixed-width;
         $Flags +|= Italic if $!face.is-italic;
+        with $tt-pclt {
+            $Flags +|= Serif if (.SerifStyle +> 6) == 2;
+        }
 
         # set up required fields
         my UInt $CapHeight  = do with $tt-pclt { .capHeight }
@@ -295,36 +298,40 @@ method font-descriptor {
         else { $!face.is-italic ?? -12 !! 0 };
 
         my $FontName  = /($!font-name);
-        my $FontFamily = /($!family);
+        my $FontFamily = $!embed ?? /($!family) !! $FontName;
         # google impoverished guess
         my UInt $StemV = $!face.is-bold ?? 110 !! 80;
 
-        $dict.Hash ,= %(
+        for (
             :$FontName, :$FontFamily, :$Flags,
             :$Ascent, :$Descent, :@FontBBox,
             :$ItalicAngle, :$StemV, :$CapHeight, :$XHeight,
-        );
+        ) {
+            $dict{.key} //= .value;
+        }
 
         # try for a few more properties
 
         with TT_OS2.load: :$!face {
-            $dict<FontWeight> = .usWeightClass;
-            $dict<AvgWidth> = .xAvgCharWidth;
+            $dict<FontWeight> //= .usWeightClass;
+            $dict<AvgWidth> //= .xAvgCharWidth;
 
             if $!face.font-format ~~ 'FreeType'|'OpenType' {
                 # applicable to CID font descriptors
                 my $buf = .panose.Blob;
                 $buf.prepend: (.sFamilyClass div 256, .sFamilyClass mod 256);
                 my $Panose = hex-string => $buf.decode: "latin-1";
-                $dict<Style> = %( :$Panose );
+                $dict<Style> //= %( :$Panose );
             }
         }
-        $dict<FontWeight> //= pclt-font-weight(.strokeWeight)
-            with $tt-pclt;
+
+        with $tt-pclt {
+            $dict<FontWeight> //= pclt-font-weight(.strokeWeight)
+        }
 
         with TT_HoriHeader.load: :$!face {
-            $dict<Leading>  = .lineGap;
-            $dict<MaxWidth> = .advanceWidthMax;
+            $dict<Leading>  //= .lineGap;
+            $dict<MaxWidth> //= .advanceWidthMax;
         }
 
         if $!embed {
@@ -562,12 +569,12 @@ method cb-finish {
 ## Informational methods
 method type { $.to-dict<Subtype>.fmt; }
 method is-embedded {
-    $!embed || do with $!font-descriptor {
+    do with $!font-descriptor {
         .{self!font-file-entry}:exists;
     } || False;
 }
 method is-subset { so ($!font-name ~~ m/^<[A..Z]>**6"+"/) }
-method is-core-font { ! self.font-descriptor.defined }
+method is-core-font { self.type ~~ 'Type1' && ! self.font-descriptor.defined }
 
 =begin pod
 =head2 Methods

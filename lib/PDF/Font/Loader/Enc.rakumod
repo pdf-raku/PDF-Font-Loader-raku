@@ -16,6 +16,7 @@ has uint16 @!widths;
 has Bool $.widths-updated is rw;
 has Bool $.encoding-updated is rw;
 has PDF::COS::Stream $.cmap is rw; # /ToUnicode CMap
+has Font::AFM $.core-metrics is rw;
 has Lock $.lock handles<protect> .= new;
 submethod TWEAK(:$widths) {
     @!widths = .map(*.Int) with $widths;
@@ -63,17 +64,30 @@ method local-glyph-name($cid) {
 
 method glyph(UInt $cid) {
     my uint32 $code-point = $.to-unicode[$cid] || 0;
+    my $chr := $code-point.chr;
+    my Str $name;
     my FT_UInt $gid = @!cid-to-gid-map[$cid]
         if @!cid-to-gid-map;
     $gid ||= $.face.glyph-index($code-point)
         if $code-point;
     $gid ||= $cid;
-    my $ax = (self.width($cid) ||= self!glyph-size($gid)[Width].round);
-    my Str $name;
+    my FT_UInt $ax;
+    if self.width($cid) -> $width {
+        $ax = $width;
+    }
+
+    $ax ||= .stringwidth($chr).round
+        with $!core-metrics;
+
+    my FT_UInt $sx = self!glyph-size($gid)[Width].round || $ax;
+
+    if $sx && !$ax {
+        $ax = $sx;
+        self.width($cid) = $ax;
+    }
 
     if $code-point {
         # prefer standard names
-        my $chr := $code-point.chr;
         $name = %Font::AFM::Glyphs{$chr} // $chr.uniname.lc;
     }
     elsif $.local-glyph-name($cid) -> $_ {
@@ -85,7 +99,7 @@ method glyph(UInt $cid) {
         $name = $_
              unless .starts-with('.');
     }
-    PDF::Font::Loader::Glyph.new: :$name, :$code-point, :$cid, :$gid, :$ax;
+    PDF::Font::Loader::Glyph.new: :$name, :$code-point, :$cid, :$gid, :$ax, :$sx;
 }
 
 method !glyph-size($gid) {

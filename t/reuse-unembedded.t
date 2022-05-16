@@ -11,14 +11,16 @@ my PDF::Lite::Page $page = $pdf.page(2);
 
 $pdf.page(2).gfx.text: -> $gfx {
     my PDF::COS::Dict %fonts = $gfx.resources('Font');
-    my PDF::Content::FontObj $f3 = PDF::Font::Loader.load-font: :dict(%fonts<F3>), :quiet;
     $gfx.text-position = 10, 400;
     subtest 'unembedded non-core' => {
-        plan 5;
+        plan 7;
+        my PDF::Content::FontObj $f3 = PDF::Font::Loader.load-font: :dict(%fonts<F3>), :quiet;
         is $f3.font-name, 'WenQuanYiMicroHei', 'font name';
         is $f3.enc, 'win', 'enc';
+        nok $f3.is-core-font, "isn't core-font";
         nok $f3.is-embedded, 'is embedded';
         nok $f3.is-subset, "isn't subset";
+        nok $f3.encoder.core-metrics.defined, 'lacks core metrics';
         lives-ok {
             $gfx.font = $f3;
             $gfx.say: "reused " ~ $f3.font-name;
@@ -26,12 +28,15 @@ $pdf.page(2).gfx.text: -> $gfx {
         }, 'reuse unembedded font';
     }
     subtest 'unembedded core-font' => {
-        plan 5;
+        plan 8;
         my PDF::Content::FontObj $f4 = PDF::Font::Loader.load-font: :dict(%fonts<F4>), :quiet;
         is $f4.font-name, 'Times-Roman', 'font name';
+        ok $f4.is-core-font, "is core-font";
         is $f4.enc, 'win', 'enc';
         nok $f4.is-embedded, 'is embedded';
         nok $f4.is-subset, "isn't subset";
+        ok $f4.encoder.core-metrics.defined, 'has core metrics';
+        is $f4.encoder.core-metrics.stringwidth('Raku'), 2111, 'sample core metrics';
         lives-ok {
             $gfx.font = $f4;
             $gfx.say: "reused " ~ $f4.font-name;
