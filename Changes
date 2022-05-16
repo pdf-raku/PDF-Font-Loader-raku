@@ -1,6 +1,13 @@
 {{$NEXT}}
+
+0.6.2  2022-05-17T08:10:11+12:00
     - Improved handling of core fonts. Use standard core-font metrics over
       substituted font metrics.
+    - Provide separate ax and sx attributes in glyphs. ax is the actual expected
+      advance, taken from the /Widths or /W entry for the font, or in the case
+      of core fonts, the standard width for the character. sx is the width of the
+      substituted font. This helps with the scaling and placement of glyphs while
+      rendering.
 
 0.6.1  2022-05-12T08:23:14+12:00
     Initial page-level thread-safety
