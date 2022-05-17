@@ -15,7 +15,6 @@ use PDF::Font::Loader::Enc::CMap;
 use PDF::Font::Loader::Enc::Identity16;
 use PDF::Font::Loader::Enc::Type1;
 use PDF::Font::Loader::Enc::Unicode;
-use PDF::Font::Loader::Enc::Glyphic;
 use PDF::Font::Loader::Glyph;
 use PDF::Font::Loader::Type1::Stream;
 use Font::FreeType:ver(v0.3.0+);

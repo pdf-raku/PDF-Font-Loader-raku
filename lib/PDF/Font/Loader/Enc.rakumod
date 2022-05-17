@@ -101,25 +101,26 @@ method glyph(UInt $cid) {
         $name = $_
              unless .starts-with('.');
     }
-
     PDF::Font::Loader::Glyph.new: :$name, :$code-point, :$cid, :$gid, :$ax, :$sx;
 }
 
 method !glyph-size($gid) {
-    my $struct = $.face.raw;
-    my $glyph-slot = $struct.glyph;
-    my $scale = 1000 / ($.face.units-per-EM || 1000);
     my int $width  = 0;
     my int $height = 0;
+    my $scale = 0;
 
     if $gid {
         CATCH {
-            when Font::FreeType::Error { warn "error processing glyph index: {$gid}: " ~ .message; }
+            when Font::FreeType::Error { warn "error processing glyph index: {$gid} for font {$.face.family-name}: " ~ .message; }
         }
-        ft-try({ $struct.FT_Load_Glyph( $gid, FT_LOAD_NO_SCALE ); });
-        given $glyph-slot.metrics {
-            $width  = .hori-advance;
-            $height = .vert-advance;
+        $.face.protect: {
+            my $struct = $.face.raw;
+            ft-try({ $struct.FT_Load_Glyph( $gid, FT_LOAD_NO_SCALE ); });
+            given $struct.glyph.metrics {
+                $scale = 1000 / ($.face.units-per-EM || 1000);
+                $width  = .hori-advance;
+                $height = .vert-advance;
+            }
         }
     }
 
@@ -284,7 +285,7 @@ The `:cids` option returns a Blob of CIDs, rather than a fully encoded bytes-str
 =begin code :lang<raku>
 multi method decode(Str $byte-string, :cids($)!) returns Seq; # decode to CIDs
 multi method decode(Str $byte-string, :ords($)!) returns Seq; # decode to code-points
-multi method decode(Str $byte-string) returns PDF::COS::ByteString;            # encode to a byte-string
+multi method decode(Str $byte-string) returns Str;            # decode to a string
 =end code
 
 Decodes a PDF byte string, by default to a Unicode text string.

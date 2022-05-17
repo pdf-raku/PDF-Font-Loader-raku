@@ -7,7 +7,7 @@
   ],
   "depends": [
     "Font::AFM:ver<1.24.6+>",
-    "Font::FreeType:ver<0.3.8+>",
+    "Font::FreeType:ver<0.4.0+>",
     "FontConfig",
     "Hash::int",
     "Native::Packing",

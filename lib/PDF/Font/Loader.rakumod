@@ -42,8 +42,9 @@ class PDF::Font::Loader:ver<0.6.2> {
         fontobj-class.new: :$face, :$font-buf, :$enc, :$embed, |c;
     }
 
+    my Font::FreeType:D $ft-lib .= new;
     multi method load-font($class = $?CLASS: Blob :$font-buf!, |c) is default {
-        my Font::FreeType::Face $face = Font::FreeType.face($font-buf);
+        my Font::FreeType::Face:D $face = $ft-lib.face($font-buf);
         $class.load-font( :$face, :$font-buf, |c);
     }
 

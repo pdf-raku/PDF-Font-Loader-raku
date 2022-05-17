@@ -1,4 +1,6 @@
 {{$NEXT}}
+    - Use thread-safe version of Font::FreeType. Protect internal low-level
+      glyph access.
 
 0.6.2  2022-05-17T08:10:11+12:00
     - Improved handling of core fonts. Use standard core-font metrics over

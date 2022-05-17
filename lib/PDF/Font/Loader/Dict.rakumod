@@ -193,26 +193,26 @@ class PDF::Font::Loader::Dict {
         else {
             # no font descriptor. unembedded or core font
             my $font-name = $dict<BaseFont> // 'courier';
-            my $family = $font-name;
-
-            %opt<weight> = 'bold' if $family ~~ s/:i ['-'|',']? bold //;
-            %opt<slant> = $0.lc if $family ~~ s/:i ['-'|',']? (italic|oblique) //;
 
             if $dict<Subtype> ~~ 'Type1' {
                 with PDF::Content::Font::CoreFont.core-font-name($font-name) {
                     # core font
                     %encoder<core-metrics> = Font::AFM.core-font: $_;
                     %opt<font-descriptor> = PDF::COS::Dict;
-                    $family = 'serif' if .starts-with('times');
-                    $family = 'sans'  if .starts-with('helvetica');
                 }
             }
             %opt ,= :$font-name;
-            %opt ,= :$family;
-            %opt<enc> //= do given $family {
-                when /:i ^[ZapfDingbats|WebDings]/ {'zapf'}
-                when /:i ^[Symbol]/ {'sym'}
-                default {'std'}
+
+            given $font-name -> $family is copy {
+
+                %opt<weight> = 'bold' if $family ~~ s/:i ['-'|',']? bold //;
+                %opt<slant> = $0.lc if $family ~~ s/:i ['-'|',']? (italic|oblique) //;
+                %opt ,= :$family;
+                %opt<enc> //= do given $family {
+                    when /:i ^[ZapfDingbats|WebDings]/ {'zapf'}
+                    when /:i ^[Symbol]/ {'sym'}
+                    default {'std'}
+                }
             }
         }
 
