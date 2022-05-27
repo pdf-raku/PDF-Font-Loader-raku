@@ -285,7 +285,7 @@ method font-descriptor {
         $Flags +|= FixedPitch if $!face.is-fixed-width;
         $Flags +|= Italic if $!face.is-italic;
         with $tt-pclt {
-            $Flags +|= Serif if (.SerifStyle +> 6) == 2;
+            $Flags +|= Serif if (.serifStyle +> 6) == 2;
         }
 
         # set up required fields
