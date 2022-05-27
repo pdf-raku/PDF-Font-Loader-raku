@@ -30,6 +30,7 @@ lives-ok {
                 $y -= 80;
             }
         }
+        $page.finish;
         $page;
     }
 }, 'page insert race';

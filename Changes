@@ -1,5 +1,7 @@
 {{$NEXT}}
-    - Fix font-descriptor() method for fonts with a TT_PCLT table
+
+0.6.4  2022-05-28T09:55:17+12:00
+    - Fix font-descriptor() handling of fonts with a TT_PCLT table
 
 0.6.3  2022-05-18T09:51:56+12:00
     - Use thread-safe version of Font::FreeType. Protect internal low-level
