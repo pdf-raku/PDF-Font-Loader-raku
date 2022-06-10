@@ -68,8 +68,8 @@ method make-encoding-stream {
             '-H'
         );
         
-        my PDF::COS::Name $CMapName .= COERCE: $name;
-        my PDF::COS::Name $Type .= COERCE: 'CMap';
+        my PDF::COS::Name() $CMapName = $name;
+        my PDF::COS::Name() $Type = 'CMap';
 
         PDF::COS::Stream.COERCE: %( :dict{
             :$Type,
@@ -121,7 +121,7 @@ method make-dict {
         :$.CIDSystemInfo
     };
 
-    my $dict = PDF::COS::Dict.COERCE: %(
+    my PDF::COS::Dict() $dict = %(
         :Type( /<Font> ),
         :Subtype( /<Type0> ),
         :$BaseFont,

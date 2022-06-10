@@ -95,11 +95,11 @@ By default the computed size is in 1000's of a font unit. Alternatively second `
 
 The `:kern` option can be used to adjust the stringwidth, using the font's horizontal kerning tables.
 
-### glyphs
+### get-glyphs
 
 ```raku
 use PDF::Font::Loader::Glyph;
-my PDF::Font::Loader::Glyph @glyphs = $font.glyphs: "Hi";
+my PDF::Font::Loader::Glyph @glyphs = $font.get-glyphs: "Hi";
 say "name:{.name} code:{.code-point} cid:{.cid} gid:{.gid} dx:{.dx} dy:{.dy}"
     for @glyphs;
 ```

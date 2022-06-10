@@ -3,11 +3,13 @@ unit class PDF::Font::Loader::Enc;
 
 use Font::AFM;
 use Font::FreeType::Error;
+use Font::FreeType::Raw;
 use Font::FreeType::Raw::Defs;
 use PDF::Font::Loader::Glyph;
 use PDF::IO::Writer;
 use PDF::COS::Stream;
 
+my constant Glyph = PDF::Font::Loader::Glyph;
 enum <Width Height>;
 
 has uint16 @.cid-to-gid-map;
@@ -18,9 +20,12 @@ has Bool $.encoding-updated is rw;
 has PDF::COS::Stream $.cmap is rw; # /ToUnicode CMap
 has Font::AFM $.core-metrics is rw;
 has Lock $.lock handles<protect> .= new;
+has Glyph %!glyphs{Int};
+
 submethod TWEAK(:$widths) {
     @!widths = .map(*.Int) with $widths;
 }
+
 multi method first-char { $!first-char }
 multi method first-char($cid) {
     unless @!widths {
@@ -62,7 +67,32 @@ method local-glyph-name($cid) {
     PDF::COS::Name
 }
 
-method glyph(UInt $cid) {
+method glyph($cid is raw) {
+    self.protect: { %!glyphs{$cid} //= self!make-glyph($cid); }
+}
+
+multi method get-glyphs(Str:D $text) {
+    self.get-glyphs: self.encode($text, :cids);
+}
+multi method get-glyphs(@cids) {
+    @cids.map: { self.glyph($_); };
+}
+
+method glyph-width(Str $ch) is rw {
+    Proxy.new(
+        FETCH => { .ax with self.get-glyphs($ch)[0] },
+        STORE => -> $, UInt() $width {
+            with self.encode($ch, :cids)[0] -> $cid {
+                self.protect: {
+                    self.width($cid) = $width;
+                    self.glyph($cid).ax = $width;
+                }
+            }
+        }
+    );
+}
+
+method !make-glyph(UInt $cid) {
     my uint32 $code-point = $.to-unicode[$cid] || 0;
     my $chr := $code-point.chr;
     my Str $name;
@@ -199,6 +229,28 @@ method make-to-unicode-cmap(:$to-unicode = self.to-unicode) {
     $.make-cmap: $!cmap, @content;
 }
 
+method !font-kerning(Str $text is copy) {
+    my FT_UInt $prev-idx = 0;
+    my FT_Vector $kerning .= new;
+    my $struct = $.face.raw;
+    my int $width = 0;
+    my int $height = 0;
+    my $scale = 1000 / ($.face.units-per-EM || 1000);
+
+    for $text.ords -> $char-code {
+        my FT_UInt $this-idx = $struct.FT_Get_Char_Index( $char-code );
+        if $this-idx {
+            if $prev-idx {
+                ft-try({ $struct.FT_Get_Kerning($prev-idx, $this-idx, FT_KERNING_UNSCALED, $kerning); });
+                $width  += $kerning.x;
+                $height += $kerning.y;
+            }
+        }
+        $prev-idx = $this-idx;
+    }
+    (($width * $scale).round, ($height * $scale).round);
+}
+
 method make-cmap(PDF::COS::Stream $cmap, @content, |c) {
     my PDF::IO::Writer $writer .= new;
     my $cmap-name = $writer.write: $cmap<CMapName>.content;
@@ -217,6 +269,29 @@ method make-cmap(PDF::COS::Stream $cmap, @content, |c) {
         {@content.join: "\n"}
         endcmap CMapName currendict /CMap defineresource pop end end
         --END--
+}
+
+method height($pointsize = 1000, Bool :$from-baseline, Bool :$hanging) {
+    die "todo: height of non-scaling fonts" unless $.face.is-scalable;
+    my FT_BBox $bbox = $.face.bounding-box;
+    my Numeric $height = $hanging ?? $.face.ascender !! $bbox.y-max;
+    $height -= $hanging ?? $.face.descender !! $bbox.y-min
+        unless $from-baseline;
+    $height * $pointsize /($.face.units-per-EM);
+}
+
+multi method stringwidth(Str $text, :$kern) {
+    (sum @.encode($text, :cids).map: { self.glyph($_).ax })
+    + ($kern ?? self!font-kerning($text)[Width] !! 0);
+}
+multi method stringwidth(Str $text, $pointsize, :$kern) {
+    self.stringwidth($text, :$kern) * $pointsize / 1000;
+}
+multi method stringwidth(@cids, $point-size?) {
+    my $width = [+] @cids.map: { self.glyph($_).ax };
+    $point-size
+        ?? $width  * $point-size / 1000
+        !! $width;
 }
 
 =begin pod

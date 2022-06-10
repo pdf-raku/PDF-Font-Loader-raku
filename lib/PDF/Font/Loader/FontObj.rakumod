@@ -45,7 +45,7 @@ enum <Width Height>;
 
 has Font::FreeType::Face:D $.face is required handles<underline-thickness underline-position>;
 use PDF::Font::Loader::Enc;
-has PDF::Font::Loader::Enc $!encoder handles <decode first-char last-char widths has-encoding>;
+has PDF::Font::Loader::Enc $!encoder handles <decode first-char last-char widths has-encoding glyph get-glyphs glyph-width height stringwidth>;
 method encoder { $!encoder }
 has Blob $.font-buf;
 has PDF::COS::Dict $!dict;
@@ -55,13 +55,11 @@ has Bool $.subset = False;
 has Str:D $.family          = $!face.family-name;
 has Str:D $.font-name is rw = $!face.postscript-name // $!family;
 # Font descriptors are needed for all but core fonts
-has PDF::COS::Dict $.font-descriptor .= COERCE: %( :Type(/'FontDescriptor'), :FontName(/$!font-name));
+has PDF::COS::Dict() $.font-descriptor = %( :Type(/'FontDescriptor'), :FontName(/$!font-name));
 has Bool $.embed = $!font-descriptor.defined;
 has Bool $!finished;
 has Bool $!gids-updated;
 has Bool $!build-widths;
-my constant Glyph = PDF::Font::Loader::Glyph;
-has Glyph %!glyphs{Int};
 
 sub subsetter {
     PDF::COS.required.("HarfBuzz::Subset")
@@ -143,57 +141,23 @@ submethod TWEAK(
         with $!dict;
 }
 
+method glyphs(|c) is DEPRECATED<get-glyphs> { self.get-glyphs(|c) }
+
 method load-font(|c) {
     PDF::COS.required('PDF::Font::Loader').load-font: |c;
-}
-
-method height($pointsize = 1000, Bool :$from-baseline, Bool :$hanging) {
-    die "todo: height of non-scaling fonts" unless $!face.is-scalable;
-    my FT_BBox $bbox = $!face.bounding-box;
-    my Numeric $height = $hanging ?? $!face.ascender !! $bbox.y-max;
-    $height -= $hanging ?? $!face.descender !! $bbox.y-min
-        unless $from-baseline;
-    $height * $pointsize /($!face.units-per-EM);
-}
-
-method glyph-width(Str $ch) is rw {
-    Proxy.new(
-        FETCH => { .ax with self.glyphs($ch)[0] },
-        STORE => -> $, UInt() $width {
-            with $!encoder.encode($ch, :cids)[0] -> $cid {
-                
-                $!encoder.width($cid) = $width;
-                self!glyph($cid).ax = $width;
-            }
-        }
-    );
-}
-
-multi method stringwidth(Str $text, :$kern) {
-    (sum $!encoder.encode($text, :cids).map: { self!glyph($_).ax })
-    + ($kern ?? self!font-kerning($text)[Width] !! 0);
-}
-multi method stringwidth(Str $text, $pointsize, :$kern) {
-    self.stringwidth($text, :$kern) * $pointsize / 1000;
-}
-multi method stringwidth(@cids, $point-size?) {
-    my $width = [+] @cids.map: { self!glyph($_).ax };
-    $point-size
-        ?? $width  * $point-size / 1000
-        !! $width;
 }
 
 method decode-cids(Str $byte-str) {
     my @cids = $!encoder.decode($byte-str, :cids);
     if $!build-widths || $!encoder.cid-to-gid-map {
-        self!glyph($_) for @cids;
+        $!encoder.get-glyphs: @cids;
     }
     @cids;
 }
 
 method encode($text is raw, |c) {
     if $!build-widths || $!encoder.cid-to-gid-map {
-        self!glyph($_) for $!encoder.encode($text, :cids);
+        $!encoder.get-glyphs: $!encoder.encode($text, :cids);
     }
     $!encoder.encode($text, |c);
 }
@@ -218,7 +182,7 @@ method !make-type1-font-file($buf) {
     my $Length1 = $stream.length[0];
     my $Length2 = $stream.length[1];
     my $Length3 = $stream.length[2];
-    my PDF::IO::Blob $encoded .= COERCE: $buf;
+    my PDF::IO::Blob() $encoded = $buf;
 
     PDF::COS::Stream.COERCE: {
         :$encoded,
@@ -250,17 +214,6 @@ method !make-font-file($buf) {
     $!face.font-format eq 'Type 1'
         ?? self!make-type1-font-file($buf)
         !! self!make-other-font-file($buf);
-}
-
-method !glyph($cid is raw) {
-    $!encoder.protect: { %!glyphs{$cid} //= $!encoder.glyph($cid); }
-}
-
-multi method glyphs(Str:D $text) {
-    self.glyphs: $!encoder.encode($text, :cids);
-}
-multi method glyphs(@cids) {
-    @cids.map: { self!glyph($_); };
 }
 
 sub pclt-font-weight(Int $w) {
@@ -381,8 +334,8 @@ method CIDSystemInfo {
 method make-to-unicode-stream {
 
     $!encoder.cmap //= do {
-        my PDF::COS::Name $CMapName .= COERCE: 'to-unicode-' ~ $!font-name;
-        my PDF::COS::Name $Type .= COERCE: 'CMap';
+        my PDF::COS::Name() $CMapName = 'to-unicode-' ~ $!font-name;
+        my PDF::COS::Name() $Type = 'CMap';
 
         PDF::COS::Stream.COERCE: %( :dict{
             :$Type,
@@ -426,7 +379,7 @@ method make-dict {
     my $BaseFont = /($!font-name);
     my $Encoding = /(self.encoding);
 
-    my $dict = PDF::COS::Dict.COERCE: %(
+    my PDF::COS::Dict() $dict = %(
         :$Type,
         :$Subtype,
         :$BaseFont,
@@ -445,28 +398,6 @@ method to-dict {
      $!encoder.protect: {
          $!dict //= PDF::Content::Font.make-font(self.make-dict, self);
      }
-}
-
-method !font-kerning(Str $text is copy) {
-    my FT_UInt $prev-idx = 0;
-    my FT_Vector $kerning .= new;
-    my $struct = $!face.raw;
-    my int $width = 0;
-    my int $height = 0;
-    my $scale = 1000 / ($!face.units-per-EM || 1000);
-
-    for $text.ords -> $char-code {
-        my FT_UInt $this-idx = $struct.FT_Get_Char_Index( $char-code );
-        if $this-idx {
-            if $prev-idx {
-                ft-try({ $struct.FT_Get_Kerning($prev-idx, $this-idx, FT_KERNING_UNSCALED, $kerning); });
-                $width  += $kerning.x;
-                $height += $kerning.y;
-            }
-        }
-        $prev-idx = $this-idx;
-    }
-    (($width * $scale).round, ($height * $scale).round);
 }
 
 method !char-height(UInt $char-code) {
@@ -543,24 +474,25 @@ method !make-subset {
 method cb-finish {
     my $dict := self.to-dict;
 
-    if $.first-char.defined {
-        
-        my $widths-updated = $!encoder.widths-updated;
-        my $encoding-updated = $!encoder.encoding-updated;
+    $!encoder.protect: {
+        if $.first-char.defined {
+            my $widths-updated = $!encoder.widths-updated;
+            my $encoding-updated = $!encoder.encoding-updated;
 
-        if !$!finished || $widths-updated || $encoding-updated {
-            my $save-widths := $!build-widths && $widths-updated--;
-            my $save-gids   := $!gids-updated--;
-            self.finish-font: $dict, :$save-widths, :$save-gids;
-            if $!subset {
-                my PDF::COS::Stream $font-file = self!make-font-file: self!make-subset();
-                $!font-descriptor{self!font-file-entry} = $font-file;
+            if !$!finished || $widths-updated || $encoding-updated {
+                my $save-widths := $!build-widths && $widths-updated--;
+                my $save-gids   := $!gids-updated--;
+                self.finish-font: $dict, :$save-widths, :$save-gids;
+                if $!subset {
+                    my PDF::COS::Stream $font-file = self!make-font-file: self!make-subset();
+                    $!font-descriptor{self!font-file-entry} = $font-file;
+                }
+                $!finished = True;
             }
-            $!finished = True;
         }
-    }
-    else {
-        warn "Font not used: $!font-name";
+        else {
+            warn "Font not used: $!font-name";
+        }
     }
     $dict;
 }
@@ -663,10 +595,10 @@ By default the computed size is in 1000's of a font unit. Alternatively second `
 
 The `:kern` option can be used to adjust the stringwidth, using the font's horizontal kerning tables.
 
-=head3 glyphs
+=head3 get-glyphs
 =begin code :lang<raku>
 use PDF::Font::Loader::Glyph;
-my PDF::Font::Loader::Glyph @glyphs = $font.glyphs: "Hi";
+my PDF::Font::Loader::Glyph @glyphs = $font.get-glyphs: "Hi";
 say "name:{.name} code:{.code-point} cid:{.cid} gid:{.gid} dx:{.dx} dy:{.dy}"
     for @glyphs;
 =end code

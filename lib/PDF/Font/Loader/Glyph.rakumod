@@ -73,8 +73,7 @@ and always returns zero.
 
 =head3 sx
 
-The actual width of the glyph in the current font. This may vary from `ax` if a width has been set for the
-glyph that varies from embedded font, or when a font has been substituted while loading an unembedded or core
+The actual width of the glyph in the current font. This may vary from `ax` if a width has been set for the glyph, or when a font has been substituted while loading an unembedded or core
 font from a PDF dictionary.
 
 =end pod

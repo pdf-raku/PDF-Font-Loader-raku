@@ -10,7 +10,7 @@ use Font::FreeType;
 my constant Glyph = PDF::Font::Loader::Glyph;
 my PDF::Content::FontObj $deja = load-font( :file<t/fonts/DejaVuSans.ttf>, :!subset );
 
-my Glyph @shape = $deja.glyphs("Hello");
+my Glyph @shape = $deja.get-glyphs("Hello");
 
 is +@shape, 5;
 
@@ -30,7 +30,7 @@ my uint8 @encoded = 3,5,10;
 todo "PDF::Content v0.5.3+ and Font::FreeType v0.3.8+ required to run these tests", 3
     unless PDF::Content.^ver >= v0.5.3 && Font::FreeType.^ver >= v0.3.8;
 
-@shape = $font.glyphs(@encoded);
+@shape = $font.get-glyphs(@encoded);
 is-deeply @shape[0], Glyph.new: :name<g85>, :code-point(0), :cid(3), :gid(16), :ax(391), :sx(391);
 is-deeply @shape[1], Glyph.new: :name<g74>, :code-point(0), :cid(5), :gid(25), :ax(558), :sx(558);
 is-deeply @shape[2], Glyph.new: :name<g69>, :code-point(0), :cid(10), :gid(12), :ax(606), :sx(606);
@@ -61,7 +61,7 @@ for '–' => 'g179', :O<g50>, :r<g85>, :i<g76>, :g<g74>, :n<g81>,
 }
 
 # We should now be able to do unicode encoding
-@shape = $font.glyphs("HiQ");
+@shape = $font.get-glyphs("HiQ");
 is-deeply @shape[0], Glyph.new(:name<H>, :code-point(72),  :cid(48), :gid(26), :ax(823), :sx(823)), 'pre-save encoding';
 is-deeply @shape[1], Glyph.new(:name<i>, :code-point(105), :cid(4),  :gid(21), :ax(334), :sx(334)), 'pre-save encoding';
 is-deeply @shape[2], Glyph.new(:name<Q>, :code-point(81),  :cid(61), :gid(6),  :ax(823), :sx(823)), 'pre-save encoding';
@@ -73,7 +73,7 @@ $pdf .= open: $pdf.Blob;
 $dict = $pdf.page(1).resources('Font')<F1>;
 $font .= load-font: :$dict;
 
-@shape = $font.glyphs("HiQ");
+@shape = $font.get-glyphs("HiQ");
 is-deeply @shape[0], Glyph.new(:name<H>, :code-point(72),  :cid(48), :gid(26), :ax(823), :sx(823)), 'reloaded encoding';
 is-deeply @shape[1], Glyph.new(:name<i>, :code-point(105), :cid(4),  :gid(21), :ax(334), :sx(334)), 'reloaded encoding';
 is-deeply @shape[2], Glyph.new(:name<Q>, :code-point(81),  :cid(61), :gid(6),  :ax(823), :sx(823)), 'reloaded encoding';

@@ -62,5 +62,5 @@ The height (vertical displacement to the next glyph) for a vertically written gl
 
 ### sx
 
-The actual width of the glyph in the current font. This may vary from `ax` if a width has been set for the glyph, or when a font has been substituted while loading an unembedded or core font form a PDF dictionary.
+The actual width of the glyph in the current font. This may vary from `ax` if a width has been set for the glyph, or when a font has been substituted while loading an unembedded or core font from a PDF dictionary.
 

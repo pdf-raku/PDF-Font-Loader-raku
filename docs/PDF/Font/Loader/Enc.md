@@ -77,7 +77,7 @@ The `:cids` option returns a Blob of CIDs, rather than a fully encoded bytes-str
 ```raku
 multi method decode(Str $byte-string, :cids($)!) returns Seq; # decode to CIDs
 multi method decode(Str $byte-string, :ords($)!) returns Seq; # decode to code-points
-multi method decode(Str $byte-string) returns PDF::COS::ByteString;            # encode to a byte-string
+multi method decode(Str $byte-string) returns Str;            # decode to a string
 ```
 
 Decodes a PDF byte string, by default to a Unicode text string.

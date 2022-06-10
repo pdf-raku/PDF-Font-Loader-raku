@@ -22,7 +22,7 @@ $pdf.page(1).gfx.text: -> $gfx {
     nok $f1.is-embedded, "isn't embedded";
     nok $f1.is-subset, "isn't subset";
     my @cids = 1, 2, 3;
-    my @glyphs = $f1.glyphs(@cids);
+    my @glyphs = $f1.get-glyphs(@cids);
     is-deeply @glyphs[0], PDF::Font::Loader::Glyph.new(:name<square>, :cid(1), :gid(1), :ax(1000), :sx(1000) );
     is $f1.stringwidth(@cids), @glyphs>>.ax.sum;
 
