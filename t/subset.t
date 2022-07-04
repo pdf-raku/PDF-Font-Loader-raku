@@ -69,11 +69,11 @@ $pdf.add-page.gfx.text: {
     .say: "ttc font { $ttc-font.font-name } {$ttc-font.encoding} subset ABCxyz";
 }
 
+check-fonts('created fonts');
+
 # ensure consistant document ID generation
 $pdf.id = $*PROGRAM-NAME.fmt('%-16.16s');
 $pdf.save-as: "t/subset.pdf";
-
-check-fonts('created fonts');
 
 # check our subsets survive serialization;
 $pdf .= open: "t/subset.pdf";

@@ -1,5 +1,7 @@
 {{$NEXT}}
     - Move from CPAN to zef module repository
+    - allow for fractional values in font widths (/W) array
+    - fix font subsetting
 
 0.6.4  2022-05-28T09:55:17+12:00
     - Fix font-descriptor() handling of fonts with a TT_PCLT table
