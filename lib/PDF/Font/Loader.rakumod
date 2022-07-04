@@ -15,7 +15,7 @@ class PDF::Font::Loader:ver<0.6.4> {
 
     multi method load-font($class = $?CLASS: IO() :$file!, |c) {
         my Blob $font-buf = $file.slurp: :bin;
-        $class.load-font(:$font-buf, |c);
+        $class.load-font: :$font-buf, |c;
     }
 
     my subset Type1 where .font-format ~~ 'Type 1'|'CFF';
@@ -42,19 +42,18 @@ class PDF::Font::Loader:ver<0.6.4> {
         fontobj-class.new: :$face, :$font-buf, :$enc, :$embed, |c;
     }
 
-    my Font::FreeType:D $ft-lib .= new;
-    multi method load-font($class = $?CLASS: Blob :$font-buf!, |c) is default {
+    multi method load-font($class = $?CLASS: Blob :$font-buf!, Font::FreeType :$ft-lib, |c) is default {
         my Font::FreeType::Face:D $face = $ft-lib.face($font-buf);
-        $class.load-font( :$face, :$font-buf, |c);
+        $class.load-font: :$face, :$font-buf, |c;
     }
 
     # resolve font name via fontconfig
     multi method load-font($class = $?CLASS: Str :$family!, PDF::COS::Dict :$dict, :$quiet, |c) {
-	my Str $file = $class.find-font(:$family, |c);
-	$file ||= do {
-          note "unable to locate font. Falling back to mono-spaced font"
-	      unless $quiet;
-          %?RESOURCES<font/FreeMono.ttf>.absolute;
+	my Str:D $file = $class.find-font(:$family, |c)
+	    || do {
+            note "unable to locate font. Falling back to mono-spaced font"
+	        unless $quiet;
+            %?RESOURCES<font/FreeMono.ttf>.absolute;
         }
 
         my PDF::Font::Loader::FontObj:D $font := $class.load-font: :$file, :$dict, |c;

@@ -15,7 +15,7 @@ $pdf.page(2).gfx.text: -> $gfx {
     subtest 'unembedded non-core' => {
         plan 7;
         my PDF::Content::FontObj $f3 = PDF::Font::Loader.load-font: :dict(%fonts<F3>), :quiet;
-        is $f3.font-name, 'WenQuanYiMicroHei', 'font name';
+        is $f3.font-name, 'SitkaSmall', 'font name';
         is $f3.enc, 'win', 'enc';
         nok $f3.is-core-font, "isn't core-font";
         nok $f3.is-embedded, 'is embedded';

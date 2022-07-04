@@ -62,7 +62,7 @@ has Bool $!gids-updated;
 has Bool $!build-widths;
 
 sub subsetter {
-    PDF::COS.required.("HarfBuzz::Subset")
+    PDF::COS.required("HarfBuzz::Subset")
 }
 
 submethod TWEAK(
@@ -104,6 +104,7 @@ submethod TWEAK(
         if $!face.font-format ~~ 'TrueType'|'OpenType'|'CFF' {
             $prefix ||= ("A".."Z").pick(6).join;
             $!font-name ~~ s/^[<[A..Z]>**6"+"]?/{$prefix ~ "+"}/;
+            $!font-descriptor<FontName> = /$!font-name;
         }
         else {
            warn  "unable to subset font $!font-name of type {$!face.font-format}";

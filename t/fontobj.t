@@ -5,11 +5,11 @@ use PDF::Lite;
 use Test;
 
 my PDF::Lite $pdf .= new;
-my PDF::Content::FontObj $deja = load-font( :file<t/fonts/DejaVuSans.ttf>, :!subset );
-my PDF::Content::FontObj $otf-font = load-font( :file<t/fonts/Cantarell-Oblique.otf>, :enc<win> );
-my PDF::Content::FontObj $cff-font = load-font( :file<t/fonts/NimbusRoman-Regular.cff>, :enc<win> );
+my PDF::Content::FontObj $deja     = load-font :file<t/fonts/DejaVuSans.ttf>, :!subset;
+my PDF::Content::FontObj $otf-font = load-font :file<t/fonts/Cantarell-Oblique.otf>, :enc<win>;
+my PDF::Content::FontObj $cff-font = load-font :file<t/fonts/NimbusRoman-Regular.cff>, :enc<win>;
 # True collections don't embed without subsetting
-my PDF::Content::FontObj $ttc-font = load-font( :file<t/fonts/wqy-microhei.ttc>, :!embed, :!subset );
+my PDF::Content::FontObj $ttc-font = load-font :file<t/fonts/Sitka.ttc>, :!embed, :!subset;
 
 is $deja.underline-position, -175;
 is $deja.underline-thickness, 90;
@@ -17,7 +17,7 @@ is $deja.underline-thickness, 90;
 my $n = 0;
 my $all-chars;
 
-$deja.face.forall-chars: :!load, -> $_ {
+$deja.face.forall-chars: :!load,  {
     $all-chars ~= .char-code.chr;
     $all-chars ~= ' ' if ++$n %% 100;
 };
