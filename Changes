@@ -1,4 +1,6 @@
 {{$NEXT}}
+
+0.6.5  2022-07-05T07:15:50+12:00
     - Move from CPAN to zef module repository
     - allow for fractional values in font widths (/W) array
     - fix font subsetting
