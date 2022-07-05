@@ -96,7 +96,6 @@ method codespaces is rw {
         }
     );
 }
-
 sub valid-codepoint($_) {
     # not an exhaustive check
     $_ <= 0x10FFFF && ! (0xD800 <= $_ <= 0xDFFF);
@@ -335,7 +334,7 @@ method !skip-cid-block($cid is rw) {
     my $cid-block = $cid div 256;
     my Bool $skip := False;
     if $cid-block {
-        with @!codespaces.first({.ACCEPTS($cid-block)}) {
+        with @!codespaces.first({.ACCEPTS($cid-block) && .bytes < $.enc-width($cid)}) {
             $skip := True;
             $cid-block = .to + 1;
         }
