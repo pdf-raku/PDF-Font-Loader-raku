@@ -131,7 +131,7 @@ submethod TWEAK(
         }
     }
 
-    $!encoder.differences = @differences
+    $!encoder.protect({ $!encoder.differences = @differences })
         if @differences;
     # Be careful not to start adding widths if an existing
     # font dictionary doesn't already have them.
