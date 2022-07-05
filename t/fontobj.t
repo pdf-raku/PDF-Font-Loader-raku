@@ -5,32 +5,31 @@ use PDF::Lite;
 use Test;
 
 my PDF::Lite $pdf .= new;
-my PDF::Content::FontObj $deja     = load-font :file<t/fonts/DejaVuSans.ttf>, :!subset;
+my PDF::Content::FontObj $vera     = load-font :file<t/fonts/Vera.ttf>, :!subset;
 my PDF::Content::FontObj $otf-font = load-font :file<t/fonts/Cantarell-Oblique.otf>, :enc<win>;
 my PDF::Content::FontObj $cff-font = load-font :file<t/fonts/NimbusRoman-Regular.cff>, :enc<win>;
 # True collections don't embed without subsetting
 my PDF::Content::FontObj $ttc-font = load-font :file<t/fonts/Sitka.ttc>, :!embed, :!subset;
 
-is $deja.underline-position, -175;
-is $deja.underline-thickness, 90;
+is $vera.underline-position, -284;
+is $vera.underline-thickness, 143;
 
 my $n = 0;
 my $all-chars;
 
-$deja.face.forall-chars: :!load,  {
+$vera.face.forall-chars: :!load,  {
     $all-chars ~= .char-code.chr;
-    $all-chars ~= ' ' if ++$n %% 100;
+    $all-chars ~= ' ' if ++$n %% 64;
 };
 
 $pdf.add-page.text: {
-   .font = $deja;
+   .font = $vera;
    .text-position = [10, 760];
    .say: 'Hello, world';
    .say: 'WAV', :kern;
-   my $n = 0;
-   .font = $deja, 8;
+   .font = $vera, 12;
 
-   .say: $all-chars, :width(400);
+   .say: $all-chars, :width(300);
 }
 
 $pdf.add-page.text: {

@@ -8,7 +8,7 @@ use PDF::Content;
 use PDF::Content::Font;
 use Font::FreeType;
 my constant Glyph = PDF::Font::Loader::Glyph;
-my PDF::Content::FontObj $deja = load-font( :file<t/fonts/DejaVuSans.ttf>, :!subset );
+my PDF::Content::FontObj $deja = load-font( :file<t/fonts/Vera.ttf>, :!subset );
 
 my Glyph @shape = $deja.get-glyphs("Hello");
 
@@ -26,9 +26,6 @@ my PDF::Content::Font:D $dict = $gfx.resources('Font')<F1>;
 
 my PDF::Font::Loader::FontObj:D $font .= load-font: :$dict;
 my uint8 @encoded = 3,5,10;
-
-todo "PDF::Content v0.5.3+ and Font::FreeType v0.3.8+ required to run these tests", 3
-    unless PDF::Content.^ver >= v0.5.3 && Font::FreeType.^ver >= v0.3.8;
 
 @shape = $font.get-glyphs(@encoded);
 is-deeply @shape[0], Glyph.new: :name<g85>, :code-point(0), :cid(3), :gid(16), :ax(391), :sx(391);

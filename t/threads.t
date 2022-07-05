@@ -9,7 +9,7 @@ my PDF::Content::Page @pages;
 my PDF::Lite $pdf .= new;
 my $core-font = $pdf.core-font('Courier');
 
-my PDF::Content::FontObj @fonts = <t/fonts/TimesNewRomPS.pfb t/fonts/DejaVuSans.ttf t/fonts/Cantarell-Oblique.otf t/fonts/NimbusRoman-Regular.cff>.map: -> $file { load-font :$file }
+my PDF::Content::FontObj @fonts = <t/fonts/TimesNewRomPS.pfb t/fonts/Vera.ttf t/fonts/Cantarell-Oblique.otf t/fonts/NimbusRoman-Regular.cff>.map: -> $file { load-font :$file }
 @fonts.push: $core-font;
 
 lives-ok {

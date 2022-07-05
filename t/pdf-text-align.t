@@ -13,9 +13,9 @@ my $width = 100;
 my $height = 80;
 my $x = 110;
 
-my PDF::Content::FontObj $font = PDF::Font::Loader.load-font: :file<t/fonts/DejaVuSans.ttf>, :!subset, :prefix<ABCDEF>;
+my PDF::Content::FontObj $font = PDF::Font::Loader.load-font: :file<t/fonts/Vera.ttf>, :!subset, :prefix<ABCDEF>;
 
-is-deeply $font.encode("Abc♠♥♦♣b").ords, (0,36, 0,69, 0,70, 15,56, 15,61, 15,62, 15,59, 0,69), 'encode (identity-h)';
+is-deeply $font.encode("Abc€√b").ords, (0,36, 0,69, 0,70, 1,2, 0,165, 0,69), 'encode (identity-h)';
 
 $gfx.text: -> $gfx {
     $gfx.font = $font, 10;

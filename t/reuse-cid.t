@@ -36,17 +36,17 @@ class FontLoader {
 sub font-sanity($font) {
     # a few sanity checks
     isa-ok $font, 'PDF::Font::Loader::FontObj', 'loaded a FreeType font';
-    like $font.font-name, /^[<[A..Z]>**6'+']?'DejaVuSans'$/, 'font name';
+    like $font.font-name, /^[<[A..Z]>**6'+']?'BitstreamVeraSans-Roman'$/, 'font name';
     ok( 1100 < $font.height < 1900, 'font height')
         or diag "unexpected font height: {$font.height}";
     # first few characters in the subset
     is-deeply $font.encode('A', :str), "\0\x[24]";
     is-deeply $font.decode("\0\x[24]", :str), 'A';
-    is-deeply $font.encode('♠', :str), "\x[F]\x[38]";
-    is-deeply $font.decode("\x[F]\x[38]", :str), '♠';
-    my $text = "Abc♠♥♦♣b";
+    is-deeply $font.encode('€', :str), "\x[1]\x[2]";
+    is-deeply $font.decode("\x[1]\x[2]", :str), '€';
+    my $text = "Abc€√b";
     my $enc = $font.encode($text, :str);
-    is-deeply $enc, [~]("\0\x[24]", "\0\x[45]", "\0\x[46]", "\x[F]\x[38]", "\x[F]\x[3d]", "\x[F]\x[3e]", "\x[F]\x[3b]", "\0\x[45]"), 'encode';
+    is-deeply $enc, [~]("\0\x[24]", "\0\x[45]", "\0\x[46]", "\x[1]\x[2]", "\x[0]\x[a5]", "\0\x[45]"), 'encode';
     is $font.decode($enc, :str), $text, "font encode/decode round-trip";
 }
 
@@ -58,7 +58,7 @@ for gather FontLoader.new.render: $pdf.page(1) -> PDF::Content::FontObj $font {
 }
 $pdf.add-page.graphics: {
     .font = $f;
-    .say: "reused DejaVuSans (CID) font", :position[10,500];
+    .say: "reused Vera (CID) font", :position[10,500];
 }
 
 $pdf.id =  $*PROGRAM-NAME.fmt('%-16.16s');
