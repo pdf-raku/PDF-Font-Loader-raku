@@ -311,13 +311,13 @@ has %!used-cid;
 method use-cid($_) { %!used-cid{$_}++ }
 method allocate($ord) {
     my $cid := %PreferredEnc{$ord};
-    if $cid && !@!to-unicode[$cid] && !%!used-cid{$cid} && !self!ambigous-cid($cid) {
+    if $cid && !@!to-unicode[$cid] && !%!used-cid{$cid} && !self!skip-cid-block($cid) {
         self.set-encoding($ord, $cid);
     }
     else {
         # sequential allocation
         repeat {
-        } while %!used-cid{$!next-cid} || @!to-unicode[++$!next-cid] || self!ambigous-cid($!next-cid) ;
+        } while %!used-cid{$!next-cid} || @!to-unicode[++$!next-cid] || self!skip-cid-block($!next-cid) ;
         $cid := $!next-cid;
         if $cid >= 2 ** ($.is-wide ?? 16 !! 8)  {
             has $!out-of-gas //= warn "CID code-range is exhausted";
@@ -328,13 +328,26 @@ method allocate($ord) {
     }
     $cid;
 }
-method !ambigous-cid($cid is copy) {
-    # we can't use a wide encoding who's first byte conflicts with a
-    # short encoding. Only possible when reusing a CMap with
+method !skip-cid-block($cid is rw) {
+    # we can't use a wide encoding who's leading byte sequence conflicts
+    # with shorter encodings. Only possible when reusing a CMap with
     # variable encoding.
-    $cid div= 256;
-    so $.is-wide && $cid && (@!codespaces.first({.ACCEPTS($cid)}) || self!ambigous-cid($cid));
+    my $cid-block = $cid div 256;
+    my Bool $skip := False;
+    if $cid-block {
+        with @!codespaces.first({.ACCEPTS($cid-block)}) {
+            $skip := True;
+            $cid-block = .to + 1;
+        }
+        else {
+            $skip := self!skip-cid-block($cid-block);
+        }
+        $cid = $cid-block * 256
+            if $skip;
+    }
+    $skip;
 }
+
 method !decode-cid(Int $code) { %!code2cid{$code} || $code }
 
 multi method decode(Str $byte-string, :cids($)!) {
