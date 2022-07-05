@@ -1,5 +1,8 @@
 {{$NEXT}}
 
+0.6.6  2022-07-06T08:26:48+12:00
+    - Further fixes to CID allocation in CMap encoder
+
 0.6.5  2022-07-06T07:28:35+12:00
     - Improved CID allocation in CMap encoder
     - Mostly replace embedded DejaVuSans with more compact Vera font
