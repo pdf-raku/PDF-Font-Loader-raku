@@ -1,6 +1,8 @@
 {{$NEXT}}
 
-0.6.5  2022-07-05T08:37:53+12:00
+0.6.5  2022-07-06T06:26:45+12:00
+    - Improved CID allocation in CMap encoder
+    - Mostly replace embedded DejaVuSans with more compact Vera font #19
     - Move from CPAN to zef module repository
     - allow for fractional values in font widths (/W) array
     - fix font subsetting
