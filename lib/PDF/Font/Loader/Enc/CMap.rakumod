@@ -131,7 +131,7 @@ method enc-width($code is raw) {
     }
 }
 
-multi sub hex-to-codepoint(Str() $x is copy) {
+sub hex-to-codepoint(Str() $x is copy) {
     if $x.chars <= 4 {
         :16($x);
     }
