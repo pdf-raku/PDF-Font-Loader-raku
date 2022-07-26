@@ -131,20 +131,25 @@ method enc-width($code is raw) {
     }
 }
 
-sub hex-to-codepoint(Str() $x is copy) {
-    if $x.chars > 4 {
-        # utf16 encoding semantics
+multi sub hex-to-codepoint(Str() $x is copy) {
+    if $x.chars <= 4 {
+        :16($x);
+    }
+    else {
         unless  $x.chars %% 4 {
             my \pad = 4  -  $x.chars % 4;
             $x = '0' x pad  ~  $x;
         }
 
-        my int16 @words = $x.comb(/..../).map({ :16($_) });
-        my utf16 $buf .= new(@words);
-        $buf.decode.ord;
-    }
-    else {
-        :16($x);
+        with %Ligatures{:16($x)} -> $lig {
+            $lig;
+        }
+        else {
+            # utf16 encoding semantics
+            my int16 @words = $x.comb(/..../).map({ :16($_) });
+            my utf16 $buf .= new(@words);
+            $buf.decode.ord;
+        }
     }
 }
 
