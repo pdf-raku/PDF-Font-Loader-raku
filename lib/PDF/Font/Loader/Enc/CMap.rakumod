@@ -136,17 +136,17 @@ sub hex-to-codepoint(Str() $x is copy) {
         :16($x);
     }
     else {
-        unless  $x.chars %% 4 {
-            my \pad = 4  -  $x.chars % 4;
-            $x = '0' x pad  ~  $x;
-        }
-
         with %Ligatures{:16($x)} -> $lig {
             $lig;
         }
         else {
+            unless  $x.chars %% 4 {
+                my \pad = 4  -  $x.chars % 4;
+                $x = '0' x pad  ~  $x;
+            }
+
             # utf16 encoding semantics
-            my int16 @words = $x.comb(/..../).map({ :16($_) });
+            my int16 @words = $x.comb(/..../).map: { :16($_) };
             my utf16 $buf .= new(@words);
             $buf.decode.ord;
         }
