@@ -229,6 +229,26 @@ method make-to-unicode-cmap(:$to-unicode = self.to-unicode) {
     $.make-cmap: $!cmap, @content;
 }
 
+method make-cmap(PDF::COS::Stream $cmap, @content, |c) {
+    my PDF::IO::Writer $writer .= new;
+    my $cmap-name = $writer.write: $cmap<CMapName>.content;
+    my $cid-system-info = $writer.write: $!cmap<CIDSystemInfo>.content;
+    my @codespaces = code-batches('codespacerange', self.make-cmap-codespaces);
+
+    qq:to<--END-->.chomp;
+        %% Custom
+        %% CMap
+        %%
+        /CIDInit /ProcSet findresource begin
+        12 dict begin begincmap
+        $cid-system-info
+        /CMapName $cmap-name def
+        {@codespaces.join: "\n";}
+        {@content.join: "\n"}
+        endcmap CMapName currendict /CMap defineresource pop end end
+        --END--
+}
+
 method !font-kerning(Str $text is copy) {
     my FT_UInt $prev-idx = 0;
     my FT_Vector $kerning .= new;
@@ -249,26 +269,6 @@ method !font-kerning(Str $text is copy) {
         $prev-idx = $this-idx;
     }
     (($width * $scale).round, ($height * $scale).round);
-}
-
-method make-cmap(PDF::COS::Stream $cmap, @content, |c) {
-    my PDF::IO::Writer $writer .= new;
-    my $cmap-name = $writer.write: $cmap<CMapName>.content;
-    my $cid-system-info = $writer.write: $!cmap<CIDSystemInfo>.content;
-    my @codespaces = code-batches('codespacerange', self.make-cmap-codespaces);
-
-    qq:to<--END-->.chomp;
-        %% Custom
-        %% CMap
-        %%
-        /CIDInit /ProcSet findresource begin
-        12 dict begin begincmap
-        $cid-system-info
-        /CMapName $cmap-name def
-        {@codespaces.join: "\n";}
-        {@content.join: "\n"}
-        endcmap CMapName currendict /CMap defineresource pop end end
-        --END--
 }
 
 method height($pointsize = 1000, Bool :$from-baseline, Bool :$hanging) {

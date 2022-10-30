@@ -8,6 +8,7 @@ my PDF::Lite $pdf .= new;
 my PDF::Content::FontObj $vera     = load-font :file<t/fonts/Vera.ttf>, :!subset;
 my PDF::Content::FontObj $otf-font = load-font :file<t/fonts/Cantarell-Oblique.otf>, :enc<win>;
 my PDF::Content::FontObj $cff-font = load-font :file<t/fonts/NimbusRoman-Regular.cff>, :enc<win>;
+my PDF::Content::FontObj $cid-keyed-font = load-font :file<t/fonts/NotoSansHK-Regular-subset.otf>;
 # True collections don't embed without subsetting
 my PDF::Content::FontObj $ttc-font = load-font :file<t/fonts/Sitka.ttc>, :!embed, :!subset;
 
@@ -49,6 +50,11 @@ $pdf.add-page.text: {
    .say: 'Grumpy wizards make toxic brew for the evil Queen and Jack';
 
    .text-position = [10, 550];
+   .font = $cid-keyed-font;
+   .say: "sample cid keyed font not embedded";
+   .say: 'Grumpy wizards make toxic brew for the evil Queen and Jack';
+
+   .text-position = [10, 500];
    .font = .core-font: 'Times';
    .say: "Core Font (Times)";
    .say: 'Grumpy wizards make toxic brew for the evil Queen and Jack';

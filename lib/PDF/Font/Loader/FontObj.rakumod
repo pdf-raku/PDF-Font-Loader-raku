@@ -49,8 +49,8 @@ has PDF::Font::Loader::Enc $!encoder handles <decode first-char last-char widths
 method encoder { $!encoder }
 has Blob $.font-buf;
 has PDF::COS::Dict $!dict;
-my subset EncodingScheme where 'mac'|'win'|'zapf'|'sym'|'identity'|'identity-h'|'identity-v'|'std'|'mac-extra'|'cmap'|'utf8'|'utf16'|'utf32';
-has EncodingScheme $.enc;
+my subset EncodingScheme is export(:EncodingScheme) where 'mac'|'win'|'zapf'|'sym'|'identity'|'identity-h'|'identity-v'|'std'|'mac-extra'|'cmap'|'utf8'|'utf16'|'utf32';
+has EncodingScheme $.enc is required;
 has Bool $.subset = False;
 has Str:D $.family          = $!face.family-name;
 has Str:D $.font-name is rw = $!face.postscript-name // $!family;
@@ -164,7 +164,16 @@ method encode($text is raw, |c) {
 }
 method !font-type-entry returns Str {
     given $!face.font-format {
-        when 'Type 1'|'CFF' {'Type1' }
+        when 'Type 1' {
+            $!face.is-internally-keyed-cid
+            ?? 'CIDFontType2'
+            !! 'Type1';
+        }
+        when 'CFF' {
+            $!face.is-internally-keyed-cid
+            ?? 'CIDFontType0'
+            !! 'Type1';
+        }
         when 'TrueType'|'OpenType' { 'TrueType' }
         default { fail "unable to handle font type: $_" }
     }
