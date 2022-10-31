@@ -1,5 +1,10 @@
 {{$NEXT}}
 
+0.6.8  2022-10-31T13:54:05+13:00
+    - Added handling of CID indexed fonts. These are mapped to Fonts
+      of sub-type CIDFontType0 and CIDFontType2
+    - Added script pdf-font-preview.raku
+
 0.6.7  2022-07-27T07:09:34+12:00
     - Fix decoding of CMap ligatures #19
 
