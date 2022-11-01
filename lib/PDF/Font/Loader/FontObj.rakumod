@@ -164,16 +164,7 @@ method encode($text is raw, |c) {
 }
 method !font-type-entry returns Str {
     given $!face.font-format {
-        when 'Type 1' {
-            $!face.is-internally-keyed-cid
-            ?? 'CIDFontType2'
-            !! 'Type1';
-        }
-        when 'CFF' {
-            $!face.is-internally-keyed-cid
-            ?? 'CIDFontType0'
-            !! 'Type1';
-        }
+        when 'Type 1'|'CFF' { 'Type1' }
         when 'TrueType'|'OpenType' { 'TrueType' }
         default { fail "unable to handle font type: $_" }
     }

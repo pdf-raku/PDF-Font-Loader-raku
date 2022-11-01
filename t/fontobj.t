@@ -60,6 +60,19 @@ $pdf.add-page.text: {
    .say: 'Grumpy wizards make toxic brew for the evil Queen and Jack';
 }
 
+multi sub font-type(PDF::Font::Loader::FontObj::CID:D $font) {
+    $font.to-dict<DescendantFonts>[0]<Subtype>;
+}
+
+multi sub font-type(PDF::Font::Loader::FontObj:D $font) {
+    $font.to-dict<Subtype>;
+}
+
+is font-type($vera), 'CIDFontType2';
+is font-type($otf-font), 'Type1';
+is font-type($cff-font), 'Type1';
+is font-type($cid-keyed-font), 'CIDFontType0';
+is font-type($ttc-font), 'TrueType';
 # ensure consistant document ID generation
 $pdf.id = $*PROGRAM-NAME.fmt('%-16.16s');
 
