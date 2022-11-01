@@ -52,7 +52,7 @@ has PDF::COS::Dict $!dict;
 my subset EncodingScheme is export(:EncodingScheme) where 'mac'|'win'|'zapf'|'sym'|'identity'|'identity-h'|'identity-v'|'std'|'mac-extra'|'cmap'|'utf8'|'utf16'|'utf32';
 has EncodingScheme $.enc is required;
 has Bool $.subset = False;
-has Str:D $.family          = $!face.family-name;
+has Str:D $.family          = $!face.family-name // 'Untitled';
 has Str:D $.font-name is rw = $!face.postscript-name // $!family;
 # Font descriptors are needed for all but core fonts
 has PDF::COS::Dict() $.font-descriptor = %( :Type(/'FontDescriptor'), :FontName(/$!font-name));
