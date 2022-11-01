@@ -9,6 +9,7 @@ use PDF::IO::Util :pack;
 use PDF::IO::Writer;
 use PDF::COS::Stream;
 use PDF::Font::Loader::Enc::CMap;
+use PDF::Font::Loader::Enc::Identity16;
 use PDF::Font::Loader::Enc::Unicode;
 
 sub prefix:</>($name) { with $name {PDF::COS::Name.COERCE($_)} else { Any } };
@@ -98,7 +99,7 @@ method finish-font($dict, :$save-widths, :$save-gids) {
         if $save-widths;
             
     $dict<CIDToGIDMap> = self!make-gid-map
-        if $save-gids && !self.enc.starts-with('identity');
+        if $save-gids && ! $.encoder.isa(PDF::Font::Loader::Enc::Identity16)
 }
 
 method font-descriptor {
