@@ -16,11 +16,11 @@ is $vera.underline-position, -284;
 is $vera.underline-thickness, 143;
 
 my $n = 0;
-my $all-chars;
+my $vera-chars;
 
 $vera.face.forall-chars: :!load,  {
-    $all-chars ~= .char-code.chr;
-    $all-chars ~= ' ' if ++$n %% 64;
+    $vera-chars ~= .char-code.chr;
+    $vera-chars ~= ' ' if ++$n %% 64;
 };
 
 $pdf.add-page.text: {
@@ -30,7 +30,7 @@ $pdf.add-page.text: {
    .say: 'WAV', :kern;
    .font = $vera, 12;
 
-   .say: $all-chars, :width(300);
+   .say: $vera-chars, :width(300);
 }
 
 $pdf.add-page.text: {
