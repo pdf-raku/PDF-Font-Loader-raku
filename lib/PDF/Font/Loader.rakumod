@@ -1,6 +1,6 @@
 use v6;
 
-class PDF::Font::Loader:ver<0.6.6> {
+class PDF::Font::Loader:ver<0.6.9> {
 
     use FontConfig;
     use Font::FreeType;
@@ -18,13 +18,13 @@ class PDF::Font::Loader:ver<0.6.6> {
         $class.load-font: :$font-buf, |c;
     }
 
-    my subset Type1 where .font-format ~~ 'Type 1'|'CFF';
+    my subset Type1 where .font-format ~~ 'Type 1'|'CFF' && !.is-internally-keyed-cid;
     my subset CIDEncoding of Str where m/^[identity|utf]/;
     multi method load-font(
         $?: Font::FreeType::Face :$face!,
         Blob :$font-buf!,
         Bool :$embed = True,
-        Str  :$enc = $face ~~ Type1 || !$embed || $face.num-glyphs <= 255
+        Str  :$enc = $face ~~ Type1 || !$embed || ($face.num-glyphs <= 255 && !$face.is-internally-keyed-cid)
             ?? 'win'
             !! 'identity-h',
         Bool :$cid = $face !~~ Type1 && $enc ~~ 'cmap'|CIDEncoding,

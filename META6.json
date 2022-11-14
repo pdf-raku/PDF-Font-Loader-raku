@@ -7,7 +7,7 @@
   ],
   "depends": [
     "Font::AFM:ver<1.24.6+>",
-    "Font::FreeType:ver<0.4.0+>",
+    "Font::FreeType:ver<0.4.3+>",
     "FontConfig",
     "Hash::int",
     "Native::Packing",
@@ -43,5 +43,5 @@
   ],
   "test-depends": [
   ],
-  "version": "0.6.6"
+  "version": "0.6.9"
 }

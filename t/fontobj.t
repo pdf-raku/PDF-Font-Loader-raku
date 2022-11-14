@@ -8,6 +8,7 @@ my PDF::Lite $pdf .= new;
 my PDF::Content::FontObj $vera     = load-font :file<t/fonts/Vera.ttf>, :!subset;
 my PDF::Content::FontObj $otf-font = load-font :file<t/fonts/Cantarell-Oblique.otf>, :enc<win>;
 my PDF::Content::FontObj $cff-font = load-font :file<t/fonts/NimbusRoman-Regular.cff>, :enc<win>;
+my PDF::Content::FontObj $cid-keyed-font = load-font :file<t/fonts/NotoSansHK-Regular-subset.otf>, :!subset;
 # True collections don't embed without subsetting
 my PDF::Content::FontObj $ttc-font = load-font :file<t/fonts/Sitka.ttc>, :!embed, :!subset;
 
@@ -15,11 +16,11 @@ is $vera.underline-position, -284;
 is $vera.underline-thickness, 143;
 
 my $n = 0;
-my $all-chars;
+my $vera-chars;
 
 $vera.face.forall-chars: :!load,  {
-    $all-chars ~= .char-code.chr;
-    $all-chars ~= ' ' if ++$n %% 64;
+    $vera-chars ~= .char-code.chr;
+    $vera-chars ~= ' ' if ++$n %% 64;
 };
 
 $pdf.add-page.text: {
@@ -29,7 +30,7 @@ $pdf.add-page.text: {
    .say: 'WAV', :kern;
    .font = $vera, 12;
 
-   .say: $all-chars, :width(300);
+   .say: $vera-chars, :width(300);
 }
 
 $pdf.add-page.text: {
@@ -49,11 +50,29 @@ $pdf.add-page.text: {
    .say: 'Grumpy wizards make toxic brew for the evil Queen and Jack';
 
    .text-position = [10, 550];
+   .font = $cid-keyed-font;
+   .say: "sample cid keyed font embedded";
+   .say: 'Grumpy wizards make toxic brew for the evil Queen and Jack';
+
+   .text-position = [10, 500];
    .font = .core-font: 'Times';
    .say: "Core Font (Times)";
    .say: 'Grumpy wizards make toxic brew for the evil Queen and Jack';
 }
 
+multi sub font-type(PDF::Font::Loader::FontObj::CID:D $font) {
+    $font.to-dict<DescendantFonts>[0]<Subtype>;
+}
+
+multi sub font-type(PDF::Font::Loader::FontObj:D $font) {
+    $font.to-dict<Subtype>;
+}
+
+is font-type($vera), 'CIDFontType2';
+is font-type($otf-font), 'Type1';
+is font-type($cff-font), 'Type1';
+is font-type($cid-keyed-font), 'CIDFontType0';
+is font-type($ttc-font), 'TrueType';
 # ensure consistant document ID generation
 $pdf.id = $*PROGRAM-NAME.fmt('%-16.16s');
 
