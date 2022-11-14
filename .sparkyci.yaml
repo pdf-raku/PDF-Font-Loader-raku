@@ -1,7 +1,0 @@
-init:
-
- packages:
-  build-essential: {}
-
- script: |
-   sudo apk add fontconfig-dev
