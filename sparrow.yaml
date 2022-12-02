@@ -83,6 +83,7 @@ tasks:
     name: install-deps
     language: Bash
     code: |
-      sudo apt-get install -y time 
-      zef install --/test Text::Table::Simple libfontconfig1-dev
+      set -e
+      sudo apt-get install -y time libfontconfig1-dev
+      zef install --/test Text::Table::Simple 
  
