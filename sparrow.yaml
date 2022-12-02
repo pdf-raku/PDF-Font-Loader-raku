@@ -1,7 +1,5 @@
 image:
   - melezhik/sparrow:debian
-  - melezhik/sparrow:ubuntu
-  - melezhik/sparrow:archlinux
 tasks:
   -
     name: main
@@ -28,7 +26,7 @@ tasks:
     config:
       list:
         # - 2022.04
-        # - 2022.06
+        - 2022.06
         - 2022.07
     code: |
       my @state;
@@ -74,10 +72,8 @@ tasks:
           zef --version
           
           cd source/
-          zef install --/test --force-install JSON::Fast OpenSSL
-          zef install . --deps-only --test-depends --build-depends --/test
-          
-          /usr/bin/time -o "${cache_root_dir}/${version}_time" \
+          zef install . --deps-only --test-depends --build-depends --/test -to=home         
+          /usr/bin/time -f "%E real,%U user,%S sys / CPU Percentage: %P" -o "${cache_root_dir}/${version}_time" \
           zef test . && touch "${cache_root_dir}/${version}_ok"
           
     depends:
@@ -87,11 +83,6 @@ tasks:
     name: install-deps
     language: Bash
     code: |
-      if test $os = "debian"; then
-        sudo apt-get install -y libfontconfig-dev time 
-      elif test $os = "ubuntu"; then
-        sudo apt-get install -y libfontconfig-dev time
-      elif test $os = "arch"; then
-        sudo pacman -S --needed --noconfirm -q fontconfig time
-      fi  
-      zef install --/test Text::Table::Simple
+      sudo apt-get install -y time 
+      zef install --/test Text::Table::Simple libfontconfig1-dev
+ 
