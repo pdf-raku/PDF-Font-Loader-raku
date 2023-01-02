@@ -20,7 +20,7 @@ role PDF::Font::Loader::Enc::Glyphic
                 $glyph-name = $!face.glyph-name-from-index($gid);
             }
         }
-        $glyph-name //= $!face.glyph-name($ord.chr) // '.notdef';
+        $glyph-name //= $!face.glyph-name($ord.chr) // callsame() // '.notdef';
         # Not sure what glyph names are universally supported. This is conservative.
         $.encoding-updated = True
             unless $glyph-name ~~ %Font::AFM::Glyphs{$ord.chr};

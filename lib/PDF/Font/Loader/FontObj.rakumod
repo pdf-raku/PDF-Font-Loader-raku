@@ -195,9 +195,10 @@ method !make-type1-font-file($buf) {
 
 method !make-other-font-file($buf) {
     my $decoded = PDF::IO::Blob.new: $buf;
-
-    my %dict = :Length1($buf.bytes);
-    %dict<Filter> = /<FlateDecode>;
+    my %dict := %(
+        :Length1($buf.bytes),
+        :Filter(/<FlateDecode>),
+    );
 
     given $!face.font-format {
         when 'OpenType' {

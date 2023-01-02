@@ -64,7 +64,7 @@ multi method width(Int $cid) is rw {
 method to-unicode {...}
 method local-glyph-name($cid) {
     # Overridden in PDF::Content::Font::Enc::Glyphic
-    PDF::COS::Name
+    ...
 }
 
 method glyph($cid is raw) {

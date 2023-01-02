@@ -175,6 +175,14 @@ class PDF::Font::Loader::Dict {
                 %opt<font-buf> = do given .decoded {
                     $_ ~~ Blob ?? $_ !! .encode("latin-1")
                 }
+                if .<Length3> ~~ 0 {
+                    # From [ISO-32000 Table 127 – Additional entries in an embedded font stream dictionary]
+                    # "If Length3 is 0, it indicates that the 512 zeros and 'cleartomark' have not been
+                    #  included in the FontFile font program and shall be added by the conforming reader."
+                    %opt<font-buf> .= Buf;
+                    %opt<font-buf>.append: 0 xx 512;
+                    %opt<font-buf>.append: "\ncleartomark\n".encode('latin-1');
+                }
             }
 
             # See [PDF 32000 Table 114 - Entries in an encoding dictionary]
