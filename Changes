@@ -1,4 +1,6 @@
 {{$NEXT}}
+
+0.6.10  2023-04-15T09:36:17+12:00
     - Make FontConfig an optional dependency. Mostly to make this module
       installable under Windows.
 
