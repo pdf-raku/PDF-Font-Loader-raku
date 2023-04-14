@@ -1,4 +1,6 @@
 {{$NEXT}}
+    - Make FontConfig an optional dependency. Mostly to make this module
+      installable under Windows.
 
 0.6.9  2022-11-11T07:06:39+13:00
     - Further minor fixes to CID font handling

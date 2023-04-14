@@ -29,7 +29,7 @@ class PDF::Font::Loader:ver<0.6.9> {
             !! 'identity-h',
         Bool :$cid = $face !~~ Type1 && $enc ~~ 'cmap'|CIDEncoding,
         |c,
-    ) {
+    ) is hidden-from-backtrace {
         unless c<dict>.defined {
             fail "Type1 fonts cannot be used as a CID font"
                 if $cid && $face ~~ Type1;
@@ -42,13 +42,13 @@ class PDF::Font::Loader:ver<0.6.9> {
         fontobj-class.new: :$face, :$font-buf, :$enc, :$embed, |c;
     }
 
-    multi method load-font($class = $?CLASS: Blob :$font-buf!, Font::FreeType :$ft-lib, |c) is default {
+    multi method load-font($class = $?CLASS: Blob :$font-buf!, Font::FreeType :$ft-lib, |c) is hidden-from-backtrace {
         my Font::FreeType::Face:D $face = $ft-lib.face($font-buf);
         $class.load-font: :$face, :$font-buf, |c;
     }
 
     # resolve font name via fontconfig
-    multi method load-font($class = $?CLASS: Str :$family!, PDF::COS::Dict :$dict, :$quiet, |c) {
+    multi method load-font($class = $?CLASS: Str :$family!, PDF::COS::Dict :$dict, :$quiet, |c) is hidden-from-backtrace {
 	my Str:D $file = $class.find-font(:$family, |c)
 	    || do {
             note "unable to locate font. Falling back to mono-spaced font"
@@ -65,7 +65,10 @@ class PDF::Font::Loader:ver<0.6.9> {
     }
 
     # resolve via PDF font dictionary
-    multi method load-font($class = $?CLASS: PDF::Content::Font:D :$dict!, |c) {
+    multi method load-font(
+        $class = $?CLASS:
+        PDF::Content::Font:D :$dict!,
+        |c) is hidden-from-backtrace {
         my %opts = load-font-opts(:$dict, |c);
         $class.load-font: |%opts, |c;
     }
@@ -79,7 +82,7 @@ class PDF::Font::Loader:ver<0.6.9> {
                      Stretch :$stretch = 'normal',
                      Slant   :$slant = 'normal',
                      Str     :$lang,
-                    ) is export(:find-font) {
+                    ) is export(:find-font) is hidden-from-backtrace {
 
         with $weight {
             # convert CSS/PDF numeric weights for fontconfig
@@ -89,8 +92,10 @@ class PDF::Font::Loader:ver<0.6.9> {
         }
 
         my \FontConfig = try PDF::COS.required("FontConfig");
-        fail "FontConfig is required for the -find-font method"
-            if FontConfig === Nil;
+        if FontConfig === Nil {
+            warn "FontConfig is required for the find-font method";
+            return Str;
+        }
         my $patt = FontConfig.new;
         $patt.family = $_ with $family;
         $patt.weight = $weight  unless $weight eq 'medium';

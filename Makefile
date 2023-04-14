@@ -1,6 +1,7 @@
 DocProj=pdf-raku.github.io
 DocRepo=https://github.com/pdf-raku/$(DocProj)
 DocLinker=../$(DocProj)/etc/resolve-links.raku
+TEST_JOBS ?= 6
 
 all : doc
 
@@ -22,7 +23,7 @@ docs/%.md : lib/%.rakumod
         > $@
 
 test :
-	@prove6 -I. t
+	@prove6 -I. -j $(TEST_JOBS) t
 
 loudtest :
 	@prove6 -I. -v t
