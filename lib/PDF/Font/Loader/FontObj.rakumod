@@ -88,7 +88,7 @@ submethod TWEAK(
                 # Its a TrueType collection which is not directly supported as a format,
                 # however, HarfBuzz::Subset will convert it for us.
                 unless $!subset {
-                    warn "unable to embed TrueType Collections font $!font-name without subsetting";
+                    warn "The HarfBuzz::Subset module is required to embed TrueType Collection font $!font-name";
                     $!embed = False;
                 }
             }

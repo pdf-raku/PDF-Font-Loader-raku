@@ -57,7 +57,7 @@ This module provides font loading and handling for [PDF::Lite](https://pdf-raku.
 
 PDF::Font::Loader depends on:
 
-- [Font::FreeType](https://pdf-raku.github.io/Font-FreeType-raku/) Raku module which further depends on the [freetype](https://www.freetype.org/download.html) library, so you must install that prior to installing this module.
+[Font::FreeType](https://pdf-raku.github.io/Font-FreeType-raku/) Raku module which further depends on the [freetype](https://www.freetype.org/download.html) library, so you must install that prior to installing this module.
 
-- [FontConfig](https://pdf-raku.github.io/FontConfig/) library .
+The `find-font` method requires installation of the [FontConfig](https://pdf-raku.github.io/FontConfig/) library .
 

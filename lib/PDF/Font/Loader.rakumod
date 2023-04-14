@@ -2,10 +2,10 @@ use v6;
 
 class PDF::Font::Loader:ver<0.6.9> {
 
-    use FontConfig;
     use Font::FreeType;
     use Font::FreeType::Face;
     use PDF::Content::Font;
+    use PDF::COS;
     use PDF::COS::Dict;
     use PDF::Font::Loader::FontObj;
     use PDF::Font::Loader::FontObj::CID;
@@ -88,14 +88,17 @@ class PDF::Font::Loader:ver<0.6.9> {
                 if /^<[0..9]>/;
         }
 
-        my FontConfig:D $patt .= new;
+        my \FontConfig = try PDF::COS.required("FontConfig");
+        fail "FontConfig is required for the -find-font method"
+            if FontConfig === Nil;
+        my $patt = FontConfig.new;
         $patt.family = $_ with $family;
         $patt.weight = $weight  unless $weight eq 'medium';
         $patt.width  = $stretch unless $stretch eq 'normal';
         $patt.slant  = $slant   unless $slant eq 'normal';
         $patt.lang   = $_ with $lang;
 
-        with $patt.match -> FontConfig $match {
+        with $patt.match -> $match {
             $match.file;
 	}
 	else {
