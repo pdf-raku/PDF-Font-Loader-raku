@@ -1,4 +1,6 @@
 {{$NEXT}}
+
+0.6.11  2023-06-29T09:16:58+12:00
     - Add :core-font option. This loads objects of type
       PDF::Content::Font::CoreFont rather than PDF::Font::Loader::FontObj
 
