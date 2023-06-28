@@ -162,7 +162,7 @@ L<PDF::Lite>,  L<PDF::API6> and other PDF modules.
 
 A class level method to create a new font object.
 
-=head4 C<PDF::Font::Loader.load-font(Str :$file, Bool :$subset, :$enc, :$lang, :$dict);>
+=head4 C<PDF::Font::Loader.load-font(Str :$file, Bool :$subset, :$enc, :$lang, :$dict, :$core-font);>
 
 Loads a font file.
 
@@ -211,6 +211,21 @@ no more that 255 distinct characters will actually be used from the font within 
 C<:$dict>
 
 Associated font dictionary.
+=end item
+
+=begin item
+C<:$core-font>
+
+Load objects of type L<PDF::Content::Font::CoreFont>, rather than L<PDF::Font::Loader::FontObj> (both perform the L<PDF::Content::FontObj> role).
+
+This option is commonly used in conjunction with the C<:$dict> option, for example:
+
+```raku
+my %fonts = $pdf.page(1).gfx.resources('Font');
+my $dict = %fonts<F1>;
+my $core-font = PDF::Font::Loader::Dict.is-core-font: $dict;
+my PDF::Content::FontObj $font = PDF::Font::Loader.load-font: :$dict, :$core-font, :quiet;
+```
 =end item
 
 =head4 C<PDF::Font::Loader.load-font(Str :$family, Str :$weight, Str :$stretch, Str :$slant, Bool :$subset, Str :$enc, Str :$lang);>

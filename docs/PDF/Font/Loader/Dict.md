@@ -38,7 +38,8 @@ for 1 .. $pdf.page-count {
 
     for %fonts.values -> $dict {
         unless %SeenFont{$dict}++ {
-            my PDF::Content::FontObj $font = PDF::Font::Loader.load-font: :$dict, :quiet;
+            my $core-font = PDF::Font::Loader::Dict.is-core-font: $dict;
+            my PDF::Content::FontObj $font = PDF::Font::Loader.load-font: :$dict, :$core-font, :quiet;
             say sprintf(Fmt, .font-name, .type, .encoding, .is-embedded.&yn, .is-subset.&yn)
                 given $font;
         }
@@ -66,4 +67,12 @@ method load-font-opts(Hash :$dict!, Bool :$embed) returns Hash
 ```
 
 Produces a set of [PDF::Font::Loader](https://pdf-raku.github.io/PDF-Font-Loader-raku/PDF/Font/Loader) `load-font()` options for the font dictionary.
+
+### is-code-font
+
+```raku
+method is-core-font(Hash $dict) returns Bool
+```
+
+Determine if the dictionary describes a PDF core font.
 
