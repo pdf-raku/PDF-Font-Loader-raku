@@ -1,4 +1,6 @@
 {{$NEXT}}
+    - Add :core-font option. This loads objects of type
+      PDF::Content::Font::CoreFont rather than PDF::Font::Loader::FontObj
 
 0.6.10  2023-04-15T09:36:17+12:00
     - Make FontConfig an optional dependency. Mostly to make this module

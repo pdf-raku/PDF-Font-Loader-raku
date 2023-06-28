@@ -251,7 +251,7 @@ constant Fmt = "%-30s %-8s %-10s %-3s %-3s";
 sub yn($_) {.so ?? 'yes' !! 'no' }
 
 my %SeenFont{PDF::Content::Font};
-my PDF::Lite $pdf .= open: "t/freetype.pdf";
+my PDF::Lite $pdf .= open: "t/fontobj.pdf";
 say sprintf(Fmt, |<name type encode emb sub>);
 say sprintf(Fmt, |<-------------------------- ------- ---------- --- --->);
 for 1 .. $pdf.page-count {
@@ -259,7 +259,7 @@ for 1 .. $pdf.page-count {
 
     for %fonts.values -> $dict {
         unless %SeenFont{$dict}++ {
-            my $core-font = PDF::Font::Loader::Dict.is-core-font: $dict;
+            my $core-font = PDF::Font::Loader::Dict.is-core-font: :$dict;
             my PDF::Content::FontObj $font = PDF::Font::Loader.load-font: :$dict, :$core-font, :quiet;
             say sprintf(Fmt, .font-name, .type, .encoding, .is-embedded.&yn, .is-subset.&yn)
                 given $font;

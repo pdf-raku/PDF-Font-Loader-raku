@@ -1,6 +1,6 @@
 use v6;
 
-class PDF::Font::Loader:ver<0.6.10> {
+class PDF::Font::Loader:ver<0.6.11> {
 
     use Font::FreeType;
     use Font::FreeType::Face;
@@ -223,7 +223,7 @@ This option is commonly used in conjunction with the C<:$dict> option, for examp
 ```raku
 my %fonts = $pdf.page(1).gfx.resources('Font');
 my $dict = %fonts<F1>;
-my $core-font = PDF::Font::Loader::Dict.is-core-font: $dict;
+my $core-font = PDF::Font::Loader::Dict.is-core-font: :$dict;
 my PDF::Content::FontObj $font = PDF::Font::Loader.load-font: :$dict, :$core-font, :quiet;
 ```
 =end item

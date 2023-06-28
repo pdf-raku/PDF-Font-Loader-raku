@@ -97,7 +97,7 @@ parameters:
 
     This option is commonly used in conjunction with the `:$dict` option, for example:
 
-    ```raku my %fonts = $pdf.page(1).gfx.resources('Font'); my $dict = %fonts<F1>; my $core-font = PDF::Font::Loader::Dict.is-core-font: $dict; my PDF::Content::FontObj $font = PDF::Font::Loader.load-font: :$dict, :$core-font, :quiet; ```
+    ```raku my %fonts = $pdf.page(1).gfx.resources('Font'); my $dict = %fonts<F1>; my $core-font = PDF::Font::Loader::Dict.is-core-font: :$dict; my PDF::Content::FontObj $font = PDF::Font::Loader.load-font: :$dict, :$core-font, :quiet; ```
 
 #### `PDF::Font::Loader.load-font(Str :$family, Str :$weight, Str :$stretch, Str :$slant, Bool :$subset, Str :$enc, Str :$lang);`
 

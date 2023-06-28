@@ -1,8 +1,9 @@
 use Test;
-plan 10;
+plan 20;
 use PDF::COS::Dict;
 use PDF::Lite;
 use PDF::Font::Loader;
+use PDF::Font::Loader::Dict;
 use PDF::Content::FontObj;
 
 my PDF::Lite $pdf .= open: "t/fontobj.pdf";
@@ -14,8 +15,12 @@ $pdf.page(2).gfx.text: -> $gfx {
     $gfx.text-position = 10, 400;
     is-deeply %fonts.keys.sort, ("F1", "F2", "F3", "F4", "F5");
     for 'F1'..'F5' {
-        my $dict = %fonts{$_};;
-        my PDF::Content::FontObj $font = PDF::Font::Loader.load-font: :$dict, :embed;
+        my $dict = %fonts{$_};
+        my Bool $core-font = PDF::Font::Loader::Dict.is-core-font: :$dict;
+        ok $core-font == ($_ eq 'F5');
+        my Bool $embed = !$core-font;
+        my PDF::Content::FontObj $font = PDF::Font::Loader.load-font: :$dict, :$core-font, :$embed;
+        ok $font.is-core-font == ($_ eq 'F5');
         if $_ eq 'F1' {
             is $font.font-name, 'Cantarell-Oblique', 'font-name';
             is $font.enc, 'win', 'enc';

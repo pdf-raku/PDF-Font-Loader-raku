@@ -1,8 +1,9 @@
 use Test;
-plan 8;
+plan 10;
 use PDF::COS::Dict;
 use PDF::Lite;
 use PDF::Font::Loader;
+use PDF::Font::Loader::Dict;
 use PDF::Content::FontObj;
 use PDF::Font::Loader::Glyph;
 use PDF::Content;
@@ -16,7 +17,10 @@ $pdf.page(1).gfx.text: -> $gfx {
     $gfx.text-position = 10, 400;
     is-deeply %fonts.keys.sort, ("F1",);
     my $dict = %fonts<F1>;
-    my PDF::Content::FontObj $f1 =  PDF::Font::Loader.load-font: :$dict;
+    my Bool $core-font = PDF::Font::Loader::Dict.is-core-font: :$dict;
+    nok $core-font, 'is-core-font';
+    my PDF::Content::FontObj $f1 =  PDF::Font::Loader.load-font: :$dict, :$core-font;
+    nok $f1.is-core-font;
     is $f1.font-name, 'courier', 'font-name';
     is $f1.enc, 'std', 'enc';
     nok $f1.is-embedded, "isn't embedded";
