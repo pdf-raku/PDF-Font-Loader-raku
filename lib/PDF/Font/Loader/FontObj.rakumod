@@ -25,6 +25,7 @@ use Font::FreeType::Raw::Defs;
 use Font::FreeType::Raw::TT_Sfnt;
 use PDF::Content:ver(v0.4.8+);
 use PDF::Content::Font;
+use PDF::Content::Font::CoreFont;
 
 constant Px = 64.0;
 sub prefix:</>($name) { PDF::COS::Name.COERCE($name) };
@@ -507,7 +508,7 @@ method is-embedded {
     } || False;
 }
 method is-subset { so ($!font-name ~~ m/^<[A..Z]>**6"+"/) }
-method is-core-font { self.type ~~ 'Type1' && ! self.font-descriptor.defined }
+method is-core-font { self.type ~~ 'Type1' && ! self.font-descriptor.defined && PDF::Content::Font::CoreFont.core-font-name($!font-name).defined }
 
 =begin pod
 =head2 Methods

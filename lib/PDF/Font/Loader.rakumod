@@ -5,6 +5,7 @@ class PDF::Font::Loader:ver<0.6.10> {
     use Font::FreeType;
     use Font::FreeType::Face;
     use PDF::Content::Font;
+    use PDF::Content::Font::CoreFont;
     use PDF::COS;
     use PDF::COS::Dict;
     use PDF::Font::Loader::FontObj;
@@ -45,6 +46,10 @@ class PDF::Font::Loader:ver<0.6.10> {
     multi method load-font($class = $?CLASS: Blob :$font-buf!, Font::FreeType :$ft-lib, |c) is hidden-from-backtrace {
         my Font::FreeType::Face:D $face = $ft-lib.face($font-buf);
         $class.load-font: :$face, :$font-buf, |c;
+    }
+
+    multi method load-font(Str :$family!, Bool :core-font($)! where .so, |c) is hidden-from-backtrace {
+        PDF::Content::Font::CoreFont.load-font($family, |c);
     }
 
     # resolve font name via fontconfig

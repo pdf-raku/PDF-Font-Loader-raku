@@ -38,7 +38,8 @@ class PDF::Font::Loader::Dict {
 
     method is-core-font($?: FontDict :$dict! ) is export(:is-core-font) {
         $dict<Subtype> ~~ 'Type1'
-        && ! font-descriptor($dict).defined
+        && ! $dict<FontDescriptor>.defined
+        && PDF::Content::Font::CoreFont.core-font-name($dict<BaseFont>).defined;
     }
 
     method is-embedded-font( FontDict :$dict! ) {
