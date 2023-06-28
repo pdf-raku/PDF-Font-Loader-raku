@@ -290,7 +290,7 @@ Produces a set of L<PDF::Font::Loader> `load-font()` options for
 the font dictionary.
 
 
-=head3 is-code-font
+=head3 is-core-font
 =begin code :lang<raku>
 method is-core-font(Hash $dict) returns Bool
 =end code

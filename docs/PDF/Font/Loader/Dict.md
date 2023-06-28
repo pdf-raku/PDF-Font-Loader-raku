@@ -68,7 +68,7 @@ method load-font-opts(Hash :$dict!, Bool :$embed) returns Hash
 
 Produces a set of [PDF::Font::Loader](https://pdf-raku.github.io/PDF-Font-Loader-raku/PDF/Font/Loader) `load-font()` options for the font dictionary.
 
-### is-code-font
+### is-core-font
 
 ```raku
 method is-core-font(Hash $dict) returns Bool
