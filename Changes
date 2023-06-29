@@ -1,5 +1,8 @@
 {{$NEXT}}
 
+0.6.13  2023-06-30T08:27:56+12:00
+   - Check :$dict really is a core-font dictionary when used with :core-font
+
 0.6.12  2023-06-30T07:47:19+12:00
    - Limit use of :core-font when combined with :dict. This only works with
      simple cases.
