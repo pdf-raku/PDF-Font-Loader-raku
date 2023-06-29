@@ -88,7 +88,7 @@ class PDF::Font::Loader:ver<0.6.12> {
         |c) is hidden-from-backtrace {
         my %opts = load-font-opts(:$dict, |c);
         $class = PDF::Content::Font::CoreFont
-            if $core-font && %opts<enc> ~~ Type1EncodingScheme && !%opts<encoder>;
+            if $core-font && PDF::Font::Loader::Dict.is-core-font(:$dict) && %opts<enc> ~~ Type1EncodingScheme && !%opts<encoder>;
         $class.load-font: |%opts, |c;
     }
 
