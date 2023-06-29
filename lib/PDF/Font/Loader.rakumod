@@ -55,6 +55,7 @@ class PDF::Font::Loader:ver<0.6.12> {
         :core-font($)! where .so,
         Str:D :$family!,
         Str:D :$enc = 'win',
+        :dict($), :encoder($),
         |c
     ) {
         $class = PDF::Content::Font::CoreFont
