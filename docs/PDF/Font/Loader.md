@@ -93,13 +93,9 @@ parameters:
 
   * `:$core-font`
 
-    Load objects of type [PDF::Content::Font::CoreFont](https://pdf-raku.github.io/PDF-Content-raku), rather than [PDF::Font::Loader::FontObj](https://pdf-raku.github.io/PDF-Font-Loader-raku/PDF/Font/Loader/FontObj) (both perform the [PDF::Content::FontObj](https://pdf-raku.github.io/PDF-Content-raku) role).
+    Prefer to load simple Type1 objects as [PDF::Content::Font::CoreFont](https://pdf-raku.github.io/PDF-Content-raku), rather than [PDF::Font::Loader::FontObj](https://pdf-raku.github.io/PDF-Font-Loader-raku/PDF/Font/Loader/FontObj) (both perform the [PDF::Content::FontObj](https://pdf-raku.github.io/PDF-Content-raku) role).
 
-    This option is commonly used in conjunction with the `:$dict` option, for example:
-
-    ```raku my %fonts = $pdf.page(1).gfx.resources('Font'); my $dict = %fonts<F1>; my $core-font = PDF::Font::Loader::Dict.is-core-font: :$dict; my PDF::Content::FontObj $font = PDF::Font::Loader.load-font: :$dict, :$core-font, :quiet; ```
-
-#### `PDF::Font::Loader.load-font(Str :$family, Str :$weight, Str :$stretch, Str :$slant, Bool :$subset, Str :$enc, Str :$lang);`
+#### `PDF::Font::Loader.load-font(Str :$family, Str :$weight, Str :$stretch, Str :$slant, Bool :$core-font, Bool :$subset, Str :$enc, Str :$lang);`
 
     my $vera = PDF::Font::Loader.load-font: :family<vera>;
     my $deja = PDF::Font::Loader.load-font: :family<Deja>, :weight<bold>, :stretch<condensed> :slant<italic>);
@@ -124,7 +120,11 @@ parameters:
 
   * `:$slant`
 
-    Font slat, one of: `normal`, `oblique`, or `italic`
+    Font slant, one of: `normal`, `oblique`, or `italic`
+
+  * `:$core-font`
+
+    Bypass fontconfig and load matching [PDF::Content::Font::CoreFont](https://pdf-raku.github.io/PDF-Content-raku) objects, rather than [PDF::Font::Loader::FontObj](https://pdf-raku.github.io/PDF-Font-Loader-raku/PDF/Font/Loader/FontObj) objects (both perform the [PDF::Content::FontObj](https://pdf-raku.github.io/PDF-Content-raku) role).
 
   * `:$lang`
 

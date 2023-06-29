@@ -19,7 +19,7 @@ endobj
 endobj
 
 4 0 obj
-<< /Length 789 >> stream
+<< /Length 737 >> stream
 BT
   /F1 16 Tf
   1 0 0 1 10 700 Tm
@@ -27,7 +27,7 @@ BT
   17.6 TL
   T*
   /F2 16 Tf
-  (H%*+«¨ª) Tj
+  () Tj
   T*
   /F1 16 Tf
   (     !"$%&'\( \)*+,-./012 3456789:;< =>?@ABCDEF) Tj
@@ -45,19 +45,7 @@ BT
   [ ] TJ
   T*
   /F2 16 Tf
-  (     !"#$%&'\( \)*+,-./012 3456789:;<) Tj
-  T*
-  (=>?@ABCDEF GHIJKLMNOP QRSTUVWXYZ) Tj
-  T*
-  ([\\]^_`abcd efghijklmn opqrstuvwx) Tj
-  T*
-  (yz{|}~€‚ ƒ„…†‡‰‹   ΅Ά£¤¥¦§¨©ª «¬­®―°±²³΄) Tj
-  T*
-  (µ¶·ΈΉΊ»Ό½Ύ ΏΐΑΒΓΔΕΖΗΘ ΙΚΛΜΝΞΟΠΡÒ) Tj
-  T*
-  (ΣΤΥΦΧΨΩΪΫά έήίΰαβγδεζ ηθικλμνξο) Tj
-  T*
-  (ρςστυφχψωϊ ϋόύώ) Tj
+  (     !"$%&'\( \)*+,-./012 3456789:;< =>?@ABCDEF GHIJKLMNOP QRSTUVWXYZ [\\]^_`abcd efghijklmn opqrstuvwx yz{|}~€‚ ƒ„…†‡‰‹ ‘’“”•– —™› ΅Ά£¤¥¦§¨©ª «¬®―°±²³΄ µ¶·ΈΉΊ»Ό½Ύ ΏΐΑΒΓΔΕΖΗΘ ΙΚΛΜΝΞΟΠΡÒ ΣΤΥΦΧΨΩΪΫά έήίΰαβγδεζ ηθικλμνξοπ ρςστυφχψωϊ ϋόύώÿ) Tj
   T*
   [ ] TJ
   T*
@@ -75,20 +63,29 @@ endobj
 endobj
 
 6 0 obj
-<< /Type /Font /Subtype /Type1 /BaseFont /ZapfDingbats >>
+<< /Type /Font /Subtype /Type1 /BaseFont /ZapfDingbats /Encoding 7 0 R >>
+endobj
+
+7 0 obj
+<<
+  /Type /Encoding
+  /BaseEncoding /WinAnsiEncoding
+  /Differences [ 1 /a35 /a4 /a11 /a12 /a109 /a112 /a110 ]
+>>
 endobj
 
 xref
-0 7
+0 8
 0000000000 65535 f 
 0000000015 00000 n 
 0000000065 00000 n 
 0000000125 00000 n 
 0000000274 00000 n 
-0000001115 00000 n 
-0000001223 00000 n 
+0000001063 00000 n 
+0000001171 00000 n 
+0000001261 00000 n 
 trailer
-<< /ID [ (t/core-font.t   ) (t/core-font.t   ) ] /Root 1 0 R /Size 7 >>
+<< /ID [ (t/core-font.t   ) (t/core-font.t   ) ] /Root 1 0 R /Size 8 >>
 startxref
-1297
+1392
 %%EOF

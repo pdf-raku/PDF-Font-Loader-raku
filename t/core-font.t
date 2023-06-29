@@ -35,14 +35,5 @@ $pdf.id =  $*PROGRAM-NAME.fmt('%-16s').substr(0,16);
 
 lives-ok { $pdf.save-as: "t/core-font.pdf"; };
 
-$pdf .= open: "t/core-font.pdf";
-
-my Hash $dict = $pdf.page(1)<Resources><Font><F1>;
-my $f = PDF::Font::Loader.load-font: :$dict, :quiet;
-nok $f.isa('PDF::Content::Font::CoreFont');
-
-$f = PDF::Font::Loader.load-font: :$dict, :core-font;
-ok $f.isa('PDF::Content::Font::CoreFont');
-
 done-testing;
 

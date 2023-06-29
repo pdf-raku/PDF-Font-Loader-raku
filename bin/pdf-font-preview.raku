@@ -7,14 +7,14 @@ use PDF::Lite;
 subset Encoding where EncodingScheme|!.defined;
 
 sub MAIN(
-    Str:D  $file!,
+    Str:D  $font-file!,
     Str:D  :$text = "Grumpy wizards make toxic brew for the evil Queen and Jack.",
     Str    :$save-as is copy,
     UInt:D :$font-size = 16,
     Bool   :$subset,
     Encoding :$enc,
 ) {
-    my Blob:D $font-buf = $file.IO.slurp: :bin;
+    my Blob:D $font-buf = $font-file.IO.slurp: :bin;
     my %opt = :$enc if $enc;
     my PDF::Font::Loader::FontObj:D $font = PDF::Font::Loader.load-font: :$font-buf, :$subset, |%opt;
     $save-as //= $font.face.postscript-name ~ '.pdf';

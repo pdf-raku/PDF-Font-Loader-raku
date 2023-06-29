@@ -1,4 +1,6 @@
 {{$NEXT}}
+   - Limit use of :core-font when combined with :dict. This only works with
+     simple cases.
 
 0.6.11  2023-06-29T09:16:58+12:00
     - Add :core-font option. This loads objects of type

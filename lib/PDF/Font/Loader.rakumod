@@ -6,6 +6,7 @@ class PDF::Font::Loader:ver<0.6.11> {
     use Font::FreeType::Face;
     use PDF::Content::Font;
     use PDF::Content::Font::CoreFont;
+    use PDF::Content::Font::Enc::Type1 :Type1EncodingScheme;
     use PDF::COS;
     use PDF::COS::Dict;
     use PDF::Font::Loader::FontObj;
@@ -48,12 +49,21 @@ class PDF::Font::Loader:ver<0.6.11> {
         $class.load-font: :$face, :$font-buf, |c;
     }
 
-    multi method load-font(Str :$family!, Bool :core-font($)! where .so, |c) is hidden-from-backtrace {
-        PDF::Content::Font::CoreFont.load-font($family, |c);
+    # core font load
+    multi method load-font(
+        $class is copy = $?CLASS:
+        :core-font($)! where .so,
+        Str:D :$family!,
+        Str:D :$enc = 'win',
+        |c
+    ) {
+        $class = PDF::Content::Font::CoreFont
+            unless c<encoder> || $enc !~~ Type1EncodingScheme;
+        $class.load-font: :$family, :$enc, |c;
     }
 
     # resolve font name via fontconfig
-    multi method load-font($class = $?CLASS: Str :$family!, PDF::COS::Dict :$dict, :$quiet, |c) is hidden-from-backtrace {
+    multi method load-font($class is copy = $?CLASS: Str:D :$family!, PDF::COS::Dict :$dict, :$quiet, |c) is hidden-from-backtrace {
 	my Str:D $file = $class.find-font(:$family, |c)
 	    || do {
             note "unable to locate font. Falling back to mono-spaced font"
@@ -71,10 +81,13 @@ class PDF::Font::Loader:ver<0.6.11> {
 
     # resolve via PDF font dictionary
     multi method load-font(
-        $class = $?CLASS:
+        $class is copy = $?CLASS:
         PDF::Content::Font:D :$dict!,
+        Bool :$core-font,
         |c) is hidden-from-backtrace {
         my %opts = load-font-opts(:$dict, |c);
+        $class = PDF::Content::Font::CoreFont
+            if $core-font && %opts<enc> ~~ Type1EncodingScheme && !%opts<encoder>;
         $class.load-font: |%opts, |c;
     }
 
@@ -216,19 +229,11 @@ Associated font dictionary.
 =begin item
 C<:$core-font>
 
-Load objects of type L<PDF::Content::Font::CoreFont>, rather than L<PDF::Font::Loader::FontObj> (both perform the L<PDF::Content::FontObj> role).
+Prefer to load simple Type1 objects as L<PDF::Content::Font::CoreFont>, rather than L<PDF::Font::Loader::FontObj> (both perform the L<PDF::Content::FontObj> role).
 
-This option is commonly used in conjunction with the C<:$dict> option, for example:
-
-```raku
-my %fonts = $pdf.page(1).gfx.resources('Font');
-my $dict = %fonts<F1>;
-my $core-font = PDF::Font::Loader::Dict.is-core-font: :$dict;
-my PDF::Content::FontObj $font = PDF::Font::Loader.load-font: :$dict, :$core-font, :quiet;
-```
 =end item
 
-=head4 C<PDF::Font::Loader.load-font(Str :$family, Str :$weight, Str :$stretch, Str :$slant, Bool :$subset, Str :$enc, Str :$lang);>
+=head4 C<PDF::Font::Loader.load-font(Str :$family, Str :$weight, Str :$stretch, Str :$slant, Bool :$core-font, Bool :$subset, Str :$enc, Str :$lang);>
 
  my $vera = PDF::Font::Loader.load-font: :family<vera>;
  my $deja = PDF::Font::Loader.load-font: :family<Deja>, :weight<bold>, :stretch<condensed> :slant<italic>);
@@ -262,7 +267,14 @@ Font stretch, one of: C<normal>, C<ultracondensed>, C<extracondensed>, C<condens
 =begin item
 C<:$slant>
 
-Font slat, one of: C<normal>, C<oblique>, or C<italic>
+Font slant, one of: C<normal>, C<oblique>, or C<italic>
+
+=end item
+
+=begin item
+C<:$core-font>
+
+Bypass fontconfig and load matching L<PDF::Content::Font::CoreFont> objects, rather than L<PDF::Font::Loader::FontObj> objects (both perform the L<PDF::Content::FontObj> role).
 
 =end item
 

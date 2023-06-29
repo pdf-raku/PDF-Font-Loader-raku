@@ -259,8 +259,7 @@ for 1 .. $pdf.page-count {
 
     for %fonts.values -> $dict {
         unless %SeenFont{$dict}++ {
-            my $core-font = PDF::Font::Loader::Dict.is-core-font: :$dict;
-            my PDF::Content::FontObj $font = PDF::Font::Loader.load-font: :$dict, :$core-font, :quiet;
+            my PDF::Content::FontObj $font = PDF::Font::Loader.load-font: :$dict, :quiet;
             say sprintf(Fmt, .font-name, .type, .encoding, .is-embedded.&yn, .is-subset.&yn)
                 given $font;
         }
