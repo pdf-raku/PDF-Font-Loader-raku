@@ -273,7 +273,7 @@ method !font-kerning(Str $text is copy) {
 
 method height($pointsize = 1000, Bool :$from-baseline, Bool :$hanging) {
     die "todo: height of non-scaling fonts" unless $.face.is-scalable;
-    my FT_BBox $bbox = $.face.bounding-box;
+    my FT_BBox $bbox = $.face.raw.bbox;
     my Numeric $height = $hanging ?? $.face.ascender !! $bbox.y-max;
     $height -= $hanging ?? $.face.descender !! $bbox.y-min
         unless $from-baseline;
