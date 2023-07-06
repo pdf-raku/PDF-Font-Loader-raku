@@ -1,5 +1,8 @@
 {{$NEXT}}
 
+0.6.14  2023-07-07T07:22:32+12:00
+   - Use low level Font::FreeType .box() method for compatibility with v0.50+
+
 0.6.13  2023-06-30T08:27:56+12:00
    - Check :$dict really is a core-font dictionary when used with :core-font
 
