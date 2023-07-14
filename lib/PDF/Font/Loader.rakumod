@@ -100,7 +100,9 @@ class PDF::Font::Loader:ver<0.6.14> {
                      Weight  :$weight is copy = 'medium',
                      Stretch :$stretch = 'normal',
                      Slant   :$slant = 'normal',
-                     Str     :$lang,
+                     :cid($), :differences($), :embed($), :enc($), :encoder($),
+                     :font-name($), :font-descriptor($), :subset($),
+                     *%props,
                     ) is export(:find-font) is hidden-from-backtrace {
 
         with $weight {
@@ -110,17 +112,20 @@ class PDF::Font::Loader:ver<0.6.14> {
                 if /^<[0..9]>/;
         }
 
-        my \FontConfig = try PDF::COS.required("FontConfig");
-        if FontConfig === Nil {
-            warn "FontConfig is required for the find-font method";
-            return Str;
+        my $FontConfig := try PDF::COS.required("FontConfig::Pattern");
+        if $FontConfig === Nil {
+            # Try for an older FontConfig version
+            $FontConfig := try PDF::COS.required("FontConfig");
+            if $FontConfig === Nil {
+                warn "FontConfig is required for the find-font method";
+                return Str;
+            }
         }
-        my $patt = FontConfig.new;
+        my $patt = $FontConfig.new: |%props;
         $patt.family = $_ with $family;
         $patt.weight = $weight  unless $weight eq 'medium';
         $patt.width  = $stretch unless $stretch eq 'normal';
         $patt.slant  = $slant   unless $slant eq 'normal';
-        $patt.lang   = $_ with $lang;
 
         with $patt.match -> $match {
             $match.file;
