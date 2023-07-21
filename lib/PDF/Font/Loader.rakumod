@@ -100,6 +100,7 @@ class PDF::Font::Loader:ver<0.6.14> {
                      Weight  :$weight is copy = 'medium',
                      Stretch :$stretch = 'normal',
                      Slant   :$slant = 'normal',
+                     Bool    :$seq,
                      :cid($), :differences($), :embed($), :enc($), :encoder($),
                      :font-name($), :font-descriptor($), :subset($),
                      *%props,
@@ -127,11 +128,16 @@ class PDF::Font::Loader:ver<0.6.14> {
         $patt.width  = $stretch unless $stretch eq 'normal';
         $patt.slant  = $slant   unless $slant eq 'normal';
 
-        with $patt.match -> $match {
-            $match.file;
-	}
-	else {
-	    Str;
+        if $seq {
+            $patt.Seq.map: *.file;
+        }
+        else {
+            with $patt.match -> $match {
+                $match.file;
+	    }
+	    else {
+	        Str;
+            }
 	}
     }
 
@@ -303,6 +309,7 @@ A RFC-3066-style language tag. `fontconfig` will select only fonts whose charact
             Stretch :$stretch,
             Slant   :$slant,
             Str     :$lang,   # e.g. :lang<jp>
+            Bool    :$seq,
             );
 
 Locates a matching font-file. Doesn't actually load it.
@@ -310,6 +317,20 @@ Locates a matching font-file. Doesn't actually load it.
    my $file = PDF::Font::Loader.find-font: :family<Deja>, :weight<bold>, :width<condensed>, :slant<italic>, :lang<en>;
    say $file;  # /usr/share/fonts/truetype/dejavu/DejaVuSansCondensed-BoldOblique.ttf
    my $font = PDF::Font::Loader.load-font: :$file;
+
+The `:seq` method returns a sequence of fonts, ordered by best match first. This method may be useful, if you wish to apply your own selection critera.
+
+=begin code :lang<raku>
+use PDF::Font::Loader;
+use Font::FreeType;
+use Font::FreeType::Face;
+my Font::FreeType $ft .= new;
+my Str $best-kerned-font = PDF::Font::Loader.find-font(:seq, :family<sans>, :weight<bold>,).first: -> $file {
+    my Font::FreeType::Face $face = $ft.face: $file;
+    $face.has-kerning;
+}
+note "best kerned font: " ~ $best-kerned-font;
+=end code
 
 =end pod
 

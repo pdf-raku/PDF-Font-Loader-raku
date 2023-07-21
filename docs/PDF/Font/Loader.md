@@ -142,6 +142,7 @@ parameters:
               Stretch :$stretch,
               Slant   :$slant,
               Str     :$lang,   # e.g. :lang<jp>
+              Bool    :$seq,
               );
 
 Locates a matching font-file. Doesn't actually load it.
@@ -149,4 +150,18 @@ Locates a matching font-file. Doesn't actually load it.
     my $file = PDF::Font::Loader.find-font: :family<Deja>, :weight<bold>, :width<condensed>, :slant<italic>, :lang<en>;
     say $file;  # /usr/share/fonts/truetype/dejavu/DejaVuSansCondensed-BoldOblique.ttf
     my $font = PDF::Font::Loader.load-font: :$file;
+
+The `:seq` method returns a sequence of fonts, ordered by best match first. This method may be useful, if you wish to apply your own selection critera.
+
+```raku
+use PDF::Font::Loader;
+use Font::FreeType;
+use Font::FreeType::Face;
+my Font::FreeType $ft .= new;
+my Str $best-kerned-font = PDF::Font::Loader.find-font(:seq, :family<sans>, :weight<bold>,).first: -> $file {
+    my Font::FreeType::Face $face = $ft.face: $file;
+    $face.has-kerning;
+}
+note "best kerned font: " ~ $best-kerned-font;
+```
 
