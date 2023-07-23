@@ -1,6 +1,6 @@
 use v6;
 
-class PDF::Font::Loader:ver<0.6.14> {
+class PDF::Font::Loader:ver<0.7.0> {
 
     use Font::FreeType;
     use Font::FreeType::Face;
@@ -100,7 +100,7 @@ class PDF::Font::Loader:ver<0.6.14> {
                      Weight  :$weight is copy = 'medium',
                      Stretch :$stretch = 'normal',
                      Slant   :$slant = 'normal',
-                     Bool    :$seq,
+                     Bool    :$seq is copy,
                      :cid($), :differences($), :embed($), :enc($), :encoder($),
                      :font-name($), :font-descriptor($), :subset($),
                      *%props,
@@ -116,6 +116,7 @@ class PDF::Font::Loader:ver<0.6.14> {
         my $FontConfig := try PDF::COS.required("FontConfig::Pattern");
         if $FontConfig === Nil {
             # Try for an older FontConfig version
+            $seq = False;
             $FontConfig := try PDF::COS.required("FontConfig");
             if $FontConfig === Nil {
                 warn "FontConfig is required for the find-font method";

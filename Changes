@@ -1,5 +1,10 @@
 {{$NEXT}}
 
+0.7.0  2023-07-24T04:45:02+12:00
+   - Prefer to use new FontConfig::Pattern class for font loading
+   - Add :seq option to find-font(). Returns a sequence of font files,
+     best match first.
+
 0.6.14  2023-07-07T07:22:32+12:00
    - Use low level Font::FreeType .box() method for compatibility with v0.50+
 
