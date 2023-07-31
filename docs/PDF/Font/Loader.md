@@ -47,7 +47,7 @@ Methods
 
 A class level method to create a new font object.
 
-#### `PDF::Font::Loader.load-font(Str :$file, Bool :$subset, :$enc, :$lang, :$dict, :$core-font);`
+#### `PDF::Font::Loader.load-font(Str :$file, Bool :$subset, :$enc, :$lang, :$dict, :$core-font, *%props);`
 
 Loads a font file.
 
@@ -130,35 +130,52 @@ parameters:
 
     A RFC-3066-style language tag. `fontconfig` will select only fonts whose character set matches the preferred lang. See also [I18N::LangTags](https://modules.raku.org/dist/I18N::LangTags:cpan:UFOBAT).
 
+  * `*%props`
+
+    Any additional options are parsed as [FontConfig](https://pdf-raku.github.io/FontConfig-raku/FontConfig) properties.
+
 ### find-font
 
-    use PDF::Font::Loader
-        :Weight  # thin|extralight|light|book|regular|medium|semibold|bold|extrabold|black|100..900
-        :Stretch # normal|[ultra|extra]?[condensed|expanded]
-        :Slant   # normal|oblique|italic
-    ;
-    find-font(Str :$family,     # e.g. :family<vera>
-              Weight  :$weight,
-              Stretch :$stretch,
-              Slant   :$slant,
-              Str     :$lang,   # e.g. :lang<jp>
-              Bool    :$seq,
-              );
+```raku
+use PDF::Font::Loader
+    :Weight  # thin|extralight|light|book|regular|medium|semibold|bold|extrabold|black|100..900
+    :Stretch # normal|[ultra|extra]?[condensed|expanded]
+    :Slant   # normal|oblique|italic
+;
+find-font(Str :$family,     # e.g. :family<vera>
+          Weight  :$weight,
+          Stretch :$stretch,
+          Slant   :$slant,
+          Str     :$lang,   # e.g. :lang<jp>
+          Bool    :$all,
+          UInt    :$limit,
+          Bool    :$serif,  # serif or sans-serif font
+          *%pattern,
+          );
+```
+
+This method requires the optional [FontConfig](https://pdf-raku.github.io/FontConfig-raku/FontConfig) Raku module to be installed.
 
 Locates a matching font-file. Doesn't actually load it.
 
-    my $file = PDF::Font::Loader.find-font: :family<Deja>, :weight<bold>, :width<condensed>, :slant<italic>, :lang<en>;
-    say $file;  # /usr/share/fonts/truetype/dejavu/DejaVuSansCondensed-BoldOblique.ttf
-    my $font = PDF::Font::Loader.load-font: :$file;
+```raku
+my $file = PDF::Font::Loader.find-font: :family<Deja>, :weight<bold>, :width<condensed>, :slant<italic>, :lang<en>;
+say $file;  # /usr/share/fonts/truetype/dejavu/DejaVuSansCondensed-BoldOblique.ttf
+my $font = PDF::Font::Loader.load-font: :$file;
+```
 
-The `:seq` method returns a sequence of fonts, ordered by best match first. This method may be useful, if you wish to apply your own selection critera.
+The `:all` option returns a sequence of fonts, ordered by best match first. This method may be useful, if you wish to apply your own selection critera.
+
+The `:limit($n)` is similar to `:all`, but returns at most `$n` fonts.
+
+Any additional options are treated as `FontConfig` pattern attributes. For example `:spacing<mono> will select monospace fonts.
 
 ```raku
 use PDF::Font::Loader;
 use Font::FreeType;
 use Font::FreeType::Face;
 my Font::FreeType $ft .= new;
-my Str $best-kerned-font = PDF::Font::Loader.find-font(:seq, :family<sans>, :weight<bold>,).first: -> $file {
+my Str $best-kerned-font = PDF::Font::Loader.find-font(:all, :!serif, :weight<bold>,).first: -> $file {
     my Font::FreeType::Face $face = $ft.face: $file;
     $face.has-kerning;
 }

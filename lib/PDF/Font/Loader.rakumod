@@ -96,15 +96,27 @@ class PDF::Font::Loader:ver<0.7.0> {
     subset Stretch of Str is export(:Stretch) where /^[[ultra|extra]?[condensed|expanded]]|normal$/;
     subset Slant   of Str is export(:Slant) where /^[normal|oblique|italic]$/;
 
-    method find-font($?: Str :$family,
+    method find-font($?: Str :$family is copy,
                      Weight  :$weight is copy = 'medium',
                      Stretch :$stretch = 'normal',
                      Slant   :$slant = 'normal',
-                     Bool    :$seq is copy,
+                     UInt    :$limit,
+                     Bool    :$all is copy = $limit.defined,
+                     Bool    :$serif, # restrict to serif or sans-serif
                      :cid($), :differences($), :embed($), :enc($), :encoder($),
                      :font-name($), :font-descriptor($), :subset($),
+                     Bool    :$seq, # deprecated
                      *%props,
                     ) is export(:find-font) is hidden-from-backtrace {
+
+        if $seq {
+            warn ':seq option is deprecated. pelase use :all, or :$limit';
+           $all ||= 1;
+        }
+
+        with $serif {
+            $family = $_ ?? 'serif' !! 'sans-serif';
+        }
 
         with $weight {
             # convert CSS/PDF numeric weights for fontconfig
@@ -116,7 +128,7 @@ class PDF::Font::Loader:ver<0.7.0> {
         my $FontConfig := try PDF::COS.required("FontConfig::Pattern");
         if $FontConfig === Nil {
             # Try for an older FontConfig version
-            $seq = False;
+            $all = False;
             $FontConfig := try PDF::COS.required("FontConfig");
             if $FontConfig === Nil {
                 warn "FontConfig is required for the find-font method";
@@ -129,8 +141,8 @@ class PDF::Font::Loader:ver<0.7.0> {
         $patt.width  = $stretch unless $stretch eq 'normal';
         $patt.slant  = $slant   unless $slant eq 'normal';
 
-        if $seq {
-            $patt.Seq.map: *.file;
+        if $all {
+            $patt.match-series(:$limit).map: *.file;
         }
         else {
             with $patt.match -> $match {
@@ -188,7 +200,7 @@ L<PDF::Lite>,  L<PDF::API6> and other PDF modules.
 
 A class level method to create a new font object.
 
-=head4 C<PDF::Font::Loader.load-font(Str :$file, Bool :$subset, :$enc, :$lang, :$dict, :$core-font);>
+=head4 C<PDF::Font::Loader.load-font(Str :$file, Bool :$subset, :$enc, :$lang, :$dict, :$core-font, *%props);>
 
 Loads a font file.
 
@@ -298,35 +310,55 @@ A RFC-3066-style language tag. `fontconfig` will select only fonts whose charact
 
 =end item
 
+=begin item
+C<*%props>
+
+Any additional options are parsed as L<FontConfig> properties.
+
+=end item
+
 =head3 find-font
 
-  use PDF::Font::Loader
-      :Weight  # thin|extralight|light|book|regular|medium|semibold|bold|extrabold|black|100..900
-      :Stretch # normal|[ultra|extra]?[condensed|expanded]
-      :Slant   # normal|oblique|italic
-  ;
-  find-font(Str :$family,     # e.g. :family<vera>
-            Weight  :$weight,
-            Stretch :$stretch,
-            Slant   :$slant,
-            Str     :$lang,   # e.g. :lang<jp>
-            Bool    :$seq,
-            );
+=begin code :lang<raku>
+use PDF::Font::Loader
+    :Weight  # thin|extralight|light|book|regular|medium|semibold|bold|extrabold|black|100..900
+    :Stretch # normal|[ultra|extra]?[condensed|expanded]
+    :Slant   # normal|oblique|italic
+;
+find-font(Str :$family,     # e.g. :family<vera>
+          Weight  :$weight,
+          Stretch :$stretch,
+          Slant   :$slant,
+          Str     :$lang,   # e.g. :lang<jp>
+          Bool    :$all,
+          UInt    :$limit,
+          Bool    :$serif,  # serif or sans-serif font
+          *%pattern,
+          );
+=end code
+
+This method requires the optional L<FontConfig> Raku module to be installed.
 
 Locates a matching font-file. Doesn't actually load it.
 
-   my $file = PDF::Font::Loader.find-font: :family<Deja>, :weight<bold>, :width<condensed>, :slant<italic>, :lang<en>;
-   say $file;  # /usr/share/fonts/truetype/dejavu/DejaVuSansCondensed-BoldOblique.ttf
-   my $font = PDF::Font::Loader.load-font: :$file;
+=begin code :lang<raku>
+my $file = PDF::Font::Loader.find-font: :family<Deja>, :weight<bold>, :width<condensed>, :slant<italic>, :lang<en>;
+say $file;  # /usr/share/fonts/truetype/dejavu/DejaVuSansCondensed-BoldOblique.ttf
+my $font = PDF::Font::Loader.load-font: :$file;
+=end code
 
-The `:seq` method returns a sequence of fonts, ordered by best match first. This method may be useful, if you wish to apply your own selection critera.
+The `:all` option returns a sequence of fonts, ordered by best match first. This method may be useful, if you wish to apply your own selection critera.
+
+The `:limit($n)` is similar to `:all`, but returns at most `$n` fonts.
+
+Any additional options are treated as `FontConfig` pattern attributes. For example `:spacing<mono> will select monospace fonts.
 
 =begin code :lang<raku>
 use PDF::Font::Loader;
 use Font::FreeType;
 use Font::FreeType::Face;
 my Font::FreeType $ft .= new;
-my Str $best-kerned-font = PDF::Font::Loader.find-font(:seq, :family<sans>, :weight<bold>,).first: -> $file {
+my Str $best-kerned-font = PDF::Font::Loader.find-font(:all, :!serif, :weight<bold>,).first: -> $file {
     my Font::FreeType::Face $face = $ft.face: $file;
     $face.has-kerning;
 }
