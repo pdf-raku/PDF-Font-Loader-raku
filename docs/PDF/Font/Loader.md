@@ -149,7 +149,7 @@ find-font(Str :$family,     # e.g. :family<vera>
           Str     :$lang,   # e.g. :lang<jp>
           Bool    :$all,
           UInt    :$limit,
-          Bool    :$serif,  # serif or sans-serif font
+          Bool    :$serif,  # serif(True) or sans-serif(False) fonts
           *%pattern,
           );
 ```
@@ -164,9 +164,9 @@ say $file;  # /usr/share/fonts/truetype/dejavu/DejaVuSansCondensed-BoldOblique.t
 my $font = PDF::Font::Loader.load-font: :$file;
 ```
 
-The `:all` option returns a sequence of fonts, ordered by best match first. This method may be useful, if you wish to apply your own selection critera.
+The `:all` option returns a sequence of all fonts, ordered best match first. This method may be useful, if you wish to apply your own selection critera.
 
-The `:limit($n)` is similar to `:all`, but returns at most `$n` fonts.
+The `:limit($n)` is similar to `:all`, but returns at most the `$n` best matching fonts.
 
 Any additional options are treated as `FontConfig` pattern attributes. For example `:spacing<mono> will select monospace fonts.
 

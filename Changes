@@ -1,4 +1,5 @@
 {{$NEXT}}
+   - Deprecate :seq in favour of :all and :limit options
 
 0.7.0  2023-07-24T04:45:02+12:00
    - Prefer to use new FontConfig::Pattern class for font loading
