@@ -93,7 +93,7 @@ parameters:
 
   * `:$core-font`
 
-    Prefer to load simple Type1 objects as [PDF::Content::Font::CoreFont](https://pdf-raku.github.io/PDF-Content-raku), rather than [PDF::Font::Loader::FontObj](https://pdf-raku.github.io/PDF-Font-Loader-raku/PDF/Font/Loader/FontObj) (both perform the [PDF::Content::FontObj](https://pdf-raku.github.io/PDF-Content-raku) role).
+    Prefer to load simple Type1 objects as [PDF::Content::Font::CoreFont](https://pdf-raku.github.io/PDF-Content-raku/PDF/Content/Font/CoreFont), rather than [PDF::Font::Loader::FontObj](https://pdf-raku.github.io/PDF-Font-Loader-raku/PDF/Font/Loader/FontObj) (both perform the [PDF::Content::FontObj](https://pdf-raku.github.io/PDF-Content-raku/PDF/Content/FontObj) role).
 
 #### `PDF::Font::Loader.load-font(Str :$family, Str :$weight, Str :$stretch, Str :$slant, Bool :$core-font, Bool :$subset, Str :$enc, Str :$lang);`
 
@@ -124,7 +124,7 @@ parameters:
 
   * `:$core-font`
 
-    Bypass fontconfig and load matching [PDF::Content::Font::CoreFont](https://pdf-raku.github.io/PDF-Content-raku) objects, rather than [PDF::Font::Loader::FontObj](https://pdf-raku.github.io/PDF-Font-Loader-raku/PDF/Font/Loader/FontObj) objects (both perform the [PDF::Content::FontObj](https://pdf-raku.github.io/PDF-Content-raku) role).
+    Bypass fontconfig and load matching [PDF::Content::Font::CoreFont](https://pdf-raku.github.io/PDF-Content-raku/PDF/Content/Font/CoreFont) objects, rather than [PDF::Font::Loader::FontObj](https://pdf-raku.github.io/PDF-Font-Loader-raku/PDF/Font/Loader/FontObj) objects (both perform the [PDF::Content::FontObj](https://pdf-raku.github.io/PDF-Content-raku/PDF/Content/FontObj) role).
 
   * `:$lang`
 

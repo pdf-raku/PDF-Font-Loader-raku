@@ -114,6 +114,7 @@ class PDF::Font::Loader:ver<0.7.1> {
            $all ||= 1;
         }
 
+       # https://wiki.archlinux.org/title/Font_configuration/Examples#Default_fonts
         with $serif {
             $family = $_ ?? 'serif' !! 'sans-serif';
         }
