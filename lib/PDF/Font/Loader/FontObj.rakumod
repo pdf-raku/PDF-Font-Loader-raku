@@ -75,30 +75,32 @@ submethod TWEAK(
     Str :$prefix is copy,
 ) {
 
-    $!subset = False
-        unless $!embed;
-
-    if $!subset && (try subsetter()) === Nil {
-        warn "HarfBuzz::Subset is required for font subsetting";
-        $!subset = False;
-    }
-
-    if $!embed && self!font-type-entry eq 'TrueType' {
-        given $!font-buf.subbuf(0,4).decode('latin-1') {
-            when 'ttcf' {
-                # Its a TrueType collection which is not directly supported as a format,
-                # however, HarfBuzz::Subset will convert it for us.
-                unless $!subset {
-                    warn "The HarfBuzz::Subset module is required to embed TrueType Collection font $!font-name";
-                    $!embed = False;
+    if $!embed {
+        if self!font-type-entry eq 'TrueType' {
+            given $!font-buf.subbuf(0,4).decode('latin-1') {
+                when 'ttcf' {
+                    unless $!subset {
+                        # Its a TrueType collection which is not directly supported as a format,
+                        # however, HarfBuzz::Subset will convert it for us.
+                        die "The HarfBuzz::Subset module is required to embed TrueType Collection font $!font-name"
+                            if (try subsetter()) === Nil;
+                        $!subset = True;
+                    }
+                }
+                when 'wOFF' {
+                    die "unable to embed wOFF font $!font-name";
                 }
             }
-            when 'wOFF' {
-                # This embeds, but browser support is patchy
-                warn "unable to embed wOFF font $!font-name";
-                $!embed = False;
-            }
         }
+
+        if $!subset && (try subsetter()) === Nil {
+            warn "HarfBuzz::Subset is required for font subsetting";
+            $!subset = False;
+        }
+    }
+    else {
+        # $!subset incompatibile with !$embed
+        $!subset = False
     }
 
     if $!subset {
