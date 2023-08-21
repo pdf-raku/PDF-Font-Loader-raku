@@ -21,10 +21,12 @@ has PDF::COS::Stream $.cmap is rw; # /ToUnicode CMap
 has Font::AFM $.core-metrics is rw;
 has Lock $.lock handles<protect> .= new;
 has Glyph %!glyphs{Int};
-
+# internal font units to 1000ths
 submethod TWEAK(:$widths) {
     @!widths = .map(*.Int) with $widths;
 }
+
+method !font-scale { 1000 / (self.face.units-per-EM || 1000) };
 
 multi method first-char { $!first-char }
 multi method first-char($cid) {
@@ -137,7 +139,6 @@ method !make-glyph(UInt $cid) {
 method !glyph-size($gid) {
     my int $width  = 0;
     my int $height = 0;
-    my $scale = 0;
 
     if $gid {
         CATCH {
@@ -147,14 +148,13 @@ method !glyph-size($gid) {
             my $struct = $.face.raw;
             ft-try({ $struct.FT_Load_Glyph( $gid, FT_LOAD_NO_SCALE ); });
             given $struct.glyph.metrics {
-                $scale = 1000 / ($.face.units-per-EM || 1000);
                 $width  = .hori-advance;
                 $height = .vert-advance;
             }
         }
     }
 
-    ($width * $scale, $height * $scale);
+    ($width * self!font-scale(), $height * self!font-scale());
 }
 
 method has-encoding {
@@ -255,7 +255,6 @@ method !font-kerning(Str $text is copy) {
     my $struct = $.face.raw;
     my int $width = 0;
     my int $height = 0;
-    my $scale = 1000 / ($.face.units-per-EM || 1000);
 
     for $text.ords -> $char-code {
         my FT_UInt $this-idx = $struct.FT_Get_Char_Index( $char-code );
@@ -268,7 +267,7 @@ method !font-kerning(Str $text is copy) {
         }
         $prev-idx = $this-idx;
     }
-    (($width * $scale).round, ($height * $scale).round);
+    (($width * self!font-scale()).round, ($height * self!font-scale()).round);
 }
 
 method height($pointsize = 1000, Bool :$from-baseline, Bool :$hanging) {
@@ -277,7 +276,7 @@ method height($pointsize = 1000, Bool :$from-baseline, Bool :$hanging) {
     my Numeric $height = $hanging ?? $.face.ascender !! $bbox.y-max;
     $height -= $hanging ?? $.face.descender !! $bbox.y-min
         unless $from-baseline;
-    $height * $pointsize /($.face.units-per-EM);
+    $height * $pointsize / $.face.units-per-EM;
 }
 
 multi method stringwidth(Str $text, :$kern) {

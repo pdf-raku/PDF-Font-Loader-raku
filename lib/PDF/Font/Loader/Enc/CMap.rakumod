@@ -28,7 +28,7 @@ my class CodeSpace is export(:CodeSpace) {
     method bytes { +@!from }
     submethod TWEAK {
         if +@!from != +@!to || @!from.pairs.first({.value > @!to[.key]}) {
-            die "bad CMAP Code Range range {@!from.raku} ... {@!to.raku}";
+            die "Bad CMAP code range {@!from.raku} ... {@!to.raku}";
         }
     }
     method iterate-range {
@@ -432,7 +432,7 @@ This method maps to PDF font dictionaries with a `ToUnicode` entry and Type0
 (CID) fonts with an `Encoding` entry that reference CMaps.
 
 This class extends the base-class L<PDF::Font::Loader::Enc>, adding the ability
-of reading existing CMaps. It also adds the ability the handle variable encoding.
+of reading existing CMaps. It also adds the ability to handle variable encoding.
 
 =head3 Methods
 

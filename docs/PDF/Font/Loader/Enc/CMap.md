@@ -13,7 +13,7 @@ CMap based encoding/decoding
 
 This method maps to PDF font dictionaries with a `ToUnicode` entry and Type0 (CID) fonts with an `Encoding` entry that reference CMaps.
 
-This class extends the base-class [PDF::Font::Loader::Enc](https://pdf-raku.github.io/PDF-Font-Loader-raku/PDF/Font/Loader/Enc), adding the ability of reading existing CMaps. It also adds the ability the handle variable encoding.
+This class extends the base-class [PDF::Font::Loader::Enc](https://pdf-raku.github.io/PDF-Font-Loader-raku/PDF/Font/Loader/Enc), adding the ability of reading existing CMaps. It also adds the ability to handle variable encoding.
 
 ### Methods
 
