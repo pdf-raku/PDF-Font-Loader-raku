@@ -113,7 +113,7 @@ method make-dict {
     my $BaseFont = /($.font-name);
     my $Type = /<Font>;
     my $FontDescriptor = self.font-descriptor;
-    my $cid-font = {
+    my PDF::COS::Dict() $cid-font = {
         :$Type,
         :Subtype(/(self!cid-font-type-entry)),
         :$BaseFont,
@@ -121,17 +121,15 @@ method make-dict {
         :CIDToGIDMap( /<Identity> ),
         :$.CIDSystemInfo
     };
+    $cid-font.is-indirect = True;
 
-    my PDF::COS::Dict() $dict = %(
-        :Type( /<Font> ),
+    PDF::COS::Dict.COERCE: %(
+        :$Type,
         :Subtype( /<Type0> ),
         :$BaseFont,
         :DescendantFonts[ $cid-font ],
         :Encoding(/(self.encoding)),
     );
-
-    $dict<DescendantFonts>[0].is-indirect = True;
-    $dict;
 }
 
 =begin pod

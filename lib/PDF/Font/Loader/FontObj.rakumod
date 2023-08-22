@@ -165,6 +165,7 @@ method encode($text is raw, |c) {
     }
     $!encoder.encode($text, |c);
 }
+
 method !font-type-entry returns Str {
     given $!face.font-format {
         when 'Type 1'|'CFF' { 'Type1' }
@@ -196,7 +197,7 @@ method !make-type1-font-file($buf) {
     }
 }
 
-method !make-other-font-file(Blob $buf) {
+method !make-other-font-file(Blob:D $buf) {
     my $decoded = PDF::IO::Blob.new: $buf;
     my %dict := %(
         :Length1($buf.bytes),
