@@ -183,18 +183,15 @@ method !font-file-entry {
 }
 
 method !make-type1-font-file($buf) {
-    my PDF::Font::Loader::Type1::Stream $stream .= new: :$buf;
-    my $Length1 = $stream.length[0];
-    my $Length2 = $stream.length[1];
-    my $Length3 = $stream.length[2];
     my PDF::IO::Blob() $encoded = $buf;
+    my PDF::Font::Loader::Type1::Stream $stream .= new: :$buf;
+    my %dict := %(
+        Length1 => $stream.length[0],
+        Length2 => $stream.length[1],
+        Length3 => $stream.length[2],
+    );
 
-    PDF::COS::Stream.COERCE: {
-        :$encoded,
-        :dict{
-            :$Length1, :$Length2, :$Length3,
-        },
-    }
+    PDF::COS::Stream.COERCE: %( :$encoded, :%dict );
 }
 
 method !make-other-font-file(Blob:D $buf) {
