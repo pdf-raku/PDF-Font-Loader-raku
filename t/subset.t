@@ -24,10 +24,11 @@ given load-font( :file<t/fonts/Vera.ttf>, :subset) {
 my PDF::Content::FontObj $ttf-font = load-font( :file<t/fonts/Vera.ttf>, :subset, :prefix<XBCDEF>);
 my PDF::Content::FontObj $otf-font = load-font( :file<t/fonts/Cantarell-Oblique.otf>, :enc<win>, :subset, :prefix<YBCDEF>);
 my PDF::Content::FontObj $ttc-font = load-font( :file<t/fonts/Sitka.ttc>, :subset, :prefix<ZBCDEF>);
+my PDF::Content::FontObj $otc-font = load-font( :file<t/fonts/EBGaramond12.otc>, :subset, :prefix<ABCDEF>);
 
-sub check-fonts($whence) {
+sub check-fonts($whence, :$subsetted) {
     subtest $whence => {
-        plan 17;
+        plan 22;
         ok $ttf-font.is-subset, '$ttf-font.is-subset';
         like $ttf-font.font-name, /^<[A..Z]>**6 '+BitstreamVeraSans-Roman'$/, 'font-name';
         is $ttf-font.encoding, 'Identity-H', '$ttf-font.encoding';
@@ -52,6 +53,18 @@ sub check-fonts($whence) {
         is-deeply @shape.head, Glyph.new(:name<A>, :code-point(65), :cid(4), :gid(4), :ax(689), :sx(689) :ay(0)), 'ttc-font glyph "A"';
         is-deeply @shape.tail, Glyph.new(:name<b>, :code-point(98), :cid(179), :gid(179), :ax(615), :sx(615), :ay(0)), 'ttc-font glyph "b"';
 
+        ok $otc-font.is-subset, '$otc-font.is-subset';
+        like $otc-font.font-name, /^<[A..Z]>**6 '+EBGaramond12-Regular'$/, 'font-name';
+        is $otc-font.encoding, 'WinAnsiEncoding', '$otc-font.encoding';
+        @shape = $otc-font.get-glyphs("Ab");
+
+        # can't avoid gid remapping in an OpenType/CFF font
+        my $gid = $subsetted ?? 6 !! 34;
+        is-deeply @shape.head, Glyph.new(:name<A>, :code-point(65), :cid(65), :$gid, :ax(692), :sx(692) :ay(0)), 'otc-font glyph "A"';
+
+        $gid = $subsetted ?? 16 !! 67;
+        is-deeply @shape.tail, Glyph.new(:name<b>, :code-point(98), :cid(98), :$gid, :ax(515), :sx(515), :ay(0)), 'otc-font glyph "b"';
+
     }
 }
 
@@ -67,6 +80,9 @@ $pdf.add-page.gfx.text: {
     .say: '';
     .font = $ttc-font;
     .say: "ttc font { $ttc-font.font-name } {$ttc-font.encoding} subset ABCxyz";
+    .say: '';
+    .font = $otc-font;
+    .say: "otc font { $otc-font.font-name } {$otc-font.encoding} subset ABCxyz";
 }
 
 check-fonts('created fonts');
@@ -82,7 +98,8 @@ my %fonts = $pdf.page(1).resources('Font');
 $ttf-font = load-font( dict => %fonts<F1> );
 $otf-font = load-font( dict => %fonts<F2> );
 $ttc-font = load-font( dict => %fonts<F3> );
+$otc-font = load-font( dict => %fonts<F4> );
 
-check-fonts('re-read fonts');
+check-fonts('re-read fonts', :subsetted);
 
 done-testing;

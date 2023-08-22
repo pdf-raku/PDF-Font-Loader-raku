@@ -196,7 +196,7 @@ method !make-type1-font-file($buf) {
     }
 }
 
-method !make-other-font-file($buf) {
+method !make-other-font-file(Blob $buf) {
     my $decoded = PDF::IO::Blob.new: $buf;
     my %dict := %(
         :Length1($buf.bytes),
@@ -208,7 +208,10 @@ method !make-other-font-file($buf) {
             %dict<Subtype> = /<CIDFontType0C>;
         }
         when 'CFF' {
-            %dict<Subtype> = /<Type1C>;
+            # Peek at the buffer to distinguish simple CFF from OpenType/CFF
+            # See https://learn.microsoft.com/en-us/typography/opentype/spec/otff#organization-of-an-opentype-font
+            my subset OpenTypeCFF of Blob:D where .subbuf(0,4).decode('latin-1') eq 'OTTO';
+            %dict<Subtype> = ($buf ~~ OpenTypeCFF) ?? /<OpenType> !! /<Type1C>;
         }
     }
 
