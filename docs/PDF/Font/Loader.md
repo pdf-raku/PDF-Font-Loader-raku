@@ -10,30 +10,33 @@ PDF::Font::Loader
 Synopsis
 ========
 
-    # load a font from a file
-    use PDF::Font::Loader :&load-font;
-    use PDF::Content::FontObj;
+```raku
+# load a font from a file
+use PDF::Font::Loader :&load-font;
+use PDF::Content::FontObj;
 
-    my PDF::Content::FontObj $deja;
-    $deja = PDF::Font::Loader.load-font: :file<t/fonts/DejaVuSans.ttf>;
-    -- or --
-    $deja = load-font( :file<t/fonts/DejaVuSans.ttf> );
+my PDF::Content::FontObj $deja;
+$deja = PDF::Font::Loader.load-font: :file<t/fonts/DejaVuSans.ttf>;
+-- or --
+$deja = load-font( :file<t/fonts/DejaVuSans.ttf> );
 
-    # find/load system fonts; requires fontconfig
-    use PDF::Font::Loader :load-font, :find-font;
-    $deja = load-font( :family<DejaVu>, :slant<italic> );
-    my Str $file = find-font( :family<DejaVu>, :slant<italic> );
-    my PDF::Content::FontObj $deja-vu = load-font: :$file;
+# find/load the best matching system font
+# *** requires FontConfig ***
+use PDF::Font::Loader :load-font, :find-font;
+$deja = load-font( :family<DejaVu>, :slant<italic> );
+my Str $file = find-font( :family<DejaVu>, :slant<italic> );
+my PDF::Content::FontObj $deja-vu = load-font: :$file;
 
-    # use the font to add text to a PDF
-    use PDF::Lite;
-    my PDF::Lite $pdf .= new;
-    $pdf.add-page.text: {
-       .font = $deja, 12;
-       .text-position = [10, 600];
-       .say: 'Hello, world';
-    }
-    $pdf.save-as: "/tmp/example.pdf";
+# use the font to add text to a PDF
+use PDF::Lite;
+my PDF::Lite $pdf .= new;
+$pdf.add-page.text: {
+   .font = $deja, 12;
+   .text-position = [10, 600];
+   .say: 'Hello, world';
+}
+$pdf.save-as: "/tmp/example.pdf";
+```
 
 Description
 -----------
@@ -110,9 +113,9 @@ parameters:
     my $vera = PDF::Font::Loader.load-font: :family<vera>;
     my $deja = PDF::Font::Loader.load-font: :family<Deja>, :weight<bold>, :stretch<condensed> :slant<italic>);
 
-Loads a font by a fontconfig name and attributes.
+Finds and loads the best-matching system font via [FontConfig](https://pdf-raku.github.io/FontConfig-raku/FontConfig).
 
-Note: Requires fontconfig to be installed on the system.
+Note: This method requires the Raku [FontConfig](https://pdf-raku.github.io/FontConfig-raku/FontConfig) module to be installed, unless the `:core-font` option is used, to load only PDF core fonts.
 
 parameters:
 
@@ -134,11 +137,11 @@ parameters:
 
   * `:$core-font`
 
-    Bypass fontconfig and load matching [PDF::Content::Font::CoreFont](https://pdf-raku.github.io/PDF-Content-raku/PDF/Content/Font/CoreFont) objects, rather than [PDF::Font::Loader::FontObj](https://pdf-raku.github.io/PDF-Font-Loader-raku/PDF/Font/Loader/FontObj) objects (both perform the [PDF::Content::FontObj](https://pdf-raku.github.io/PDF-Content-raku/PDF/Content/FontObj) role).
+    Bypass [FontConfig](https://pdf-raku.github.io/FontConfig-raku/FontConfig) and load matching [PDF::Content::Font::CoreFont](https://pdf-raku.github.io/PDF-Content-raku/PDF/Content/Font/CoreFont) objects, rather than [PDF::Font::Loader::FontObj](https://pdf-raku.github.io/PDF-Font-Loader-raku/PDF/Font/Loader/FontObj) objects (both perform the [PDF::Content::FontObj](https://pdf-raku.github.io/PDF-Content-raku/PDF/Content/FontObj) role).
 
   * `:$lang`
 
-    A RFC-3066-style language tag. `fontconfig` will select only fonts whose character set matches the preferred lang. See also [I18N::LangTags](https://modules.raku.org/dist/I18N::LangTags:cpan:UFOBAT).
+    A RFC-3066-style language tag. [FontConfig](https://pdf-raku.github.io/FontConfig-raku/FontConfig) will select only fonts whose character set matches the preferred lang. See also [I18N::LangTags](https://modules.raku.org/dist/I18N::LangTags:cpan:UFOBAT).
 
   * `*%props`
 
@@ -178,7 +181,7 @@ The `:all` option returns a sequence of all fonts, ordered best match first. Thi
 
 The `:limit($n)` is similar to `:all`, but returns at most the `$n` best matching fonts.
 
-Any additional options are treated as `FontConfig` pattern attributes. For example `:spacing<mono> will select monospace fonts.
+Any additional options are treated as a [FontConfig](https://pdf-raku.github.io/FontConfig-raku/FontConfig) pattern attributes. For example `:spacing<mono> will select monospace fonts.
 
 ```raku
 use PDF::Font::Loader;

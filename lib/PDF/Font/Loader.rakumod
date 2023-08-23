@@ -63,7 +63,7 @@ class PDF::Font::Loader:ver<0.7.3> {
         $class.load-font: :$family, :$enc, |c;
     }
 
-    # resolve font name via fontconfig
+    # resolve font name via FontConfig
     multi method load-font($class is copy = $?CLASS: Str:D :$family!, PDF::COS::Dict :$dict, :$quiet, |c) is hidden-from-backtrace {
 	my Str:D $file = $class.find-font(:$family, |c)
 	    || do {
@@ -165,6 +165,7 @@ PDF::Font::Loader
 
 =head1 Synopsis
 
+ =begin code :lang<raku>
  # load a font from a file
  use PDF::Font::Loader :&load-font;
  use PDF::Content::FontObj;
@@ -174,7 +175,8 @@ PDF::Font::Loader
  -- or --
  $deja = load-font( :file<t/fonts/DejaVuSans.ttf> );
 
- # find/load system fonts; requires fontconfig
+ # find/load the best matching system font
+ # *** requires FontConfig ***
  use PDF::Font::Loader :load-font, :find-font;
  $deja = load-font( :family<DejaVu>, :slant<italic> );
  my Str $file = find-font( :family<DejaVu>, :slant<italic> );
@@ -189,6 +191,7 @@ PDF::Font::Loader
     .say: 'Hello, world';
  }
  $pdf.save-as: "/tmp/example.pdf";
+ =end code
 
 =head2 Description
 
@@ -274,9 +277,10 @@ Prefer to load simple Type1 objects as L<PDF::Content::Font::CoreFont>, rather t
  my $vera = PDF::Font::Loader.load-font: :family<vera>;
  my $deja = PDF::Font::Loader.load-font: :family<Deja>, :weight<bold>, :stretch<condensed> :slant<italic>);
 
-Loads a font by a fontconfig name and attributes.
+Finds and loads the best-matching system font via L<FontConfig>.
 
-Note: Requires fontconfig to be installed on the system.
+Note: This method requires the Raku L<FontConfig> module to be installed,
+unless the `:core-font` option is used, to load only PDF core fonts.
 
 parameters:
 =begin item
@@ -310,14 +314,14 @@ Font slant, one of: C<normal>, C<oblique>, or C<italic>
 =begin item
 C<:$core-font>
 
-Bypass fontconfig and load matching L<PDF::Content::Font::CoreFont> objects, rather than L<PDF::Font::Loader::FontObj> objects (both perform the L<PDF::Content::FontObj> role).
+Bypass L<FontConfig> and load matching L<PDF::Content::Font::CoreFont> objects, rather than L<PDF::Font::Loader::FontObj> objects (both perform the L<PDF::Content::FontObj> role).
 
 =end item
 
 =begin item
 C<:$lang>
 
-A RFC-3066-style language tag. `fontconfig` will select only fonts whose character set matches the preferred lang. See also L<I18N::LangTags|https://modules.raku.org/dist/I18N::LangTags:cpan:UFOBAT>.
+A RFC-3066-style language tag. L<FontConfig> will select only fonts whose character set matches the preferred lang. See also L<I18N::LangTags|https://modules.raku.org/dist/I18N::LangTags:cpan:UFOBAT>.
 
 =end item
 
@@ -362,7 +366,7 @@ The `:all` option returns a sequence of all fonts, ordered best match first. Thi
 
 The `:limit($n)` is similar to `:all`, but returns at most the `$n` best matching fonts.
 
-Any additional options are treated as `FontConfig` pattern attributes. For example `:spacing<mono> will select monospace fonts.
+Any additional options are treated as a L<FontConfig> pattern attributes. For example `:spacing<mono> will select monospace fonts.
 
 =begin code :lang<raku>
 use PDF::Font::Loader;

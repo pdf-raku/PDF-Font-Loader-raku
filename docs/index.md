@@ -19,9 +19,9 @@ $deja = PDF::Font::Loader.load-font: :file<t/fonts/DejaVuSans.ttf>;
 -- or --
 $deja = load-font( :file<t/fonts/DejaVuSans.ttf> );
 
-# find/load system fonts; requires fontconfig
+# find/load the best matching system font
+# *** requires FontConfig ***
 use PDF::Font::Loader :load-font, :find-font;
-$deja = load-font( :family<DejaVu>, :slant<italic> );
 my Str $file = find-font( :family<DejaVu>, :slant<italic> );
 my PDF::Content::FontObj $deja-vu = load-font: :$file;
 
