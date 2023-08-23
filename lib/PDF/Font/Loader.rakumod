@@ -199,9 +199,19 @@ L<PDF::Lite>,  L<PDF::API6> and other PDF modules.
 
 =head3 load-font
 
-A class level method to create a new font object.
+A class level method to load a font from a font file, or pattern creating a new L<PDF::Font::Loader::FontObj> object.
 
-=head4 C<PDF::Font::Loader.load-font(Str :$file, Bool :$subset, :$enc, :$lang, :$dict, :$core-font, *%props);>
+=for code :lang<raku>
+multi method load-font(Str:D :$file, Bool :$subset, :$enc, :$dict);
+
+=para Loads a font from a given font file as a L<PDF::Font::Loader::FontObj> object.
+
+=for code :lang<raku>
+multi method load-font(Bool :$subset, :$enc, :$lang, :$core-font, *%patt);
+
+=para Finds a font using the `find-font` method on a pattern and loads it. If `:core-font` is True and the pattern
+matches a core-font, it is loaded as a L<PDF::Content::Font::CoreFont> object.
+
 
 Loads a font file.
 
@@ -215,20 +225,20 @@ Font file to load. Currently supported formats are:
 =item Postscript (C<.pfb>, or C<.pfa>)
 =item CFF (C<.cff>)
 
-TrueType Collections (C<.ttc>) are also accepted, but must be subsetted,
-if they are being embedded.
+TrueType Collections (C<.ttc>) and OpenType Collections (C<*.otc>) are also accepted,
+but must be subsetted, if they are being embedded.
 
 =end item
 
 =begin item
-C<:$subset> *(experimental)*
+C<:$subset>
 
 Subset the font for compaction. The font is reduced to the set
 of characters that have actually been encoded. This can greatly
 reduce the output size when the font is embedded in a PDF file.
 
 This feature currently works on OpenType, TrueType and CFF fonts and
-requires installation of the experimental L<HarfBuzz::Subset> module.
+requires installation of the L<HarfBuzz::Subset> module.
 =end item
 
 =begin item
@@ -238,11 +248,11 @@ Selects the encoding mode: common modes are `win`, `mac` and `identity-h`.
 
 =item `mac` Macintosh platform single byte encoding
 =item `win` Windows platform single byte encoding
-=item `identity-h` a degenerative two byte encoding mode
+=item `identity-h` a two byte encoding mode
 
 `win` is used as the default encoding for fonts with no more than 255 glyphs. `identity-h` is used otherwise.
 
-It is recommended that you set a single byte encoding such as `:enc<mac>` or `:enc<win>` when it known that
+It is recommended that you use a single byte encoding such as `:enc<mac>` or `:enc<win>` when it known that
 no more that 255 distinct characters will actually be used from the font within the PDF.
 =end item
 

@@ -45,9 +45,19 @@ Methods
 
 ### load-font
 
-A class level method to create a new font object.
+A class level method to load a font from a font file, or pattern creating a new [PDF::Font::Loader::FontObj](https://pdf-raku.github.io/PDF-Font-Loader-raku/PDF/Font/Loader/FontObj) object.
 
-#### `PDF::Font::Loader.load-font(Str :$file, Bool :$subset, :$enc, :$lang, :$dict, :$core-font, *%props);`
+```raku
+multi method load-font(Str:D :$file, Bool :$subset, :$enc, :$dict);
+```
+
+Loads a font from a given font file as a [PDF::Font::Loader::FontObj](https://pdf-raku.github.io/PDF-Font-Loader-raku/PDF/Font/Loader/FontObj) object.
+
+```raku
+multi method load-font(Bool :$subset, :$enc, :$lang, :$core-font, *%patt);
+```
+
+Finds a font using the `find-font` method on a pattern and loads it. If `:core-font` is True and the pattern matches a core-font, it is loaded as a [PDF::Content::Font::CoreFont](https://pdf-raku.github.io/PDF-Content-raku/PDF/Content/Font/CoreFont) object.
 
 Loads a font file.
 
@@ -65,13 +75,13 @@ parameters:
 
       * CFF (`.cff`)
 
-    TrueType Collections (`.ttc`) are also accepted, but must be subsetted, if they are being embedded.
+    TrueType Collections (`.ttc`) and OpenType Collections (`*.otc`) are also accepted, but must be subsetted, if they are being embedded.
 
-  * `:$subset` *(experimental)*
+  * `:$subset`
 
     Subset the font for compaction. The font is reduced to the set of characters that have actually been encoded. This can greatly reduce the output size when the font is embedded in a PDF file.
 
-    This feature currently works on OpenType, TrueType and CFF fonts and requires installation of the experimental [HarfBuzz::Subset](https://harfbuzz-raku.github.io/HarfBuzz-Subset-raku/HarfBuzz/Subset) module.
+    This feature currently works on OpenType, TrueType and CFF fonts and requires installation of the [HarfBuzz::Subset](https://harfbuzz-raku.github.io/HarfBuzz-Subset-raku/HarfBuzz/Subset) module.
 
   * `:$enc`
 
@@ -81,11 +91,11 @@ parameters:
 
       * `win` Windows platform single byte encoding
 
-      * `identity-h` a degenerative two byte encoding mode
+      * `identity-h` a two byte encoding mode
 
     `win` is used as the default encoding for fonts with no more than 255 glyphs. `identity-h` is used otherwise.
 
-    It is recommended that you set a single byte encoding such as `:enc<mac>` or `:enc<win>` when it known that no more that 255 distinct characters will actually be used from the font within the PDF.
+    It is recommended that you use a single byte encoding such as `:enc<mac>` or `:enc<win>` when it known that no more that 255 distinct characters will actually be used from the font within the PDF.
 
   * `:$dict`
 
