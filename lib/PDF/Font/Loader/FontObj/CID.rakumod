@@ -58,7 +58,7 @@ method !make-gid-map {
     PDF::COS::Stream.COERCE: { :$decoded };
 }
 
-method make-encoding-stream {
+method !make-encoding-stream {
 
     $.encoder.cid-cmap //= do {
         my $name = [~] (
@@ -79,7 +79,7 @@ method make-encoding-stream {
         });
     }
 
-    with $.encoder.cid-cmap {
+    given $.encoder.cid-cmap {
         when PDF::COS::Stream {
             .decoded = $.encoder.make-encoding-cmap;
         }
@@ -92,7 +92,7 @@ method finish-font($dict, :$save-widths, :$save-gids) {
         $dict<ToUnicode> //= self.make-to-unicode-stream;
     }
     if $.encoder.isa(PDF::Font::Loader::Enc::CMap) && $.encoder.code2cid {
-        $dict<Encoding> //= self.make-encoding-stream;
+        $dict<Encoding> //= self!make-encoding-stream;
     }
 
     $dict<DescendantFonts>[0]<W> = self!make-widths
@@ -145,5 +145,8 @@ This class is used for all fonts with a multi-byte (or potentially multi-byte) e
 =head3 Methods
 
 This class inherits from L<PDF::Font::Loader::FontObj> and has all its methods available.
+
+It provides CIS specific implementations of the `finish-font`,
+`font-descriptor` and `make-dict` methods, but introduces no new methods.
 
 =end pod
