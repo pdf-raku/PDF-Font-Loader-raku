@@ -371,7 +371,7 @@ The `:all` option returns a sequence of all fonts, ordered best match first. Thi
 
 The `:best($n)` is similar to `:all`, but returns at most the `$n` best matching fonts.
 
-Any additional options are treated as a L<FontConfig> pattern attributes. For example `:spacing<mono> will select monospace fonts.
+Any additional options are treated as a L<FontConfig> pattern attributes. For example `:spacing<mono>` will select monospace fonts.
 
 =begin code :lang<raku>
 use PDF::Font::Loader;
