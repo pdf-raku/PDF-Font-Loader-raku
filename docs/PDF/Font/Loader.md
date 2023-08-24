@@ -189,13 +189,14 @@ use PDF::Font::Loader;
 use Font::FreeType;
 use Font::FreeType::Face;
 my Font::FreeType $ft .= new;
-my Str @best = PDF::Font::Loader.find-font(:best(10), :!serif, :weight<bold>,);
+my $series = PDF::Font::Loader.find-font(:best(10), :!serif, :weight<bold>,);
+my Str @best = $series.Array;
 # prefer a font with kerning
-my $best-font = @best.first: -> $file {
+my Str $best-font = @best.first: -> $file {
     my Font::FreeType::Face $face = $ft.face: $file;
     $face.has-kerning;
 }
-# fall-back to best match without kerning
+# fall-back to best matching font without kerning
 $best-font //= @best.head;
 
 note "best font: " ~ $best-font;

@@ -20,7 +20,7 @@ $pdf.page(2).gfx.text: -> $gfx {
         ok $core-font == ($_ eq 'F5');
         my Bool $embed = !$core-font;
         my PDF::Content::FontObj $font = PDF::Font::Loader.load-font: :$dict, :$core-font, :$embed, :quiet;
-        ok $font.is-core-font == ($_ eq 'F5');
+        ok $font.is-core-font == $core-font;
         if $_ eq 'F1' {
             is $font.font-name, 'Cantarell-Oblique', 'font-name';
             is $font.enc, 'win', 'enc';
