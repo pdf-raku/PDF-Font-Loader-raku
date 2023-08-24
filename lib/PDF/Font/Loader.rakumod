@@ -100,19 +100,21 @@ class PDF::Font::Loader:ver<0.7.3> {
                      Weight  :$weight is copy = 'medium',
                      Stretch :$stretch = 'normal',
                      Slant   :$slant = 'normal',
-                     UInt    :$limit,
-                     Bool    :$all is copy = $limit.defined,
+                     UInt    :$limit, # deprecated
+                     UInt    :$best = $limit,
+                     Bool    :$seq, # deprecated
+                     Bool    :$all = $seq,
                      Bool    :$serif, # restrict to serif or sans-serif
                      :cid($), :differences($), :embed($), :enc($), :encoder($),
                      :font-name($), :font-descriptor($), :subset($),
-                     Bool    :$seq, # deprecated
                      *%props,
-                    ) is export(:find-font) is hidden-from-backtrace {
+                    ) is raw is export(:find-font) is hidden-from-backtrace {
 
-        if $seq {
-            warn ':seq option is deprecated. pelase use :all, or :$limit';
-           $all ||= 1;
-        }
+        warn ':seq option is deprecated. please use :all, or :$best'
+            with $seq;
+
+        warn ':limit option is deprecated. please use :all, or :$best'
+           with $limit;
 
        # https://wiki.archlinux.org/title/Font_configuration/Examples#Default_fonts
         with $serif {
@@ -128,8 +130,9 @@ class PDF::Font::Loader:ver<0.7.3> {
 
         my $FontConfig := try PDF::COS.required("FontConfig::Pattern");
         if $FontConfig === Nil {
+            $all = Nil;
+            $best = Nil;
             # Try for an older FontConfig version
-            $all = False;
             $FontConfig := try PDF::COS.required("FontConfig");
             if $FontConfig === Nil {
                 warn "FontConfig is required for the find-font method";
@@ -142,8 +145,9 @@ class PDF::Font::Loader:ver<0.7.3> {
         $patt.width  = $stretch unless $stretch eq 'normal';
         $patt.slant  = $slant   unless $slant eq 'normal';
 
-        if $all {
-            $patt.match-series(:$limit).map: *.file;
+        if $all || $best {
+            my $limit = $best; # deprecated in FontConfig
+            $patt.match-series(:$best).map: *.file;
         }
         else {
             with $patt.match -> $match {
@@ -347,6 +351,7 @@ find-font(Str :$family,     # e.g. :family<vera>
           Str     :$lang,   # e.g. :lang<jp>
           Bool    :$all,
           UInt    :$limit,
+          UInt    :$best = $limit,
           Bool    :$serif,  # serif(True) or sans-serif(False) fonts
           *%pattern,
           );
@@ -364,7 +369,7 @@ my $font = PDF::Font::Loader.load-font: :$file;
 
 The `:all` option returns a sequence of all fonts, ordered best match first. This method may be useful, if you wish to apply your own selection critera.
 
-The `:limit($n)` is similar to `:all`, but returns at most the `$n` best matching fonts.
+The `:best($n)` is similar to `:all`, but returns at most the `$n` best matching fonts.
 
 Any additional options are treated as a L<FontConfig> pattern attributes. For example `:spacing<mono> will select monospace fonts.
 
@@ -373,11 +378,16 @@ use PDF::Font::Loader;
 use Font::FreeType;
 use Font::FreeType::Face;
 my Font::FreeType $ft .= new;
-my Str $best-kerned-font = PDF::Font::Loader.find-font(:all, :!serif, :weight<bold>,).first: -> $file {
+my Str @best = PDF::Font::Loader.find-font(:best(10), :!serif, :weight<bold>,);
+# prefer a font with kerning
+my $best-font = @best.first: -> $file {
     my Font::FreeType::Face $face = $ft.face: $file;
     $face.has-kerning;
 }
-note "best kerned font: " ~ $best-kerned-font;
+# fall-back to best match without kerning
+$best-font //= @best.head;
+
+note "best font: " ~ $best-font;
 =end code
 
 =end pod

@@ -162,6 +162,7 @@ find-font(Str :$family,     # e.g. :family<vera>
           Str     :$lang,   # e.g. :lang<jp>
           Bool    :$all,
           UInt    :$limit,
+          UInt    :$best = $limit,
           Bool    :$serif,  # serif(True) or sans-serif(False) fonts
           *%pattern,
           );
@@ -179,7 +180,7 @@ my $font = PDF::Font::Loader.load-font: :$file;
 
 The `:all` option returns a sequence of all fonts, ordered best match first. This method may be useful, if you wish to apply your own selection critera.
 
-The `:limit($n)` is similar to `:all`, but returns at most the `$n` best matching fonts.
+The `:best($n)` is similar to `:all`, but returns at most the `$n` best matching fonts.
 
 Any additional options are treated as a [FontConfig](https://pdf-raku.github.io/FontConfig-raku/FontConfig) pattern attributes. For example `:spacing<mono> will select monospace fonts.
 
@@ -188,10 +189,15 @@ use PDF::Font::Loader;
 use Font::FreeType;
 use Font::FreeType::Face;
 my Font::FreeType $ft .= new;
-my Str $best-kerned-font = PDF::Font::Loader.find-font(:all, :!serif, :weight<bold>,).first: -> $file {
+my Str @best = PDF::Font::Loader.find-font(:best(10), :!serif, :weight<bold>,);
+# prefer a font with kerning
+my $best-font = @best.first: -> $file {
     my Font::FreeType::Face $face = $ft.face: $file;
     $face.has-kerning;
 }
-note "best kerned font: " ~ $best-kerned-font;
+# fall-back to best match without kerning
+$best-font //= @best.head;
+
+note "best font: " ~ $best-font;
 ```
 

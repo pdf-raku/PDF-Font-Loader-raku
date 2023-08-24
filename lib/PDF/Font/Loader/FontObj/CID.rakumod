@@ -59,7 +59,6 @@ method !make-gid-map {
 }
 
 method !make-encoding-stream {
-
     $.encoder.cid-cmap //= do {
         my $name = [~] (
             $.font-name, '-Custom',
