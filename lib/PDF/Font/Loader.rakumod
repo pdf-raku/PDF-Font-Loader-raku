@@ -101,14 +101,14 @@ class PDF::Font::Loader:ver<0.7.3> {
                      Stretch :$stretch = 'normal',
                      Slant   :$slant = 'normal',
                      UInt    :$limit, # deprecated
-                     UInt    :$best = $limit,
+                     UInt    :$best is copy = $limit,
                      Bool    :$seq, # deprecated
-                     Bool    :$all = $seq,
+                     Bool    :$all is copy = $seq,
                      Bool    :$serif, # restrict to serif or sans-serif
                      :cid($), :differences($), :embed($), :enc($), :encoder($),
                      :font-name($), :font-descriptor($), :subset($),
                      *%props,
-                    ) is export(:find-font) is hidden-from-backtrace {
+                    ) is raw is export(:find-font) is hidden-from-backtrace {
 
         warn ':seq option is deprecated. please use :all, or :$best'
             with $seq;

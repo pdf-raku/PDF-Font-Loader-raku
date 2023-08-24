@@ -19,7 +19,7 @@ $pdf.page(1).gfx.text: -> $gfx {
     my $dict = %fonts<F1>;
     my Bool $core-font = PDF::Font::Loader::Dict.is-core-font: :$dict;
     nok $core-font, 'is-core-font';
-    my PDF::Content::FontObj $f1 =  PDF::Font::Loader.load-font: :$dict, :$core-font;
+    my PDF::Content::FontObj $f1 = PDF::Font::Loader.load-font: :$dict, :$core-font;
     nok $f1.is-core-font;
     is $f1.font-name, 'courier', 'font-name';
     is $f1.enc, 'std', 'enc';
