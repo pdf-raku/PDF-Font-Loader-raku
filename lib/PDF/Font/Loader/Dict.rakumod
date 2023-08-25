@@ -260,7 +260,7 @@ for 1 .. $pdf.page-count {
     for %fonts.values -> $dict {
         unless %SeenFont{$dict}++ {
             my PDF::Content::FontObj $font = PDF::Font::Loader.load-font: :$dict, :quiet;
-            say sprintf(Fmt, .font-name, .type, .encoding, .is-embedded.&yn, .is-subset.&yn)
+            say sprintf(Fmt, .font-name, .type, .enc, .is-embedded.&yn, .is-subset.&yn)
                 given $font;
         }
     }

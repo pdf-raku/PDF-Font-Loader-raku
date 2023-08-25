@@ -78,7 +78,7 @@ parameters:
 
       * CFF (`.cff`)
 
-    TrueType Collections (`.ttc`) and OpenType Collections (`*.otc`) are also accepted, but must be subsetted, if they are being embedded.
+    TrueType Collections (`*.ttc`) and OpenType Collections (`*.otc`) are also accepted, but must be subsetted, if they are being embedded.
 
   * `:$subset`
 

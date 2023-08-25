@@ -1,6 +1,6 @@
 use v6;
 
-class PDF::Font::Loader:ver<0.7.3> {
+class PDF::Font::Loader:ver<0.7.4> {
 
     use Font::FreeType;
     use Font::FreeType::Face;
@@ -232,7 +232,7 @@ Font file to load. Currently supported formats are:
 =item Postscript (C<.pfb>, or C<.pfa>)
 =item CFF (C<.cff>)
 
-TrueType Collections (C<.ttc>) and OpenType Collections (C<*.otc>) are also accepted,
+TrueType Collections (C<*.ttc>) and OpenType Collections (C<*.otc>) are also accepted,
 but must be subsetted, if they are being embedded.
 
 =end item

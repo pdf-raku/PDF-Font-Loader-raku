@@ -145,7 +145,7 @@ This class is used for all fonts with a multi-byte (or potentially multi-byte) e
 
 This class inherits from L<PDF::Font::Loader::FontObj> and has all its methods available.
 
-It provides CIS specific implementations of the `finish-font`,
+It provides CID specific implementations of the `finish-font`,
 `font-descriptor` and `make-dict` methods, but introduces no new methods.
 
 =end pod
