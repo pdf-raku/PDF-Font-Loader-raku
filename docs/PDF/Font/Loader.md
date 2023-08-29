@@ -159,8 +159,7 @@ find-font(Str :$family,     # e.g. :family<vera>
           Slant   :$slant,
           Str     :$lang,   # e.g. :lang<jp>
           Bool    :$all,
-          UInt    :$limit,
-          UInt    :$best = $limit,
+          UInt    :$best,
           Bool    :$serif,  # serif(True) or sans-serif(False) fonts
           *%pattern,
           );

@@ -39,7 +39,7 @@ class PDF::Font::Loader::Dict {
     method is-core-font($?: FontDict :$dict! ) is export(:is-core-font) {
         $dict<Subtype> ~~ 'Type1'
         && ! $dict<FontDescriptor>.defined
-        && PDF::Content::Font::CoreFont.core-font-name($dict<BaseFont>).defined;
+        && PDF::Content::Font::CoreFont.core-font-name($dict<BaseFont> // 'courier').defined;
     }
 
     method is-embedded-font( FontDict :$dict! ) {
@@ -202,15 +202,15 @@ class PDF::Font::Loader::Dict {
         else {
             # no font descriptor. unembedded or core font
             my $font-name = $dict<BaseFont> // 'courier';
+            %opt ,= :$font-name;
 
-            if $dict<Subtype> ~~ 'Type1' {
+            if $?CLASS.is-core-font(:$dict) {
                 with PDF::Content::Font::CoreFont.core-font-name($font-name) {
                     # core font
                     %encoder<core-metrics> = Font::AFM.core-font: $_;
                     %opt<font-descriptor> = PDF::COS::Dict;
                 }
             }
-            %opt ,= :$font-name;
 
             given $font-name -> $family is copy {
 
