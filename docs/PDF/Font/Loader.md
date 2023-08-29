@@ -60,9 +60,7 @@ Loads a font from a given font file as a [PDF::Font::Loader::FontObj](https://pd
 multi method load-font(Bool :$subset, :$enc, :$lang, :$core-font, *%patt);
 ```
 
-Finds a font using the `find-font` method on a pattern and loads it. If `:core-font` is True and the pattern matches a core-font, it is loaded as a [PDF::Content::Font::CoreFont](https://pdf-raku.github.io/PDF-Content-raku/PDF/Content/Font/CoreFont) object.
-
-Loads a font file.
+Finds the best matching font using the `find-font` method on a pattern and loads it. If `:core-font` is True and the pattern matches a core-font, it is loaded as a [PDF::Content::Font::CoreFont](https://pdf-raku.github.io/PDF-Content-raku/PDF/Content/Font/CoreFont) object.
 
 parameters:
 
@@ -170,7 +168,7 @@ find-font(Str :$family,     # e.g. :family<vera>
 
 This method requires the optional [FontConfig](https://pdf-raku.github.io/FontConfig-raku/FontConfig) Raku module to be installed.
 
-Locates a matching font-file. Doesn't actually load it.
+Locates, font-files after sorting system fonts using the pattern. Normally the best matching font-file is returned, or multiple font files can be returned using the `:best($n)` or `:all` options.
 
 ```raku
 my $file = PDF::Font::Loader.find-font: :family<Deja>, :weight<bold>, :width<condensed>, :slant<italic>, :lang<en>;
@@ -178,7 +176,7 @@ say $file;  # /usr/share/fonts/truetype/dejavu/DejaVuSansCondensed-BoldOblique.t
 my $font = PDF::Font::Loader.load-font: :$file;
 ```
 
-The `:all` option returns a sequence of all fonts, ordered best match first. This method may be useful, if you wish to apply your own selection critera.
+The `:all` option returns a sequence of all fonts, ordered by best to worst matching. This method may be useful, if you wish to apply your own selection critera.
 
 The `:best($n)` is similar to `:all`, but returns at most the `$n` best matching fonts.
 
