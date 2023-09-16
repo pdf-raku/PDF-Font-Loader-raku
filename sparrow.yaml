@@ -25,9 +25,8 @@ tasks:
     language: Raku
     config:
       list:
-        # - 2022.04
         - 2022.07
-        - 2022.06
+        - 2023.08
     code: |
       my @state;
       for config()<list><> -> $v {
