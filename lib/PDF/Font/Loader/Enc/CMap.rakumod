@@ -168,7 +168,22 @@ method load-cmap(Str:D $_) {
             }
         }
         elsif /:s^ \d+ beginbfrange/ ff /^endbfrange/ {
-            if /:s [ '<' $<r>=[<xdigit>+] '>' ] ** 3/ {
+            if .contains('[') && /:s [ '<' $<r>=[<xdigit>+] '>' ] ** 2 '[' [ '<' $<s>=[<xdigit>+] '>' ]+ ']' / {
+                my $srcLo = @<r>[0].Str;
+                my $srcHi = @<r>[1].Str;
+                my $bytes = $srcLo.chars div 2;
+                my uint $lo = :16($srcLo);
+                my uint $hi = :16($srcHi);
+                my $i = 0;
+                for $lo .. $hi -> $cid {
+                    my $srcOrd = @<s>[$i++].Str // last;
+                    my $ord = :16($srcOrd);
+                    last unless self!add-code($cid, $ord);
+                    %!dec-width{$cid} = $bytes;
+                    %!enc-width{$ord++} = $bytes;
+                }
+            }
+            elsif /:s [ '<' $<r>=[<xdigit>+] '>' ] ** 3/ {
                 my $srcLo = @<r>[0].Str;
                 my $srcHi = @<r>[1].Str;
                 my $bytes = $srcLo.chars div 2;
