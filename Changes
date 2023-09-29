@@ -1,5 +1,8 @@
 {{$NEXT}}
 
+0.7.6  2023-09-29T17:14:01+13:00
+   - Fix a bug in parsing ToUnicode CMAPs #34
+
 0.7.5  2023-09-01T08:55:54+12:00
    - Attempted zef upload
 
