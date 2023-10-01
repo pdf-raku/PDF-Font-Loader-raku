@@ -217,9 +217,21 @@ method make-to-unicode-cmap(:$to-unicode = self.to-unicode) {
         my $code-hex = codepoint-to-hex($start-code);
 
         if $start-cid == $cid && $start-byte == $cid div 256 {
-            @cmap-char.push: char-fmt.sprintf($cid, $code-hex);
+            # look for a run of cids
+            $cid++ while $cid < last-char && $to-unicode[$cid + 1];
+            if $start-cid == $cid {
+                # <cid> <code>
+                @cmap-char.push: char-fmt.sprintf($cid, $code-hex);
+            }
+            else {
+                # multiple cids; use more compact representation:
+                # <start-cid> ,<end-cid> [ <code> ... ]
+                my @codes = ($start-cid .. $cid).map: { '<' ~ codepoint-to-hex($to-unicode[$_]) ~ '>'; }
+                @cmap-range.push: sprintf('<%04X> <%04X> [ %s ]', $start-cid, $cid,  @codes.join(' '));
+            }
         }
         else {
+            # <start-cid> <end-cid> <start-code>
             @cmap-range.push: $start-cid.fmt('<%04X> ') ~ char-fmt.sprintf($cid, $code-hex);
         }
     }
