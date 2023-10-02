@@ -11,9 +11,7 @@ Loads a font from a PDF font dictionary
 Description
 -----------
 
-Loads fonts from PDF font dictionaries.
-
-This an internal class, usually invoked from the [PDF::Font::Loader](https://pdf-raku.github.io/PDF-Font-Loader-raku/PDF/Font/Loader) `load-font` method to facilitate font loading from PDF font dictionaries.
+This an internal class, typically invoked from the [PDF::Font::Loader](https://pdf-raku.github.io/PDF-Font-Loader-raku/PDF/Font/Loader) `load-font` method to facilitate font loading from PDF font dictionaries.
 
 Example
 -------

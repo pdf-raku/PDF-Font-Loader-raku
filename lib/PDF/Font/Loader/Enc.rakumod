@@ -212,6 +212,7 @@ method make-to-unicode-cmap(:$to-unicode = self.to-unicode) {
         my uint8 $start-byte = $start-cid div 256;
         my uint32 $start-code = $ord;
 
+        # look for a run of ascending cids + ords
         while $cid < last-char && $to-unicode[$cid + 1] == $ord+1 && ($cid+1) div 256 == $start-byte {
             $cid++; $ord++;
         }
@@ -222,15 +223,15 @@ method make-to-unicode-cmap(:$to-unicode = self.to-unicode) {
             @cmap-range.push: $start-cid.fmt('<%04X> ') ~ char-fmt.sprintf($cid, $code-hex);
         }
         else {
-            # look for a run of cids
+            # look for a run ascending cids only
             my $ord-run-len = 0;
             my $last-ord := $to-unicode[$cid];
-            while $cid < last-char && (my $this-ord := $to-unicode[$cid + 1]) && ($cid+1) div 256 == $start-byte {
+            while $cid < last-char && $to-unicode[$cid + 1] && ($cid+1) div 256 == $start-byte {
+                my $this-ord := $to-unicode[$cid + 1];
                 if ($this-ord == $last-ord + 1) {
-                    if ++$ord-run-len >= 8 {
-                        # we've wandered into a signicant run of consecutive code points
-                        # that is better expressed as: <start-cid> <end-cid> <start-code>
-                        # back-off and break out
+                    if ++$ord-run-len >= 6 {
+                        # We've encountered a run of ascending cids + ords.
+                        # Process them more elegantly on our next loop.
                         $cid -= $ord-run-len;
                         last;
                     }

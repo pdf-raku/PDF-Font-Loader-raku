@@ -233,9 +233,7 @@ class PDF::Font::Loader::Dict {
 =begin pod
 =head2 Description
 
-Loads fonts from PDF font dictionaries.
-
-This an internal class, usually invoked from the L<PDF::Font::Loader> `load-font` method to facilitate font loading from PDF font dictionaries.
+This an internal class, typically invoked from the L<PDF::Font::Loader> `load-font` method to facilitate font loading from PDF font dictionaries.
 
 =head2 Example
 
