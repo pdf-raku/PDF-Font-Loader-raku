@@ -1,4 +1,5 @@
 {{$NEXT}}
+   - Also use #34 to improve compaction of ToUnicode CMaps 
 
 0.7.6  2023-09-29T17:14:01+13:00
    - Fix a bug in parsing ToUnicode CMAPs #34

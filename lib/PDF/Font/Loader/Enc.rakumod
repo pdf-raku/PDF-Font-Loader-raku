@@ -211,28 +211,48 @@ method make-to-unicode-cmap(:$to-unicode = self.to-unicode) {
         my uint16 $start-cid = $cid;
         my uint8 $start-byte = $start-cid div 256;
         my uint32 $start-code = $ord;
+
         while $cid < last-char && $to-unicode[$cid + 1] == $ord+1 && ($cid+1) div 256 == $start-byte {
             $cid++; $ord++;
         }
         my $code-hex = codepoint-to-hex($start-code);
 
-        if $start-cid == $cid && $start-byte == $cid div 256 {
+        if $cid > $start-cid {
+            # <start-cid> <end-cid> <start-code>
+            @cmap-range.push: $start-cid.fmt('<%04X> ') ~ char-fmt.sprintf($cid, $code-hex);
+        }
+        else {
             # look for a run of cids
-            $cid++ while $cid < last-char && $to-unicode[$cid + 1];
-            if $start-cid == $cid {
-                # <cid> <code>
-                @cmap-char.push: char-fmt.sprintf($cid, $code-hex);
+            my $ord-run-len = 0;
+            my $last-ord := $to-unicode[$cid];
+            while $cid < last-char && (my $this-ord := $to-unicode[$cid + 1]) && ($cid+1) div 256 == $start-byte {
+                if ($this-ord == $last-ord + 1) {
+                    if ++$ord-run-len >= 8 {
+                        # we've wandered into a signicant run of consecutive code points
+                        # that is better expressed as: <start-cid> <end-cid> <start-code>
+                        # back-off and break out
+                        $cid -= $ord-run-len;
+                        last;
+                    }
+                }
+                else {
+                    $ord-run-len = 0;
+                }
+
+                $last-ord := $this-ord;
+                $cid++
             }
-            else {
+
+            if $cid > $start-cid {
                 # multiple cids; use more compact representation:
                 # <start-cid> ,<end-cid> [ <code> ... ]
                 my @codes = ($start-cid .. $cid).map: { '<' ~ codepoint-to-hex($to-unicode[$_]) ~ '>'; }
                 @cmap-range.push: sprintf('<%04X> <%04X> [ %s ]', $start-cid, $cid,  @codes.join(' '));
             }
-        }
-        else {
-            # <start-cid> <end-cid> <start-code>
-            @cmap-range.push: $start-cid.fmt('<%04X> ') ~ char-fmt.sprintf($cid, $code-hex);
+            else {
+                # <cid> <code>
+                @cmap-char.push: char-fmt.sprintf($cid, $code-hex);
+            }
         }
     }
 
