@@ -1,6 +1,6 @@
 use v6;
 use Test;
-plan 2;
+plan 3;
 use PDF::IO::IndObj;
 use PDF::Grammar::PDF;
 use PDF::Grammar::PDF::Actions;
@@ -129,6 +129,10 @@ my $cmap = $ind-obj.object;
 my PDF::Font::Loader::Enc::CMap $encoder .= new: :$cmap, :$face, :!is-wide;
 ok $encoder.is-wide;
 
-my $str = "\x[3]~\0\x[4]\x[1]\x[F]\x[1]µ\x[1]l\x[1]u\x[1]\x[1E]\x[1]]\x[1]o\x[3]U\0\x[3]\x[1]\x[1E]\x[1]\x[9A]\0\x[3]\x[1]\x[2]\x[1]o\x[3]X\x[3]U\0\x[3]\x[3]î\x[3]ì\x[3]î\x[3]í\x[3]V\0";
+my $enc = "\x[3]~\0\x[4]\x[1]\x[F]\x[1]µ\x[1]l\x[1]u\x[1]\x[1E]\x[1]]\x[1]o\x[3]U\0\x[3]\x[1]\x[1E]\x[1]\x[9A]\0\x[3]\x[1]\x[2]\x[1]o\x[3]X\x[3]U\0\x[3]\x[3]î\x[3]ì\x[3]î\x[3]í\x[3]V";
+my $dec = '(Abukmeil, et al., 2021;';
 
-is $str.comb(/../).map({$encoder.decode($_, :str)}).join, '(Abukmeil, et al., 2021;';
+is $encoder.decode($enc, :str), $dec;
+is-deeply $encoder.encode($dec, :str), $enc;
+
+
