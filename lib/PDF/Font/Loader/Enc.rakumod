@@ -262,7 +262,7 @@ method make-to-unicode-cmap(:$to-unicode = self.to-unicode) {
     $.make-cmap: $!cmap, @content;
 }
 
-method make-cmap(PDF::COS::Stream $cmap, @content, |c) {
+method make-cmap(PDF::COS::Stream:D $cmap, @content, |c) {
     my PDF::IO::Writer $writer .= new;
     my $cmap-name = $writer.write: $cmap<CMapName>.content;
     my $cid-system-info = $writer.write: $!cmap<CIDSystemInfo>.content;
@@ -369,7 +369,7 @@ font-size / 1000 to compute actual widths.
 =begin code :lang<raku>
 method width($cid) returns UInt
 =end code
-R/w accessor to get or sey the width of a character.
+R/w accessor to get or set the width of a character.
 
 =head3 glyph
 

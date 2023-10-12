@@ -104,17 +104,17 @@ sub valid-codepoint($_) {
 constant %Ligatures = %(
     do {
         (
-            [0x66,0x66]       => 0xFB00, # ff
-            [0x66,0x69]       => 0xFB01, # fi
-            [0x66,0x6C]       => 0xFB02, # fl
-            [0x66,0x66,0x69]  => 0xFB03, # ffi
-            [0x66,0x66,0x6C]  => 0xFB04, # ffl
-            [0x66,0x74]       => 0xFB05, # ft
-            [0x73,0x74]       => 0xFB06, # st
+            'ff'     => 0xFB00,
+            'fi'     => 0xFB01,
+            'fl'     => 0xFB02,
+            'ffi'    => 0xFB03,
+            'ffl'    => 0xFB04,
+            'ft'     => 0xFB05,
+            'st'     => 0xFB06,
             # .. + more, see https://en.wikipedia.org/wiki/Orthographic_ligature
         ).map: {
             my $k = 0;
-            for .key {
+            for .key.ords {
                 $k +<= 16;
                 $k += $_;
             }
@@ -158,7 +158,7 @@ method load-cmap(Str:D $_) {
     for .lines {
         if /:s \d+ begincodespacerange/ ff /endcodespacerange/ {
             if /:s [ '<' $<r>=[<xdigit>+] '>' ] ** 2 / {
-
+                # <xxxx> <xxxx>
                 my ($from, $to) = @<r>.map: { [.Str.comb(/../).map({ :16($_)})] };
                 my CodeSpace $codespace .= new: :from(@$from), :to(@$to);
                 my $bytes := $codespace.bytes;
@@ -201,6 +201,7 @@ method load-cmap(Str:D $_) {
         }
         elsif /:s^ \d+ beginbfchar/ ff /^endbfchar/ {
             if /:s [ '<' $<r>=[<xdigit>+] '>' ] ** 2 / {
+                # <xxxx> <xxxx>
                 my $srcCode = @<r>[0].Str;
                 my $bytes = $srcCode.chars div 2;
                 my $code = :16($srcCode);
@@ -213,6 +214,7 @@ method load-cmap(Str:D $_) {
         }
         elsif /:s^ \d+ begincidrange/ ff /^endcidrange/ {
             if /:s [ '<' $<r>=[<xdigit>+] '>' ] ** 2 $<c>=[<digit>+] / {
+                # <xxxx> <xxxx> dddd
                 my Int ($from, $to) = @<r>.map: { :16(.Str) };
                 my Int $cid = $<c>.Int;
                 for $from .. $to -> $code {
@@ -223,6 +225,7 @@ method load-cmap(Str:D $_) {
         }
         elsif /:s^ \d+ begincidchar/ ff /^endcidchar/ {
             if /:s '<' $<r>=[<xdigit>+] '>' $<c>=[<digit>+] / {
+                # <xxxx> dddd
                 my Int $code = :16($<r>.Str);
                 my Int $cid = $<c>.Int;
                 %!cid2code{$cid}  = $code;
