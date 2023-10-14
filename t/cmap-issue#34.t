@@ -133,6 +133,6 @@ my $enc = "\x[3]~\0\x[4]\x[1]\x[F]\x[1]µ\x[1]l\x[1]u\x[1]\x[1E]\x[1]]\x[1]o\x[3
 my $dec = '(Abukmeil, et al., 2021;';
 
 is $encoder.decode($enc, :str), $dec;
-is-deeply $encoder.encode($dec, :str), $enc;
+is $encoder.encode($dec, :str), $enc;
 
 

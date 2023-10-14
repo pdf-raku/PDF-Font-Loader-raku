@@ -16,8 +16,9 @@ has uint32 @.to-unicode;
 has Int %.charset{Int};
 has %!enc-width is Hash::int;
 has %!dec-width is Hash::int;
-has %.code2cid is Hash::int; # decoding mappings
-has %.cid2code is Hash::int; # encoding mappings
+has %!ligature  is Hash::int;
+has %.code2cid  is Hash::int; # decoding mappings
+has %.cid2code  is Hash::int; # encoding mappings
 has uint8 @cid-width;
 has PDF::COS::Stream $.cid-cmap is rw; # Type0 /Encoding CMap
 has uint8 $!max-width = 1;
@@ -102,25 +103,14 @@ sub valid-codepoint($_) {
 }
 
 constant %Ligatures = %(
-    do {
-        (
-            'ff'     => 0xFB00,
-            'fi'     => 0xFB01,
-            'fl'     => 0xFB02,
-            'ffi'    => 0xFB03,
-            'ffl'    => 0xFB04,
-            'ft'     => 0xFB05,
-            'st'     => 0xFB06,
-            # .. + more, see https://en.wikipedia.org/wiki/Orthographic_ligature
-        ).map: {
-            my $k = 0;
-            for .key.ords {
-                $k +<= 16;
-                $k += $_;
-            }
-            $k => .value;
-        }
-    }
+    'ff'     => 0xFB00,
+    'fi'     => 0xFB01,
+    'fl'     => 0xFB02,
+    'ffi'    => 0xFB03,
+    'ffl'    => 0xFB04,
+    'ft'     => 0xFB05,
+    'st'     => 0xFB06,
+    # .. + more, see https://en.wikipedia.org/wiki/Orthographic_ligature
 );
 
 method enc-width($code is raw) {
@@ -131,25 +121,16 @@ method enc-width($code is raw) {
     }
 }
 
-sub hex-to-codepoint(Str() $x is copy) {
+sub hex-to-codepoints(Str() $x) {
     if $x.chars <= 4 {
         :16($x);
     }
     else {
-        with %Ligatures{:16($x)} -> $lig {
-            $lig;
-        }
-        else {
-            unless  $x.chars %% 4 {
-                my \pad = 4  -  $x.chars % 4;
-                $x = '0' x pad  ~  $x;
-            }
-
-            # utf16 encoding semantics
-            my int16 @words = $x.comb(/..../).map: { :16($_) };
-            my utf16 $buf .= new(@words);
-            $buf.decode.ord;
-        }
+        my \pad =  $x.chars %% 4 ?? '' !! '0' x (4  -  $x.chars % 4);
+        # utf16 encoding semantics
+        my int16 @words = (pad ~ $x).comb(/..../).map: { :16($_) };
+        my utf16 $buf .= new(@words);
+        $buf.decode.ords;
     }
 }
 
@@ -177,11 +158,8 @@ method load-cmap(Str:D $_) {
                 my uint $hi = :16($srcHi);
                 my $i = 0;
                 for $lo .. $hi -> $cid {
-                    my $srcOrd = @<s>[$i++].Str // last;
-                    my $ord := :16($srcOrd);
-                    last unless self!add-code($cid, $ord);
-                    %!dec-width{$cid} = $bytes;
-                    %!enc-width{$ord} = $bytes;
+                    my @ords = hex-to-codepoints(@<s>[$i++] // last);
+                    last unless self!add-code($cid, @ords, $bytes);
                 }
             }
             elsif /:s [ '<' $<r>=[<xdigit>+] '>' ] ** 3/ {
@@ -191,11 +169,10 @@ method load-cmap(Str:D $_) {
                 my $bytes = $srcLo.chars div 2;
                 my uint $lo = :16($srcLo);
                 my uint $hi = :16($srcHi);
-                my $ord = hex-to-codepoint(@<r>[2]);
+                my @ords = hex-to-codepoints(@<r>[2]);
                 for $lo .. $hi -> $cid {
-                    last unless self!add-code($cid, $ord);
-                    %!dec-width{$cid} = $bytes;
-                    %!enc-width{$ord++} = $bytes;
+                    last unless self!add-code($cid, @ords, $bytes);
+                    @ords.tail++;
                 }
             }
         }
@@ -204,12 +181,9 @@ method load-cmap(Str:D $_) {
                 # <xxxx> <xxxx>
                 my $srcCode = @<r>[0].Str;
                 my $bytes = $srcCode.chars div 2;
-                my $code = :16($srcCode);
-                my $ord = hex-to-codepoint(@<r>[1]);
-                if self!add-code($code, $ord) {
-                    %!dec-width{$code} = $bytes;
-                    %!enc-width{$ord} = $bytes;
-                }
+                my $cid = :16($srcCode);
+                my @ords = hex-to-codepoints(@<r>[1]);
+                self!add-code($cid, @ords, $bytes);
             }
         }
         elsif /:s^ \d+ begincidrange/ ff /^endcidrange/ {
@@ -270,8 +244,8 @@ method make-encoding-cmap {
             my $start-i = $i;
             my $width = $.enc-width($code);
             my $d = $width * 2;
-            my \cid-fmt   := '<%%0%sX>'.sprintf: $d;
-            my \char-fmt  := '<%%0%sX> %%d'.sprintf: $d;
+            my \cid-fmt   := '<%0' ~ $d ~ 'X>';
+            my \char-fmt  := '<%0' ~ $d ~ 'X> %d';
             my \range-fmt := cid-fmt ~ ' ' ~ char-fmt;
 
             while $i < n && @codes[$i+1] == $code+1 && $.enc-width($code+1) == $width {
@@ -291,16 +265,25 @@ method make-encoding-cmap {
     $.make-cmap: $!cid-cmap, @content;
 }
 
-method !add-code(Int $cid, Int $ord) {
+method !add-code(Int $cid, @ords, Int $bytes) {
     my $ok = True;
-    if valid-codepoint($ord) {
-        %!charset{$ord} = $cid;
-        @!to-unicode[$cid] = $ord;
+    if @ords > 1 {
+        # A ligature
+        %!ligature{$cid} := @ords.Slip;
+        %!dec-width{$cid} = $bytes;
+        with %Ligatures{@ords>>.chr.join} -> $lig {
+            # Ligature has a standard Unicode mapping
+            @!to-unicode[$cid] = $lig;
+            %!charset{$lig} = $cid;
+        }
     }
     else {
-        with %Ligatures{$ord} -> $lig {
-            %!charset{$lig} = $cid;
-            @!to-unicode[$cid] = $lig;
+        my $ord := @ords.head;
+        if valid-codepoint($ord) {
+            %!charset{$ord} = $cid;
+            @!to-unicode[$cid] = $ord;
+            %!dec-width{$cid} = $bytes;
+            %!enc-width{$ord} = $bytes;
         }
         elsif 0xFFFF < $ord < 0xFFFFFFFF {
             warn sprintf("skipping possible unmapped ligature: U+%X...", $ord);
@@ -409,7 +392,7 @@ multi method decode(Str $byte-string, :cids($)!) {
 }
 
 multi method decode(Str $s, :ords($)!) {
-    @.protect: {self.decode($s, :cids).map({ @!to-unicode[$_] || Empty})};
+    @.protect: {self.decode($s, :cids).map({ @!to-unicode[$_] || %!ligature{$_} || Empty})};
 }
 
 multi method decode(Str $byte-string --> Str) {
