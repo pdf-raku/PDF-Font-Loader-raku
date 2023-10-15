@@ -14,16 +14,25 @@ role PDF::Font::Loader::Enc::Glyphic
 
     # Callback for character mapped glyphs
     method lookup-glyph(UInt $ord) {
-        my $glyph-name;
-        if self.charset{$ord} -> $cid {
-            if $.cid-to-gid-map[$cid] -> $gid {
-                $glyph-name = $!face.glyph-name-from-index($gid);
+        my Str $glyph-name;
+        my uint32 $gid;
+        if $ord {
+            if self.charset{$ord} -> $cid {
+                $gid = $.cid-to-gid-map[$cid];
             }
+            $gid ||= $!face.glyph-index($ord);
         }
-        $glyph-name //= $!face.glyph-name($ord.chr) // callsame() // '.notdef';
-        # Not sure what glyph names are universally supported. This is conservative.
-        $.encoding-updated = True
-            unless $glyph-name ~~ %Font::AFM::Glyphs{$ord.chr};
+
+        if $gid {
+            $glyph-name = $!face.glyph-name-from-index($gid) // callsame() // $ord.chr.uniname;
+            # Not sure what glyph names are universally supported. This is conservative.
+            $.encoding-updated = True
+                unless $glyph-name ~~ %Font::AFM::Glyphs{$ord.chr};
+        }
+        else {
+            $glyph-name = '.notdef';
+        }
+
         $glyph-name;
     }
 

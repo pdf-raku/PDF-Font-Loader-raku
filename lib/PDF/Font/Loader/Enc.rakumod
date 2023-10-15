@@ -133,6 +133,8 @@ method !make-glyph(UInt $cid) {
         $name = $_
              unless .starts-with('.');
     }
+    $name //= 'glyph-' ~ $gid;
+
     PDF::Font::Loader::Glyph.new: :$name, :$code-point, :$cid, :$gid, :$ax, :$sx;
 }
 
