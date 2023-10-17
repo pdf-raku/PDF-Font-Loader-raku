@@ -16,7 +16,7 @@ has uint32 @.to-unicode;
 has Int %.charset{Int};
 has %!enc-width is Hash::int;
 has %!dec-width is Hash::int;
-has %!ligature  is Hash::int;
+has Slip %!ligature;
 has %.code2cid  is Hash::int; # decoding mappings
 has %.cid2code  is Hash::int; # encoding mappings
 has uint8 @cid-width;
@@ -284,9 +284,6 @@ method !add-code(Int $cid, @ords, Int $bytes) {
             @!to-unicode[$cid] = $ord;
             %!dec-width{$cid} = $bytes;
             %!enc-width{$ord} = $bytes;
-        }
-        elsif 0xFFFF < $ord < 0xFFFFFFFF {
-            warn sprintf("skipping possible unmapped ligature: U+%X...", $ord);
         }
         else {
             warn sprintf("skipping invalid ord(s) in CMAP: U+%X...", $ord);
