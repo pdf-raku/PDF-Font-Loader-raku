@@ -192,12 +192,13 @@ sub code-batches($name, @content) is export(:code-batches) {
 
 sub codepoint-to-hex(UInt $_) {
     my $buf = .chr.encode("utf16");
-    my \words = +$buf;
-    my $fmt = words > 1 || $buf[0] >= 256 ?? '%04X' !! '%02X';
-    my $s = $buf[0].fmt($fmt);
-    $buf == words > 1
-        ?? $s ~ $buf[1].fmt("%04X") # 4 byte
-        !! $s;                      # variable bytes
+    my \IsWide = +$buf > 1;
+    my \Fmt = IsWide || $buf[0] >= 256 ?? '%04X' !! '%02X';
+    my $s = $buf[0].fmt(Fmt);
+
+    IsWide
+        ?? $s ~ $buf[1].fmt(Fmt) # 4 byte
+        !! $s;                   # 1-2 bytes
 }
 
 method make-to-unicode-cmap(:$to-unicode = self.to-unicode) {
