@@ -97,10 +97,6 @@ method codespaces is rw {
         }
     );
 }
-sub valid-codepoint($_) {
-    # not an exhaustive check
-    $_ <= 0x10FFFF && ! (0xD800 <= $_ <= 0xDFFF);
-}
 
 constant %Ligatures = %(
     'ff'     => 0xFB00,
@@ -279,16 +275,10 @@ method !add-code(Int $cid, @ords, Int $bytes) {
     }
     else {
         my $ord := @ords.head;
-        if valid-codepoint($ord) {
-            %!charset{$ord} = $cid;
-            @!to-unicode[$cid] = $ord;
-            %!dec-width{$cid} = $bytes;
-            %!enc-width{$ord} = $bytes;
-        }
-        else {
-            warn sprintf("skipping invalid ord(s) in CMAP: U+%X...", $ord);
-            $ok = False;
-        }
+        %!charset{$ord} = $cid;
+        @!to-unicode[$cid] = $ord;
+        %!dec-width{$cid} = $bytes;
+        %!enc-width{$ord} = $bytes;
     }
     $ok;
 }
