@@ -155,7 +155,7 @@ method load-cmap(Str:D $_) {
                 my $i = 0;
                 for $lo .. $hi -> $cid {
                     my @ords = hex-to-codepoints(@<s>[$i++] // last);
-                    last unless self!add-code($cid, @ords, $bytes);
+                    self!add-code($cid, @ords, $bytes);
                 }
             }
             elsif /:s [ '<' $<r>=[<xdigit>+] '>' ] ** 3/ {
@@ -167,7 +167,7 @@ method load-cmap(Str:D $_) {
                 my uint $hi = :16($srcHi);
                 my @ords = hex-to-codepoints(@<r>[2]);
                 for $lo .. $hi -> $cid {
-                    last unless self!add-code($cid, @ords, $bytes);
+                    self!add-code($cid, @ords, $bytes);
                     @ords.tail++;
                 }
             }
@@ -262,7 +262,6 @@ method make-encoding-cmap {
 }
 
 method !add-code(Int $cid, @ords, Int $bytes) {
-    my $ok = True;
     if @ords > 1 {
         # A ligature
         %!ligature{$cid} := @ords.Slip;
@@ -280,7 +279,6 @@ method !add-code(Int $cid, @ords, Int $bytes) {
         %!dec-width{$cid} = $bytes;
         %!enc-width{$ord} = $bytes;
     }
-    $ok;
 }
 
 method set-encoding($ord, $cid) {
