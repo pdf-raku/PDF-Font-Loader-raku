@@ -1,4 +1,6 @@
 {{$NEXT}}
+
+0.7.8  2023-11-13T06:38:11+13:00
    - Further streamline CMAP encoding. Remove redundant code-point checks.
    - Minor ligature and glyph lookup fixes
 
