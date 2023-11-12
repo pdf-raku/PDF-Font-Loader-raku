@@ -17,7 +17,7 @@ use PDF::Content::FontObj;
 my PDF::Content::FontObj $deja;
 $deja = PDF::Font::Loader.load-font: :file<t/fonts/DejaVuSans.ttf>;
 -- or --
-$deja = load-font( :file<t/fonts/DejaVuSans.ttf> );
+$deja = load-font: :file<t/fonts/DejaVuSans.ttf>;
 
 # find/load the best matching system font
 # *** requires FontConfig ***

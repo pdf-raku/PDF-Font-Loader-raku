@@ -1,4 +1,6 @@
 {{$NEXT}}
+   - Further streamline CMAP encoding. Remove redundant code-point checks.
+   - Minor ligature and glyph lookup fixes
 
 0.7.7  2023-10-15T07:18:39+13:00
    - Fix CMap encoder to handle string decoding of non

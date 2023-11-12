@@ -51,7 +51,7 @@ The widths of all glyphs, indexed by CID, in the range `first-char` to `last-cha
 method width($cid) returns UInt
 ```
 
-R/w accessor to get or sey the width of a character.
+R/w accessor to get or set the width of a character.
 
 ### glyph
 
