@@ -20,7 +20,7 @@ class PDF::Font::Loader:ver<0.7.8> {
         $class.load-font: :$font-buf, |c;
     }
 
-    my subset Type1 where .font-format ~~ 'Type 1'|'CFF' && !.is-internally-keyed-cid;
+    my subset Type1 where .font-format ~~ 'Type 1'|'CFF'|'OpenType' && !.is-internally-keyed-cid;
     my subset CIDEncoding of Str where m/^[identity|utf]/;
     multi method load-font(
         $?: Font::FreeType::Face :$face!,

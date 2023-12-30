@@ -168,8 +168,8 @@ method encode($text is raw, |c) {
 
 method !font-type-entry returns Str {
     given $!face.font-format {
-        when 'Type 1'|'CFF' { 'Type1' }
-        when 'TrueType'|'OpenType' { 'TrueType' }
+        when 'Type 1'|'CFF'|'OpenType' { 'Type1' }
+        when 'TrueType' { 'TrueType' }
         default { fail "unable to handle font type: $_" }
     }
 }
@@ -203,13 +203,18 @@ method !make-other-font-file(Blob:D $buf) {
 
     given $!face.font-format {
         when 'OpenType' {
-            %dict<Subtype> = /<CIDFontType0C>;
+            %dict<Subtype> = $!face.is-internally-keyed-cid
+                ?? /<CIDFontType0C> !! /<OpenType>;
         }
         when 'CFF' {
-            # Peek at the buffer to distinguish simple CFF from OpenType/CFF
-            # See https://learn.microsoft.com/en-us/typography/opentype/spec/otff#organization-of-an-opentype-font
-            my subset OpenTypeCFF of Blob:D where .subbuf(0,4).decode('latin-1') eq 'OTTO';
-            %dict<Subtype> = ($buf ~~ OpenTypeCFF) ?? /<OpenType> !! /<Type1C>;
+            %dict<Subtype> = /<Type1C>;
+            if Font::FreeType.^ver <= v0.5.4 {
+                # Peek at the buffer to distinguish simple CFF from OpenType/CFF
+                # See https://learn.microsoft.com/en-us/typography/opentype/spec/otff#organization-of-an-opentype-font
+                my subset OpenTypeCFF of Blob:D where .subbuf(0,4).decode('latin-1') eq 'OTTO';
+                %dict<Subtype> = /<OpenType>
+                    if $buf ~~ OpenTypeCFF;
+            }
         }
     }
 
@@ -274,7 +279,7 @@ method font-descriptor {
             $dict<FontWeight> //= .usWeightClass;
             $dict<AvgWidth> //= .xAvgCharWidth;
 
-            if $!face.font-format ~~ 'FreeType'|'OpenType' {
+            if $!face.is-internally-keyed-cid {
                 # applicable to CID font descriptors
                 my $buf = .panose.Blob;
                 $buf.prepend: (.sFamilyClass div 256, .sFamilyClass mod 256);

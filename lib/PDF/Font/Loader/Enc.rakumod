@@ -232,7 +232,7 @@ method make-to-unicode-cmap(:$to-unicode = self.to-unicode) {
             while $cid < last-char && $to-unicode[$cid + 1] && ($cid+1) div 256 == $start-byte {
                 my $this-ord := $to-unicode[$cid + 1];
                 if ($this-ord == $last-ord + 1) {
-                    if ++$ord-run-len >= 6 {
+                    if ++$ord-run-len >= 5 {
                         # We've encountered a run of ascending cids + ords.
                         # Process them more elegantly on our next loop.
                         $cid -= $ord-run-len;

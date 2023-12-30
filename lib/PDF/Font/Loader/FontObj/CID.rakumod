@@ -24,8 +24,8 @@ submethod TWEAK {
 # /Subtype entry for the descendant CID font
 method !cid-font-type-entry {
     given $.face.font-format {
-        when 'CFF' { 'CIDFontType0' }
-        when 'TrueType'|'OpenType'    {'CIDFontType2'}
+        when 'CFF'|'OpenType' { 'CIDFontType0' }
+        when 'TrueType'       {'CIDFontType2'}
         default { fail "unable to handle CID font type: $_" }
     }
 }
