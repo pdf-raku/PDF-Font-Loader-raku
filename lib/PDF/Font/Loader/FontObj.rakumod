@@ -46,7 +46,7 @@ enum <Width Height>;
 
 has Font::FreeType::Face:D $.face is required handles<underline-thickness underline-position>;
 use PDF::Font::Loader::Enc;
-has PDF::Font::Loader::Enc $!encoder handles <decode first-char last-char widths has-encoding glyph get-glyphs glyph-width height stringwidth>;
+has PDF::Font::Loader::Enc $!encoder handles <decode first-char last-char widths has-encoding glyph get-glyphs glyph-width height stringwidth encode-cids>;
 method encoder { $!encoder }
 has Blob $.font-buf;
 has PDF::COS::Dict $!dict;
@@ -463,6 +463,39 @@ method kern(Str $text) {
     }
 
     @chunks, self.stringwidth($text) + $kernwidth.round;
+}
+
+method shape(Str $text) {
+    my @shaped;
+    my uint16 @cids;
+    my FT_UInt $prev-cid = 0;
+    my FT_Vector $kerning .= new;
+    my FT_Face $struct = $!face.raw;
+    my $scale = 1000 / $!face.units-per-EM;
+    my int $width = 0;
+
+    for $text.ords -> $ord {
+        my FT_UInt $cid = $struct.FT_Get_Char_Index( $ord );
+        if $cid {
+            $!encoder.set-encoding($ord, $cid);
+            $width += .ax with self.get-glyphs($ord.chr)[0];
+            if $prev-cid {
+                ft-try({ $struct.FT_Get_Kerning($prev-cid, $cid, FT_KERNING_UNSCALED, $kerning); });
+                if $kerning.x || $kerning.y {
+                    my int $kx = ($kerning.x * $scale).round;
+                    my int $ky = ($kerning.y * $scale).round;
+                    $width  += $kx;
+                    @shaped.push: $.encode-cids: @cids;
+                    @shaped.push: Complex.new(-$kx, $ky) ;
+                    @cids = ();
+                }
+            }
+            @cids.push: $cid;
+        }
+        $prev-cid = $cid;
+    }
+    @shaped.push($.encode-cids: @cids) if @cids;
+    @shaped, $width;
 }
 
 method !make-subset {

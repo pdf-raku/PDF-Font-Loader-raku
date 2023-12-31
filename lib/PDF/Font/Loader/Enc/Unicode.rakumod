@@ -41,7 +41,7 @@ method enc-width($_ is raw) {
     default { 1 }
 }
 
-method allocate(Int $ord) {
+method add-encoding(Int $ord) {
     my uint $cid = $.face.raw.FT_Get_Char_Index($ord);
     my uint32 $code = 0;
 

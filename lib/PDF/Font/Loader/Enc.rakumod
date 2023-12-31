@@ -285,7 +285,7 @@ method make-cmap(PDF::COS::Stream:D $cmap, @content, |c) {
         --END--
 }
 
-method !font-kerning(Str $text is copy) {
+method !font-kerning(Str $text) {
     my FT_UInt $prev-idx = 0;
     my FT_Vector $kerning .= new;
     my $struct = $.face.raw;

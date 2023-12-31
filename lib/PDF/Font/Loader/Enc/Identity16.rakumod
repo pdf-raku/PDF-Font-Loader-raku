@@ -3,6 +3,9 @@ use PDF::Font::Loader::Enc;
 class PDF::Font::Loader::Enc::Identity16
     is PDF::Font::Loader::Enc {
 
+use PDF::Content::Font::Encoder;
+also does PDF::Content::Font::Encoder;
+
     use Font::FreeType::Face;
     use Font::FreeType::Raw;
     use Font::FreeType::Raw::Defs;
@@ -10,30 +13,44 @@ class PDF::Font::Loader::Enc::Identity16
     use PDF::IO::Util :&pack;
 
     has Font::FreeType::Face $.face is required;
+    has FT_Face $!raw;
     has uint32 @!to-unicode;
     has UInt %.charset{UInt};
     has UInt $.min-index;
     has UInt $.max-index;
     has atomicint $!init = 0;
 
+    submethod TWEAK {
+        $!raw = $!face.raw;
+    }
+
     method is-wide {True}
 
+    method set-encoding($ord, $cid) {
+        @!to-unicode[$cid] ||= $ord;
+        %!charset{$ord} ||= $cid;        
+        $cid;
+    }
+
+    method add-encoding(UInt:D $ord) {
+        self.set-encoding: $ord, $!raw.FT_Get_Char_Index($ord);
+    }
+
     multi method encode(Str $text, :cids($)!) {
-        my $face-struct = $!face.raw;
         $.lock.protect: {
             blob16.new: $text.ords.map: -> $ord {
-                my uint $cid = $face-struct.FT_Get_Char_Index($ord);
-                @!to-unicode[$cid] ||= $ord;
-                %!charset{$ord} ||= $cid;
-                $cid;
+                self.add-encoding($ord);
             }
         }
     }
 
+    method encode-cids(@cids is raw) {
+        my blob8 $buf := pack(@cids, 16);
+        $buf.decode: 'latin-1';
+    }
+
     multi method encode(Str $text --> Str) {
-        my blob8 $buf := pack(self.encode($text, :cids), 16);
-        my $hex-string = $buf.decode: 'latin-1';
-        PDF::COS.coerce: :$hex-string;
+        self.encode-cids: self.encode($text, :cids);
     }
 
     method !setup-decoding {

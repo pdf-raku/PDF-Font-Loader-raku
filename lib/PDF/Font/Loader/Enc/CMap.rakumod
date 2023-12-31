@@ -8,6 +8,9 @@ unit class PDF::Font::Loader::Enc::CMap
 use PDF::Font::Loader::Enc::Glyphic;
 also does PDF::Font::Loader::Enc::Glyphic;
 
+use PDF::Content::Font::Encoder;
+also does PDF::Content::Font::Encoder;
+
 use PDF::IO::Util :&pack;
 use PDF::COS::Stream;
 use Hash::int;
@@ -301,7 +304,7 @@ my constant %PreferredEnc = do {
 has UInt $!next-cid = 0;
 has %!used-cid;
 method use-cid($_) { %!used-cid{$_}++ }
-method allocate($ord) {
+method add-encoding($ord) {
     my $cid := %PreferredEnc{$ord};
     if $cid && !@!to-unicode[$cid] && !%!used-cid{$cid} && !self!skip-cid-block($cid) {
         self.set-encoding($ord, $cid);
@@ -385,13 +388,12 @@ multi method decode(Str $byte-string --> Str) {
 }
 
 multi method encode(Str $text, :cids($)!) {
-    @.protect: {$text.ords.map: { %!charset{$_} // self.allocate: $_ }}
+    @.protect: {$text.ords.map: { %!charset{$_} // self.add-encoding: $_ }}
 }
 multi method encode(Str $text --> Str) {
-    self!encode-buf($text).decode: 'latin-1';
+    self.encode-cids: self.encode($text, :cids);
 }
-method !encode-buf(Str $text --> Buf:D) {
-    my uint32 @cids = self.encode($text, :cids);
+method encode-cids(@cids is raw --> Str:D) {
     my buf8 $buf;
 
     if $.is-wide {
@@ -409,7 +411,7 @@ method !encode-buf(Str $text --> Buf:D) {
         $buf .= new: @cids;
     }
 
-    $buf;
+    $buf.decode: "latin-1"
 }
 
 =begin pod
