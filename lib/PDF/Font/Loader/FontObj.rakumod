@@ -430,7 +430,7 @@ method kern(Str $text) {
     my @chunks;
 
     if $!face.has-kerning {
-        my FT_UInt      $prev-idx = 0;
+        my FT_UInt      $prev-gid = 0;
         my FT_Vector    $kerning .= new;
         my FT_Face      $face-struct = $!face.raw;
         my FT_GlyphSlot $glyph-slot = $face-struct.glyph;
@@ -438,10 +438,10 @@ method kern(Str $text) {
         my $scale = 1000 / $!face.units-per-EM;
 
         for $text.ords -> $char-code {
-            my FT_UInt $this-idx = $face-struct.FT_Get_Char_Index( $char-code );
-            if $this-idx {
-                if $prev-idx {
-                    ft-try({ $face-struct.FT_Get_Kerning($prev-idx, $this-idx, FT_KERNING_UNSCALED, $kerning); });
+            my FT_UInt $this-gid = $face-struct.FT_Get_Char_Index( $char-code );
+            if $this-gid {
+                if $prev-gid {
+                    ft-try({ $face-struct.FT_Get_Kerning($prev-gid, $this-gid, FT_KERNING_UNSCALED, $kerning); });
                     my $dx := ($kerning.x * $scale).round;
                     if $dx {
                         @chunks.push: $str;
@@ -451,7 +451,7 @@ method kern(Str $text) {
                     }
                 }
                 $str ~= $char-code.chr;
-                $prev-idx = $this-idx;
+                $prev-gid = $this-gid;
             }
         }
 
@@ -466,35 +466,46 @@ method kern(Str $text) {
 }
 
 method shape(Str $text) {
+    my Numeric $width = 0.0;
     my @shaped;
-    my uint16 @cids;
-    my FT_UInt $prev-cid = 0;
-    my FT_Vector $kerning .= new;
-    my FT_Face $struct = $!face.raw;
-    my $scale = 1000 / $!face.units-per-EM;
-    my int $width = 0;
 
-    for $text.ords -> $ord {
-        my FT_UInt $cid = $struct.FT_Get_Char_Index( $ord );
-        if $cid {
-            $!encoder.set-encoding($ord, $cid);
-            $width += .ax with self.get-glyphs($ord.chr)[0];
-            if $prev-cid {
-                ft-try({ $struct.FT_Get_Kerning($prev-cid, $cid, FT_KERNING_UNSCALED, $kerning); });
-                if $kerning.x || $kerning.y {
-                    my int $kx = ($kerning.x * $scale).round;
-                    my int $ky = ($kerning.y * $scale).round;
-                    $width  += $kx;
-                    @shaped.push: $.encode-cids: @cids;
-                    @shaped.push: Complex.new(-$kx, $ky) ;
-                    @cids = ();
+    if $!face.has-kerning {
+        my FT_UInt      $prev-gid = 0;
+        my FT_Vector    $kerning .= new;
+        my FT_Face      $face-struct = $!face.raw;
+        my FT_GlyphSlot $glyph-slot = $face-struct.glyph;
+        my uint16       @cids;
+        my $scale = 1000 / $!face.units-per-EM;
+
+        for $text.ords -> $ord {
+            my uint16 $cid = $!encoder.protect: { $!encoder.charset{$ord} // $!encoder.add-encoding($ord) };
+            if $cid {
+                $width += self.glyph($cid).ax;
+                my FT_UInt $this-gid = $face-struct.FT_Get_Char_Index( $ord );
+                if $prev-gid && $this-gid {
+                    ft-try({ $face-struct.FT_Get_Kerning($prev-gid, $this-gid, FT_KERNING_UNSCALED, $kerning); });
+                    my $dx := ($kerning.x * $scale).round;
+                    my $dy := ($kerning.y * $scale).round;
+                    if $dx || $dy {
+                        @shaped.push: $!encoder.encode-cids: @cids;
+                        @cids = ();
+                        @shaped.push: Complex.new(-$dx, $dy);
+                        $width += $dx;
+                    }
                 }
+                @cids.push: $cid;
+                $prev-gid = $this-gid;
             }
-            @cids.push: $cid;
         }
-        $prev-cid = $cid;
+
+        @shaped.push: $!encoder.encode-cids: @cids
+            if @cids;
     }
-    @shaped.push($.encode-cids: @cids) if @cids;
+    else {
+        @shaped.push: $!encoder.encode: $text;
+        $width = self.stringwidth($text);
+    }
+
     @shaped, $width;
 }
 
