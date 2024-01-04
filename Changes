@@ -1,4 +1,5 @@
 {{$NEXT}}
+   - Add auto-loading of type-1 AFM metrics
 
 0.7.8  2023-11-13T06:38:11+13:00
    - Further streamline CMAP encoding. Remove redundant code-point checks.

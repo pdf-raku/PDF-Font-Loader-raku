@@ -15,9 +15,19 @@ class PDF::Font::Loader:ver<0.7.8> {
 
     proto method load-font($?: |c) is export(:load-font) {*};
 
-    multi method load-font($class = $?CLASS: IO() :$file!, |c) {
+    multi sub find-afm(IO:D $file where .extension ~~ 'pfa'|'pfb') {
+        my $afm-file = $file.Str.subst(/'.pf'[a|b]$/, '.afm');
+        $afm-file.IO.e ?? $afm-file !! Str;
+    }
+    multi sub find-afm(IO:D $file where .extension ~~ 'PFA'|'PFB') {
+        my $afm-file = $file.Str.subs(/'.PF'[A|B]$/, '.AFM');
+        $afm-file.IO.e ?? $afm-file !! Str;
+    }
+    multi sub find-afm($) { Str }
+
+    multi method load-font($class = $?CLASS: IO() :$file!, Str :$afm = find-afm($file), |c) {
         my Blob $font-buf = $file.slurp: :bin;
-        $class.load-font: :$font-buf, |c;
+        $class.load-font: :$font-buf, :$afm, |c;
     }
 
     my subset Type1 where .font-format ~~ 'Type 1'|'CFF'|'OpenType' && !.is-internally-keyed-cid;

@@ -1,6 +1,6 @@
 use v6;
 use Test;
-plan 25;
+plan 26;
 use PDF::Grammar::Test :is-json-equiv;
 use PDF::Font::Loader :Weight, :Stretch, :Slant;
 use PDF::Content::FontObj;
@@ -23,6 +23,7 @@ my $times = PDF::Font::Loader.load-font: :file<t/fonts/TimesNewRomPS.pfa>;
 # - Vera defines: AB˚. Doesn't include: ♥♣✔
 # - Ring (˚) is not in WinsAnsii encoding
 is-deeply $times.encode("A♥♣✔˚B", :str), "A\x[1]B", '.encode(...) sanity';
+is-json-equiv $times.shape("flAVX" ), (["\x[2]A", <128+0i>, "VX"], 2594.0), '.shape(...)';
 
 is $vera.stringwidth("RVX", :!kern), 2064, 'stringwidth :!kern';
 is $vera.stringwidth("RVX", :kern), 2064 - 55, 'stringwidth :kern';
@@ -47,11 +48,11 @@ is-json-equiv $times-dict, {
     :Encoding{
         :Type("Encoding")
         :BaseEncoding<WinAnsiEncoding>,
-        :Differences[1, "ring"],
+        :Differences[1, "ring", "fl"],
     },
     :FirstChar(1),
-    :LastChar(66),
-    :Widths[flat 333,  0 xx 63,  722, 667],
+    :LastChar(88),
+    :Widths[flat 333, 556, 0 xx 62, 722, 667, 0 xx 19, 722, 0, 722],
 }, "to-dict";
 
 for ($times => "Á®ÆØ",

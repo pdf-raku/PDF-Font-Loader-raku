@@ -4,6 +4,7 @@ use PDF::Content::FontObj;
 unit class PDF::Font::Loader::FontObj
     does PDF::Content::FontObj;
 
+use Font::AFM;
 use PDF::COS;
 use PDF::COS::Dict;
 use PDF::COS::Name;
@@ -61,9 +62,16 @@ has Bool $.embed = $!font-descriptor.defined;
 has Bool $!finished;
 has Bool $!gids-updated;
 has Bool $!build-widths;
+has Str $.afm;
+has Font::AFM $!metrics;
 
 sub subsetter {
     PDF::COS.required("HarfBuzz::Subset")
+}
+
+method !metrics {
+    $!metrics //= Font::AFM.new: :name(.IO.absolute)
+        with $!afm;
 }
 
 submethod TWEAK(
@@ -74,6 +82,8 @@ submethod TWEAK(
     :%encoder,
     Str :$prefix is copy,
 ) {
+
+    $!face.attach-file($_) with $!afm;
 
     if $!embed {
         if self!font-type-entry eq 'TrueType' {
@@ -465,10 +475,12 @@ method kern(Str $text) {
     @chunks, self.stringwidth($text) + $kernwidth.round;
 }
 
-method shape(Str $text) {
+method shape(Str $text is copy) {
     my Numeric $width = 0.0;
     my @shaped;
 
+    $text = .ligature-subs($text) with self!metrics;
+ 
     if $!face.has-kerning {
         my FT_UInt      $prev-gid = 0;
         my FT_Vector    $kerning .= new;
