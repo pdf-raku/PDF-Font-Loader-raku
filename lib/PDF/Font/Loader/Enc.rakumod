@@ -12,9 +12,23 @@ use PDF::COS::Stream;
 my constant Glyph = PDF::Font::Loader::Glyph;
 enum <Width Height>;
 
+constant %Ligatures is export(:Ligatures) = %(
+    'ff'     => 0xFB00,
+    'fi'     => 0xFB01,
+    'fl'     => 0xFB02,
+    'ffi'    => 0xFB03,
+    'ffl'    => 0xFB04,
+    'ft'     => 0xFB05,
+    'st'     => 0xFB06,
+    # .. + more, see https://en.wikipedia.org/wiki/Orthographic_ligature
+);
+
+constant %LigatureExpansion = %Ligatures.map({.value => .key.ords}).Hash;
+
 has uint16 @.cid-to-gid-map;
 has uint $.first-char;
 has uint16 @!widths;
+has Slip %.ligature;
 has Bool $.widths-updated is rw;
 has Bool $.encoding-updated is rw;
 has PDF::COS::Stream $.cmap is rw; # /ToUnicode CMap
@@ -201,61 +215,72 @@ sub codepoint-to-hex(UInt $_) {
         !! $s;                   # 1-2 bytes
 }
 
+sub ligature-to-hex(UInt @codes) {
+    my $buf = @codes>>.chr.join.encode("utf16");
+    $buf>>.fmt('%04X').join;
+}
+
 method make-to-unicode-cmap(:$to-unicode = self.to-unicode) {
     my @content;
     my @cmap-char;
     my @cmap-range;
     my \last-char  = $.last-char;
     my \char-fmt  := '<%04X> <%s>';
+    my constant lig-fmt = '<%04X> [<%s>]';
 
     loop (my uint16 $cid = $.first-char; $cid <= last-char; $cid++) {
-        my uint32 $ord = $to-unicode[$cid]
-            || next;
-        my uint16 $start-cid = $cid;
-        my uint8 $start-byte = $start-cid div 256;
-        my uint32 $start-code = $ord;
-
-        # look for a run of ascending cids + ords
-        while $cid < last-char && $to-unicode[$cid + 1] == $ord+1 && ($cid+1) div 256 == $start-byte {
-            $cid++; $ord++;
+        my uint32 $ord = $to-unicode[$cid];
+        with %!ligature{$cid} // %LigatureExpansion{$ord} {
+            my $lig-codes-hex = ligature-to-hex($_);
+            @cmap-char.push: lig-fmt.sprintf($cid, $lig-codes-hex);
         }
-        my $code-hex = codepoint-to-hex($start-code);
+        elsif ($ord) {
+            my uint16 $start-cid = $cid;
+            my uint8 $start-byte = $start-cid div 256;
+            my uint32 $start-code = $ord;
 
-        if $cid > $start-cid {
-            # <start-cid> <end-cid> <start-code>
-            @cmap-range.push: $start-cid.fmt('<%04X> ') ~ char-fmt.sprintf($cid, $code-hex);
-        }
-        else {
-            # look for a run ascending cids only
-            my $ord-run-len = 0;
-            my $last-ord := $to-unicode[$cid];
-            while $cid < last-char && $to-unicode[$cid + 1] && ($cid+1) div 256 == $start-byte {
-                my $this-ord := $to-unicode[$cid + 1];
-                if ($this-ord == $last-ord + 1) {
-                    if ++$ord-run-len >= 5 {
-                        # We've encountered a run of ascending cids + ords.
-                        # Process them more elegantly on our next loop.
-                        $cid -= $ord-run-len;
-                        last;
-                    }
-                }
-                else {
-                    $ord-run-len = 0;
-                }
-
-                $last-ord := $this-ord;
-                $cid++
+            # look for a run of ascending cids + ords
+            while $cid < last-char && $to-unicode[$cid + 1] == $ord+1 && ($cid+1) div 256 == $start-byte {
+                $cid++; $ord++;
             }
+            my $code-hex = codepoint-to-hex($start-code);
 
             if $cid > $start-cid {
-                # multiple cids; use more compact representation:
-                # <start-cid> ,<end-cid> [ <code> ... ]
-                my @codes = ($start-cid .. $cid).map: { '<' ~ codepoint-to-hex($to-unicode[$_]) ~ '>'; }
-                @cmap-range.push: sprintf('<%04X> <%04X> [ %s ]', $start-cid, $cid,  @codes.join(' '));
+                # <start-cid> <end-cid> <start-code>
+                @cmap-range.push: $start-cid.fmt('<%04X> ') ~ char-fmt.sprintf($cid, $code-hex);
             }
             else {
-                # <cid> <code>
-                @cmap-char.push: char-fmt.sprintf($cid, $code-hex);
+                # look for a run ascending cids only
+                my $ord-run-len = 0;
+                my $last-ord := $to-unicode[$cid];
+                while $cid < last-char && $to-unicode[$cid + 1] && ($cid+1) div 256 == $start-byte {
+                    my $this-ord := $to-unicode[$cid + 1];
+                    if ($this-ord == $last-ord + 1) {
+                        if ++$ord-run-len >= 5 {
+                            # We've encountered a run of ascending cids + ords.
+                            # Process them more elegantly on our next loop.
+                            $cid -= $ord-run-len;
+                            last;
+                        }
+                    }
+                    else {
+                        $ord-run-len = 0;
+                    }
+
+                    $last-ord := $this-ord;
+                    $cid++
+                }
+
+                if $cid > $start-cid {
+                    # multiple cids; use more compact representation:
+                    # <start-cid> ,<end-cid> [ <code> ... ]
+                    my @codes = ($start-cid .. $cid).map: { '<' ~ codepoint-to-hex($to-unicode[$_]) ~ '>'; }
+                    @cmap-range.push: sprintf('<%04X> <%04X> [ %s ]', $start-cid, $cid,  @codes.join(' '));
+                }
+                else {
+                    # <cid> <code>
+                    @cmap-char.push: char-fmt.sprintf($cid, $code-hex);
+                }
             }
         }
     }

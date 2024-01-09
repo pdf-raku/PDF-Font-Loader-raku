@@ -5,28 +5,32 @@ unit class PDF::Font::Loader::FontObj
     does PDF::Content::FontObj;
 
 use Font::AFM;
-use PDF::COS;
+use Font::FreeType::Error;
+use Font::FreeType::Face;
+use Font::FreeType::Raw::Defs;
+use Font::FreeType::Raw::TT_Sfnt;
+use Font::FreeType::Raw;
+use Font::FreeType:ver(v0.3.0+);
+use HarfBuzz::Font;
+use HarfBuzz::Font::FreeType;
+use HarfBuzz::Glyph;
+use HarfBuzz::Shaper;
+use NativeCall;
 use PDF::COS::Dict;
 use PDF::COS::Name;
 use PDF::COS::Stream;
-use PDF::IO::Blob;
-use PDF::IO::Util :pack;
-use NativeCall;
+use PDF::COS;
+use PDF::Content::Font::CoreFont;
+use PDF::Content::Font;
+use PDF::Content:ver(v0.4.8+);
 use PDF::Font::Loader::Enc::CMap;
 use PDF::Font::Loader::Enc::Identity16;
 use PDF::Font::Loader::Enc::Type1;
 use PDF::Font::Loader::Enc::Unicode;
 use PDF::Font::Loader::Glyph;
 use PDF::Font::Loader::Type1::Stream;
-use Font::FreeType:ver(v0.3.0+);
-use Font::FreeType::Face;
-use Font::FreeType::Error;
-use Font::FreeType::Raw;
-use Font::FreeType::Raw::Defs;
-use Font::FreeType::Raw::TT_Sfnt;
-use PDF::Content:ver(v0.4.8+);
-use PDF::Content::Font;
-use PDF::Content::Font::CoreFont;
+use PDF::IO::Blob;
+use PDF::IO::Util :pack;
 
 constant Px = 64.0;
 sub prefix:</>($name) { PDF::COS::Name.COERCE($name) };
@@ -92,13 +96,18 @@ submethod TWEAK(
                     unless $!subset {
                         # Its a TrueType collection which is not directly supported as a format,
                         # however, HarfBuzz::Subset will convert it for us.
-                        die "The HarfBuzz::Subset module is required to embed TrueType Collection font $!font-name"
-                            if (try subsetter()) === Nil;
-                        $!subset = True;
+                        if (try subsetter()) === Nil {
+                            warn "The HarfBuzz::Subset module is required to embed TrueType Collection font $!font-name";
+                        }
+                        else {
+                            $!subset = True;
+                            $!embed = False;
+                        }
                     }
                 }
                 when 'wOFF' {
-                    die "unable to embed wOFF font $!font-name";
+                    warn "unable to embed wOFF font $!font-name";
+                    $!embed = False;
                 }
             }
         }
@@ -475,7 +484,45 @@ method kern(Str $text) {
     @chunks, self.stringwidth($text) + $kernwidth.round;
 }
 
-method shape(Str $text is copy) {
+multi method shape(Str $text where $!face.font-format ~~ 'TrueType'|'OpenType') {
+    my HarfBuzz::Font() $font = %( :blob($!font-buf) );
+    my HarfBuzz::Shaper $hb .= new: :buf{ :$text }, :$font;
+    my uint32 @ords = $text.ords;
+    my @shaped;
+    my uint16 @cids;
+    my int $cluster = 0;
+    my uint16 $gid = 0;
+    my @cid-to-gid-map := $!encoder.cid-to-gid-map;
+    my Numeric $width = 0;
+
+    for $hb.shape -> HarfBuzz::Glyph $g {
+        my $dx  := $g.pos.x-offset;
+        my $dy  := $g.pos.y-offset;
+        my $gid := $g.gid;
+        my $cid := @cid-to-gid-map[$gid] || $gid;
+
+        if $g.cluster > $cluster + 1 {
+            $!encoder.ligatures{$cid} //= @ords[$cluster .. $g.cluster-1].Slip;
+        }
+
+        $cluster = $g.cluster;
+        $!encoder.add-encoding($cid, @ords[$cluster])
+            unless $!encoder.to-unicode[$cid];
+        $width += self.glyph($cid).ax;
+
+        if $dx || $dy {
+            @shaped.push: $!encoder.encode-cids(@cids) if @cids;
+            @cids = ();
+            @shaped.push: Complex.new(-$dx, -$dy);
+            $width += $dx;
+        }
+        @cids.push: $cid;
+    }
+    @shaped.push: $!encoder.encode-cids(@cids) if @cids;
+    @shaped, $width;
+}
+
+multi method shape(Str $text is copy) {
     my Numeric $width = 0.0;
     my @shaped;
 

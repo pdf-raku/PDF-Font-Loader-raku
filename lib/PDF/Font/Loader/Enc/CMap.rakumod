@@ -1,5 +1,5 @@
 use v6;
-use PDF::Font::Loader::Enc :&code-batches;
+use PDF::Font::Loader::Enc :&code-batches, :%Ligatures;
 
 #| CMap based encoding/decoding
 unit class PDF::Font::Loader::Enc::CMap
@@ -19,7 +19,6 @@ has uint32 @.to-unicode;
 has Int %.charset{Int};
 has %!enc-width is Hash::int;
 has %!dec-width is Hash::int;
-has Slip %!ligature;
 has %.code2cid  is Hash::int; # decoding mappings
 has %.cid2code  is Hash::int; # encoding mappings
 has uint8 @cid-width;
@@ -100,17 +99,6 @@ method codespaces is rw {
         }
     );
 }
-
-constant %Ligatures = %(
-    'ff'     => 0xFB00,
-    'fi'     => 0xFB01,
-    'fl'     => 0xFB02,
-    'ffi'    => 0xFB03,
-    'ffl'    => 0xFB04,
-    'ft'     => 0xFB05,
-    'st'     => 0xFB06,
-    # .. + more, see https://en.wikipedia.org/wiki/Orthographic_ligature
-);
 
 method enc-width($code is raw) {
    %!enc-width{$code} // do {
@@ -267,7 +255,7 @@ method make-encoding-cmap {
 method !add-code(Int $cid, @ords, Int $bytes) {
     if @ords > 1 {
         # A ligature
-        %!ligature{$cid} := @ords.Slip;
+        %.ligature{$cid} := @ords.Slip;
         %!dec-width{$cid} = $bytes;
         with %Ligatures{@ords>>.chr.join} -> $lig {
             # Ligature has a standard Unicode mapping
@@ -380,7 +368,7 @@ multi method decode(Str $byte-string, :cids($)!) {
 }
 
 multi method decode(Str $s, :ords($)!) {
-    @.protect: {self.decode($s, :cids).map({ @!to-unicode[$_] || %!ligature{$_} || Empty})};
+    @.protect: {self.decode($s, :cids).map({ @!to-unicode[$_] || %.ligature{$_} || Empty})};
 }
 
 multi method decode(Str $byte-string --> Str) {
