@@ -25,7 +25,7 @@ jobs:
       - uses: Raku/setup-raku@v1
         with:
           raku-version: ${{ matrix.raku-version }}
-       - name: Linux specific setup
+      - name: Linux specific setup
         if: contains(matrix.os, 'ubuntu')
         run: |
           sudo apt-get install -y libharfbuzz-dev
