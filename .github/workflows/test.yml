@@ -25,9 +25,16 @@ jobs:
       - uses: Raku/setup-raku@v1
         with:
           raku-version: ${{ matrix.raku-version }}
-      - name: Install Libraries (MacOS)
-        if: matrix.os == 'macOS-latest'
-        run: brew install openssl
+       - name: Linux specific setup
+        if: contains(matrix.os, 'ubuntu')
+        run: |
+          sudo apt-get install -y libharfbuzz-dev
+      - name: macOS specific setup
+        if: contains(matrix.os, 'macOS')
+        run: |
+          brew update
+          brew install harfbuzz
+          brew install openssl
       - name: Install Dependencies
         run: |
           # install and test if need be (includes [test-depends])
