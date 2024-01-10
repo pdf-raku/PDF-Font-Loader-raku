@@ -11,6 +11,7 @@ use Font::FreeType::Raw::Defs;
 use Font::FreeType::Raw::TT_Sfnt;
 use Font::FreeType::Raw;
 use Font::FreeType:ver(v0.3.0+);
+use HarfBuzz::Feature;
 use HarfBuzz::Font;
 use HarfBuzz::Font::FreeType;
 use HarfBuzz::Glyph;
@@ -485,8 +486,8 @@ method kern(Str $text) {
 }
 
 multi method shape(Str $text where $!face.font-format ~~ 'TrueType'|'OpenType') {
-    my HarfBuzz::Font() $font = %( :blob($!font-buf) );
-    my HarfBuzz::Shaper $hb .= new: :buf{ :$text }, :$font;
+    my HarfBuzz::Font() $font = %( :blob($!font-buf), );
+    my HarfBuzz::Shaper $shaper .= new: :buf{ :$text }, :$font;
     my uint32 @ords = $text.ords;
     my @shaped;
     my uint16 @cids;
@@ -494,21 +495,32 @@ multi method shape(Str $text where $!face.font-format ~~ 'TrueType'|'OpenType') 
     my uint16 $gid = 0;
     my @cid-to-gid-map := $!encoder.cid-to-gid-map;
     my Numeric $width = 0;
+    my UInt $i;
+    my HarfBuzz::Glyph $g := $shaper[$i=0];
 
-    for $hb.shape -> HarfBuzz::Glyph $g {
+    while $g.defined {
         my $dx  := $g.pos.x-offset;
         my $dy  := $g.pos.y-offset;
         my $gid := $g.gid;
         my $cid := @cid-to-gid-map[$gid] || $gid;
+        my $glyph := self.glyph($cid);
+        my HarfBuzz::Glyph $g-next := $shaper[++$i];
+        my $cluster-end = do with $g-next { .cluster } else { @ords.elems }
 
-        if $g.cluster > $cluster + 1 {
-            $!encoder.ligatures{$cid} //= @ords[$cluster .. $g.cluster-1].Slip;
+        if $cluster-end > $cluster + 1 {
+            $!encoder.ligature{$cid} //= @ords[$cluster .. $cluster-end-1].Slip;
+        }
+        else {
+            my $cp := $glyph.code-point || @ords[$cluster];
+            with $!encoder.charset{$cp} {
+                warn "whoa $cid: $cp != $_" unless $cp == $_;
+            }
+            else {
+                $!encoder.set-encoding($cid, $cp);
+            }
         }
 
-        $cluster = $g.cluster;
-        $!encoder.add-encoding($cid, @ords[$cluster])
-            unless $!encoder.to-unicode[$cid];
-        $width += self.glyph($cid).ax;
+        $width += $glyph.ax;
 
         if $dx || $dy {
             @shaped.push: $!encoder.encode-cids(@cids) if @cids;
@@ -517,6 +529,7 @@ multi method shape(Str $text where $!face.font-format ~~ 'TrueType'|'OpenType') 
             $width += $dx;
         }
         @cids.push: $cid;
+        $g := $g-next;
     }
     @shaped.push: $!encoder.encode-cids(@cids) if @cids;
     @shaped, $width;
