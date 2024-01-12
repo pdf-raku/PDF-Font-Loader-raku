@@ -21,4 +21,4 @@ tasks:
     code: |
       set -e
       sudo apt-get -y update 
-      sudo apt-get install -y libfontconfig1-dev libfreetype-dev
+      sudo apt-get install -y libfontconfig1-dev libfreetype-dev libharfbuzz-dev
