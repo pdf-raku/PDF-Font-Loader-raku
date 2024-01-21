@@ -14,14 +14,30 @@ also does PDF::Content::Font::Encoder;
 
     has Font::FreeType::Face $.face is required;
     has FT_Face $!raw;
-    has uint32 @!to-unicode;
     has UInt %.charset{UInt};
     has UInt $.min-index;
     has UInt $.max-index;
-    has atomicint $!init = 0;
+    has uint32 @.to-unicode is built;
 
     submethod TWEAK {
         $!raw = $!face.raw;
+        if self.cid-to-gid-map -> $cid-gid {
+            my $gid-uni:= $!face.index-to-unicode;
+            for $cid-gid.kv -> $cid, $gid {
+                if $gid {
+                    my $cp := $gid-uni[$gid];
+                    if $cp {
+                        @!to-unicode[$cid] = $cp
+                    }
+                    else {
+                        @!used-cid[$cid] = 1;
+                    }
+                }
+            }
+        }
+        else {
+            @!to-unicode = $!face.index-to-unicode;
+        }
     }
 
     method is-wide {True}
@@ -33,7 +49,22 @@ also does PDF::Content::Font::Encoder;
     }
 
     method add-encoding(UInt:D $ord) {
-        self.set-encoding: $ord, $!raw.FT_Get_Char_Index($ord);
+        my $gid = $!raw.FT_Get_Char_Index($ord);
+        my $cid;
+        if self.cid-to-gid-map -> $map {
+            if $ord <= $!raw.num-glyphs && !@!to-unicode[$ord] && !@!used-cid[$ord] {
+                $cid = $ord;
+            }
+            else {
+                $cid = self.allocate-cid;
+            }
+            $map[$cid] = $gid
+                if $cid;
+        }
+        else {
+            $cid = $gid;
+        }
+        self.set-encoding: $ord, $cid
     }
 
     multi method encode(Str $text, :cids($)!) {
@@ -44,6 +75,17 @@ also does PDF::Content::Font::Encoder;
         }
     }
 
+    has UInt $!next-cid = 0;
+    has uint8 @!used-cid;
+    method allocate-cid {
+        repeat {
+            $!next-cid++;
+        } while @!used-cid[$!next-cid] || @!to-unicode[$!next-cid] && $!next-cid <= $!raw.num-glyphs;
+        my $cid = $!next-cid <= $!raw.num-glyphs ?? $!next-cid !! 0;
+        @!used-cid[$cid] = 1;
+        $cid;
+    }
+
     method encode-cids(@cids is raw) {
         my blob8 $buf := pack(@cids, 16);
         $buf.decode: 'latin-1';
@@ -51,27 +93,6 @@ also does PDF::Content::Font::Encoder;
 
     multi method encode(Str $text --> Str) {
         self.encode-cids: self.encode($text, :cids);
-    }
-
-    method !setup-decoding {
-        $.lock.protect: {
-            unless $!init {
-                my FT_Face $struct = $!face.raw;
-                my FT_UInt $glyph-idx;
-                my FT_ULong $char-code = $struct.FT_Get_First_Char( $glyph-idx);
-                @!to-unicode[$!face.num-glyphs] = 0;
-                while $glyph-idx {
-                    @!to-unicode[ $glyph-idx ] = $char-code;
-                    $char-code = $struct.FT_Get_Next_Char( $char-code, $glyph-idx);
-                }
-                $!init ⚛= 1;
-            }
-        }
-    }
-
-    method to-unicode {
-        $!init || self!setup-decoding();
-        @!to-unicode;
     }
 
     multi method decode(Str $encoded, :cids($)!) {

@@ -1,8 +1,8 @@
-use PDF::Content::FontObj;
-
 #| Loaded font objects
-unit class PDF::Font::Loader::FontObj
-    does PDF::Content::FontObj;
+unit class PDF::Font::Loader::FontObj;
+
+use PDF::Content::FontObj;
+also does PDF::Content::FontObj;
 
 use Font::AFM;
 use Font::FreeType::Error;
@@ -10,7 +10,7 @@ use Font::FreeType::Face;
 use Font::FreeType::Raw::Defs;
 use Font::FreeType::Raw::TT_Sfnt;
 use Font::FreeType::Raw;
-use Font::FreeType:ver(v0.3.0+);
+use Font::FreeType;
 use HarfBuzz::Feature;
 use HarfBuzz::Font;
 use HarfBuzz::Font::FreeType;
@@ -23,8 +23,9 @@ use PDF::COS::Stream;
 use PDF::COS;
 use PDF::Content::Font::CoreFont;
 use PDF::Content::Font;
-use PDF::Content:ver(v0.4.8+);
+use PDF::Content;
 use PDF::Font::Loader::Enc::CMap;
+use PDF::Font::Loader::Enc::Glyphic;
 use PDF::Font::Loader::Enc::Identity16;
 use PDF::Font::Loader::Enc::Type1;
 use PDF::Font::Loader::Enc::Unicode;
@@ -34,7 +35,7 @@ use PDF::IO::Blob;
 use PDF::IO::Util :pack;
 
 constant Px = 64.0;
-sub prefix:</>($name) { PDF::COS::Name.COERCE($name) };
+sub prefix:</>(PDF::COS::Name() $name) { $name };
 sub bit(\n) { 1 +< (n-1) }
 
 my enum FontFlags is export(:FontFlags) «
@@ -69,6 +70,7 @@ has Bool $!gids-updated;
 has Bool $!build-widths;
 has Str $.afm;
 has Font::AFM $!metrics;
+has uint32 @.unicode-index;
 
 sub subsetter {
     PDF::COS.required("HarfBuzz::Subset")
@@ -88,10 +90,11 @@ submethod TWEAK(
     Str :$prefix is copy,
 ) {
 
+    @!unicode-index := $!face.index-to-unicode;
     $!face.attach-file($_) with $!afm;
 
     if $!embed {
-        if self!font-type-entry eq 'TrueType' {
+        if $!face.font-format ~~ 'TrueType'|'OpenType' {
             given $!font-buf.subbuf(0,4).decode('latin-1') {
                 when 'ttcf' {
                     unless $!subset {
@@ -102,7 +105,6 @@ submethod TWEAK(
                         }
                         else {
                             $!subset = True;
-                            $!embed = False;
                         }
                     }
                 }
@@ -134,10 +136,6 @@ submethod TWEAK(
            $!subset = False;
         }
     }
-
-    # See [PDF 32000 Table 117 – Entries in a CIDFont dictionary]
-    warn "ignoring /CIDToGIDMap for {self.encoding} encoding"
-        if $!enc.starts-with('identity') && (%encoder<cid-to-gid-map>:delete);
 
     $!encoder = do {
         when $!enc ~~ 'utf8'|'utf16'|'utf32' {
@@ -392,10 +390,13 @@ method finish-font($dict, :$save-widths) {
         $dict<LastChar>  = $.last-char;
         $dict<Widths>    = $.widths;
     }
-    if $!encoder.differences -> $Differences {
-        my %enc = :Type(/<Encoding>), :$Differences;
+    my $Differences = $!encoder.differences;
+    my $BaseEncoding = self.encoding;
+    if $Differences || $BaseEncoding eq 'CMap' {
+        my %enc = :Type(/<Encoding>);
+        %enc ,= :$Differences if $Differences;
 
-        with self.encoding {
+        with $BaseEncoding {
             %enc<BaseEncoding> = /($_)
                 unless $_ ~~ 'CMap'|'StandardEncoding'; # implied anyway
         }
@@ -485,42 +486,57 @@ method kern(Str $text) {
     @chunks, self.stringwidth($text) + $kernwidth.round;
 }
 
+has $!harfbuzz-font;
+method !harfbuzz-font {
+    $!harfbuzz-font //= $!face.font-format ~~ 'TrueType'|'OpenType'
+        ?? HarfBuzz::Font.COERCE: %( :blob($!font-buf), )
+        !! HarfBuzz::Font::FreeType.COERCE: %( :ft-face($!face), );
+}
+
 multi method shape(Str $text where $!face.font-format ~~ 'TrueType'|'OpenType') {
-    my HarfBuzz::Font() $font = %( :blob($!font-buf), );
+    my HarfBuzz::Font $font = self!harfbuzz-font;
     my HarfBuzz::Shaper $shaper .= new: :buf{ :$text }, :$font;
     my uint32 @ords = $text.ords;
     my @shaped;
     my uint16 @cids;
-    my int $cluster = 0;
-    my uint16 $gid = 0;
-    my @cid-to-gid-map := $!encoder.cid-to-gid-map;
     my Numeric $width = 0;
     my UInt $i;
-    my HarfBuzz::Glyph $g := $shaper[$i=0];
+    my $n = $shaper.elems;
+    my Bool $identity = $!enc.starts-with('identity')
+                          && ! $!encoder.cid-to-gid-map;
+    my Bool $glyphic = $!encoder.does(PDF::Font::Loader::Enc::Glyphic);
 
-    while $g.defined {
-        my $dx  := $g.pos.x-offset;
-        my $dy  := $g.pos.y-offset;
-        my $gid := $g.gid;
-        my $cid := @cid-to-gid-map[$gid] || $gid;
-        my $glyph := self.glyph($cid);
-        my HarfBuzz::Glyph $g-next := $shaper[++$i];
-        my $cluster-end = do with $g-next { .cluster } else { @ords.elems }
+    loop ($i = 0; $i < $n; $i++) {
+        my HarfBuzz::Glyph $g = $shaper[$i];
+        my $dx   := $g.pos.x-offset;
+        my $dy   := $g.pos.y-offset;
+        my $gid  := $g.gid;
+        my $name := $g.name;
+        my $ord  := @!unicode-index[$gid];
+        my $cid;
+        my $cluster = $g.cluster;
+        my $cluster-end = $i+1 < $n ?? $shaper[$i+1].cluster !! @ords.elems;
 
-        if $cluster-end > $cluster + 1 {
-            $!encoder.ligature{$cid} //= @ords[$cluster .. $cluster-end-1].Slip;
+        if $ord {
+            $cid = $!encoder.charset{$ord} // $!encoder.add-encoding($ord);
         }
         else {
-            my $cp := $glyph.code-point || @ords[$cluster];
-            with $!encoder.charset{$cp} {
-                warn "whoa $cid: $cp != $_" unless $cp == $_;
+            if $identity {
+                $cid = $gid;
             }
             else {
-                $!encoder.set-encoding($cid, $cp);
+                $cid = $!encoder.allocate-cid;
+                $!encoder.cid-to-gid-map[$cid] = $gid;
+                $!encoder.add-glyph-diff($cid, $name)
+                    if $glyphic;
             }
         }
 
-        $width += $glyph.ax;
+        if $cluster-end > $cluster + 1 || (!$ord && $cluster-end == $cluster + 1)  {
+            $!encoder.ligature{$cid} //= @ords[$cluster .. $cluster-end-1].Slip;
+        }
+
+        $width += self.glyph($cid).ax;
 
         if $dx || $dy {
             @shaped.push: $!encoder.encode-cids(@cids) if @cids;
@@ -529,7 +545,6 @@ multi method shape(Str $text where $!face.font-format ~~ 'TrueType'|'OpenType') 
             $width += $dx;
         }
         @cids.push: $cid;
-        $g := $g-next;
     }
     @shaped.push: $!encoder.encode-cids(@cids) if @cids;
     @shaped, $width;
@@ -538,9 +553,8 @@ multi method shape(Str $text where $!face.font-format ~~ 'TrueType'|'OpenType') 
 multi method shape(Str $text is copy) {
     my Numeric $width = 0.0;
     my @shaped;
-
     $text = .ligature-subs($text) with self!metrics;
- 
+
     if $!face.has-kerning {
         my FT_UInt      $prev-gid = 0;
         my FT_Vector    $kerning .= new;
@@ -583,18 +597,12 @@ multi method shape(Str $text is copy) {
 
 method !make-subset {
     # perform subsetting on the font
-    my %ords := $!encoder.charset;
-    my $buf := $!font-buf;
-    my %input = do if $!enc ~~ m/^[identity|utf]/ {
-        # need to retain gids for identity based encodings
-        my @glyphs = %ords.values;
-        %( :@glyphs, :retain-gids)
-    }
-    else {
-        my @unicodes = %ords.keys;
-        %( :@unicodes );
-    }
-    my $subset = subsetter().new: :%input, :face{ :$buf };
+    my @glyphs = $!encoder.glyphs-seen.values>>.gid;
+    # need to retain gids for identity based encodings
+    my Bool() $retain-gids = $!enc ~~ m/^[identity|utf]/ ;
+    my %input = :@glyphs, :$retain-gids;
+    my %face = :buf($!font-buf);
+    my $subset = subsetter().new: :%input, :%face;
     $subset.Blob;
 }
 

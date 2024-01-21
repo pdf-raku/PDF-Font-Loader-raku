@@ -24,7 +24,7 @@ role PDF::Font::Loader::Enc::Glyphic
         }
 
         if $gid {
-            $glyph-name = $!face.glyph-name-from-index($gid) // callsame() // $ord.chr.uniname;
+            $glyph-name = $!face.glyph-name-from-index($gid) || callsame() || $ord.chr.uniname;
             # Not sure what glyph names are universally supported. This is conservative.
             $.encoding-updated = True
                 unless $glyph-name ~~ %Font::AFM::Glyphs{$ord.chr};
@@ -37,8 +37,8 @@ role PDF::Font::Loader::Enc::Glyphic
     }
 
     # Callback for unmapped glyphs
-    method cid-map-glyph($glyph-name, $cid) {
-        if $!face.index-from-glyph-name($glyph-name) -> $gid {
+    method cid-map-glyph($glyph-name, $cid, $gid = $!face.index-from-glyph-name($glyph-name)) {
+        if $gid {
             $.cid-to-gid-map[$cid] ||= $gid;
         }
     }

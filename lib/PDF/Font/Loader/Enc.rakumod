@@ -34,7 +34,7 @@ has Bool $.encoding-updated is rw;
 has PDF::COS::Stream $.cmap is rw; # /ToUnicode CMap
 has Font::AFM $.core-metrics is rw;
 has Lock $.lock handles<protect> .= new;
-has Glyph %!glyphs{Int};
+has Glyph %.glyphs-seen{Int} is built;
 # internal font units to 1000ths
 submethod TWEAK(:$widths) {
     @!widths = .map(*.Int) with $widths;
@@ -84,7 +84,7 @@ method local-glyph-name($cid) {
 }
 
 method glyph($cid is raw) {
-    self.protect: { %!glyphs{$cid} //= self!make-glyph($cid); }
+    self.protect: { %!glyphs-seen{$cid} //= self!make-glyph($cid); }
 }
 
 multi method get-glyphs(Str:D $text) {
@@ -215,7 +215,7 @@ sub codepoint-to-hex(UInt $_) {
         !! $s;                   # 1-2 bytes
 }
 
-sub ligature-to-hex(UInt @codes) {
+sub ligature-to-hex(@codes) {
     my $buf = @codes>>.chr.join.encode("utf16");
     $buf>>.fmt('%04X').join;
 }

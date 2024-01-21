@@ -8,9 +8,9 @@ use PDF::Content;
 use PDF::Content::Font;
 use Font::FreeType;
 my constant Glyph = PDF::Font::Loader::Glyph;
-my PDF::Content::FontObj $deja = load-font( :file<t/fonts/Vera.ttf>, :!subset );
+my PDF::Content::FontObj $vera = load-font( :file<t/fonts/Vera.ttf>, :!subset );
 
-my Glyph @shape = $deja.get-glyphs("Hello");
+my Glyph @shape = $vera.get-glyphs("Hello");
 
 is +@shape, 5;
 

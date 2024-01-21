@@ -1,5 +1,14 @@
 {{$NEXT}}
-   - Add auto-loading of type-1 AFM metrics
+   - Add auto-loading of type-1 AFM metrics. Look for a
+     sibling *.afm file when loading type-1 *.pfa or *.pfb
+     files and attach it.
+   - Add shape() method:
+     -- integrate HarfBuzz for TrueType and OpenType shaping
+     -- fallback to kerning + typographic ligature substitution
+        for other fonts
+     -- Add allocate-cid() and encode-cids() method to encoders.
+        To support HarfBuzz shaping, which may return non-unicode mapped
+        glyphs.
 
 0.7.8  2023-11-13T06:38:11+13:00
    - Further streamline CMAP encoding. Remove redundant code-point checks.

@@ -290,24 +290,29 @@ my constant %PreferredEnc = do {
     %win;
 }
 has UInt $!next-cid = 0;
-has %!used-cid;
-method use-cid($_) { %!used-cid{$_}++ }
-method add-encoding($ord) {
-    my $cid := %PreferredEnc{$ord};
-    if $cid && !@!to-unicode[$cid] && !%!used-cid{$cid} && !self!skip-cid-block($cid) {
-        self.set-encoding($ord, $cid);
+has @!used-cid;
+method use-cid($_) { @!used-cid[$_] = 1 }
+method allocate-cid {
+    my UInt $cid;
+    repeat {
+        ++$!next-cid;
+    } while @!used-cid[$!next-cid] || @!to-unicode[$!next-cid] || self!skip-cid-block($!next-cid);
+    if $!next-cid >= 2 ** ($.is-wide ?? 16 !! 8)  {
+        has $!out-of-gas //= warn "CID code-range is exhausted";
     }
     else {
-        # sequential allocation
-        repeat {
-        } while %!used-cid{$!next-cid} || @!to-unicode[++$!next-cid] || self!skip-cid-block($!next-cid) ;
         $cid := $!next-cid;
-        if $cid >= 2 ** ($.is-wide ?? 16 !! 8)  {
-            has $!out-of-gas //= warn "CID code-range is exhausted";
-        }
-        else {
-            self.set-encoding($ord, $cid);
-        }
+    }
+    @!used-cid[$cid] = 1;
+    $cid;
+}
+method add-encoding($ord) {
+    my $cid = %PreferredEnc{$ord};
+    if $cid && !@!to-unicode[$cid] && !@!used-cid[$cid] && !self!skip-cid-block($cid) {
+        self.set-encoding($ord, $cid);
+    }
+    elsif $cid = self.allocate-cid {
+        self.set-encoding($ord, $cid);
     }
     $cid;
 }

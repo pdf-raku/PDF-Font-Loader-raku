@@ -122,13 +122,18 @@ method make-dict {
     };
     $cid-font.is-indirect = True;
 
-    PDF::COS::Dict.COERCE: %(
+    my PDF::COS::Dict() $dict = %(
         :$Type,
         :Subtype( /<Type0> ),
         :$BaseFont,
         :DescendantFonts[ $cid-font ],
         :Encoding(/(self.encoding)),
     );
+    given self.encoding {
+        $dict<Encoding> = /($_)
+            unless $_ eq 'CMap';
+    }
+    $dict;
 }
 
 =begin pod
