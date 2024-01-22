@@ -1,5 +1,8 @@
 {{$NEXT}}
 
+0.8.1  2024-01-23T07:43:00+13:00
+    - Set shaping direction from left-to-right
+
 0.8.0  2024-01-22T06:22:19+13:00
    - Add auto-loading of type-1 AFM metrics. Look for a
      sibling *.afm file when loading type-1 *.pfa or *.pfb
