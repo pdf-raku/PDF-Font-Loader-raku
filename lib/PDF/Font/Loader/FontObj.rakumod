@@ -14,6 +14,7 @@ use Font::FreeType;
 use HarfBuzz::Feature;
 use HarfBuzz::Font;
 use HarfBuzz::Font::FreeType;
+use HarfBuzz::Raw::Defs :hb-direction;
 use HarfBuzz::Glyph;
 use HarfBuzz::Shaper;
 use NativeCall;
@@ -495,7 +496,7 @@ method !harfbuzz-font {
 
 multi method shape(Str $text where $!face.font-format ~~ 'TrueType'|'OpenType') {
     my HarfBuzz::Font $font = self!harfbuzz-font;
-    my HarfBuzz::Shaper $shaper .= new: :buf{ :$text }, :$font;
+    my HarfBuzz::Shaper $shaper .= new: :buf{ :$text, :direction(HB_DIRECTION_LTR) }, :$font;
     my uint32 @ords = $text.ords;
     my @shaped;
     my uint16 @cids;

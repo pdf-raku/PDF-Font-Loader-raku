@@ -3,8 +3,8 @@ use PDF::Font::Loader::Enc;
 class PDF::Font::Loader::Enc::Identity16
     is PDF::Font::Loader::Enc {
 
-use PDF::Content::Font::Encoder;
-also does PDF::Content::Font::Encoder;
+    use PDF::Content::Font::Encoder;
+    also does PDF::Content::Font::Encoder;
 
     use Font::FreeType::Face;
     use Font::FreeType::Raw;
