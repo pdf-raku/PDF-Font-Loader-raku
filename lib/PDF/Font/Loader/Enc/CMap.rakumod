@@ -115,7 +115,7 @@ sub hex-to-codepoints(Str() $x) {
     else {
         my \pad =  $x.chars %% 4 ?? '' !! '0' x (4  -  $x.chars % 4);
         # utf16 encoding semantics
-        my int16 @words = (pad ~ $x).comb(/..../).map: { :16($_) };
+        my int16 @words = (pad ~ $x).comb(4).map: { :16($_) };
         my utf16 $buf .= new(@words);
         $buf.decode.ords;
     }
@@ -127,7 +127,7 @@ method load-cmap(Str:D $_) {
         if /:s \d+ begincodespacerange/ ff /endcodespacerange/ {
             if /:s [ '<' $<r>=[<xdigit>+] '>' ] ** 2 / {
                 # <xxxx> <xxxx>
-                my ($from, $to) = @<r>.map: { [.Str.comb(/../).map({ :16($_)})] };
+                my ($from, $to) = @<r>.map: { [.Str.comb(2).map({ :16($_)})] };
                 my CodeSpace $codespace .= new: :from(@$from), :to(@$to);
                 my $bytes := $codespace.bytes;
                 $!max-width = $bytes if $bytes > $!max-width;
