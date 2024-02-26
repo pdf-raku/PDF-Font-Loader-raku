@@ -1,4 +1,5 @@
 {{$NEXT}}
+    - Add shape(:!kern) option. I.e shaping with horizontal disabled.
 
 0.8.1  2024-01-23T07:43:00+13:00
     - Set shaping direction from left-to-right
