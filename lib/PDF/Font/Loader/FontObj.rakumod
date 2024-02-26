@@ -487,9 +487,8 @@ method kern(Str $text) {
     @chunks, self.stringwidth($text) + $kernwidth.round;
 }
 
-has $!harfbuzz-font;
 method !harfbuzz-font(:@features) {
-    $!harfbuzz-font //= $!face.font-format ~~ 'TrueType'|'OpenType'
+    $!face.font-format ~~ 'TrueType'|'OpenType'
         ?? HarfBuzz::Font.COERCE: %( :blob($!font-buf), :@features)
         !! HarfBuzz::Font::FreeType.COERCE: %( :ft-face($!face), :@features);
 }

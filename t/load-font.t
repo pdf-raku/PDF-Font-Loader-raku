@@ -31,7 +31,7 @@ is $vera.stringwidth("RVX", :kern), 2064 - 55, 'stringwidth :kern';
 is-deeply $vera.kern("RVX" ), (['R', -55, 'VX'], 2064 - 55), '.kern(...)';
 is-deeply $vera.kern('ABCD' ), (['AB', -18, 'CD'], 2820), '.kern(...)';
 is-json-equiv $vera.shape("RVX" ), (["\0\c[53]", 56+0i, "\0\c[57]"~"\0\c[59]"], 2064 - 56), '.shape(...)';
-todo "kerning not disabled?";
+
 is-json-equiv $vera.shape("RVX", :!kern ), (["\0\c[53]" ~ "\0\c[57]"~"\0\c[59]"], 2064), '.shape(:!kern)';
 
 is $vera.glyph-width('V'), 684;
