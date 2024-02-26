@@ -488,14 +488,15 @@ method kern(Str $text) {
 }
 
 has $!harfbuzz-font;
-method !harfbuzz-font {
+method !harfbuzz-font(:@features) {
     $!harfbuzz-font //= $!face.font-format ~~ 'TrueType'|'OpenType'
-        ?? HarfBuzz::Font.COERCE: %( :blob($!font-buf), )
-        !! HarfBuzz::Font::FreeType.COERCE: %( :ft-face($!face), );
+        ?? HarfBuzz::Font.COERCE: %( :blob($!font-buf), :@features)
+        !! HarfBuzz::Font::FreeType.COERCE: %( :ft-face($!face), :@features);
 }
 
-multi method shape(Str $text where $!face.font-format ~~ 'TrueType'|'OpenType') {
-    my HarfBuzz::Font $font = self!harfbuzz-font;
+multi method shape(Str $text where $!face.font-format ~~ 'TrueType'|'OpenType', Bool :$kern = True) {
+    my HarfBuzz::Feature() @features = $kern ?? <kern> !! <-kern>;
+    my HarfBuzz::Font $font = self!harfbuzz-font: :@features;
     my HarfBuzz::Shaper $shaper .= new: :buf{ :$text, :direction(HB_DIRECTION_LTR) }, :$font;
     my uint32 @ords = $text.ords;
     my @shaped;
@@ -551,12 +552,12 @@ multi method shape(Str $text where $!face.font-format ~~ 'TrueType'|'OpenType') 
     @shaped, $width;
 }
 
-multi method shape(Str $text is copy) {
+multi method shape(Str $text is copy, Bool :$kern = $!face.has-kerning) {
     my Numeric $width = 0.0;
     my @shaped;
     $text = .ligature-subs($text) with self!metrics;
 
-    if $!face.has-kerning {
+    if $kern {
         my FT_UInt      $prev-gid = 0;
         my FT_Vector    $kerning .= new;
         my FT_Face      $face-struct = $!face.raw;

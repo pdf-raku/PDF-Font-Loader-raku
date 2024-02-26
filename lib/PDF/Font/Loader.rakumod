@@ -79,7 +79,7 @@ class PDF::Font::Loader:ver<0.8.1> {
 	    || do {
             note "unable to locate font. Falling back to mono-spaced font"
 	        unless $quiet;
-            %?RESOURCES<font/FreeMono.ttf>.absolute;
+            %?RESOURCES<font/FreeMono.ttf>.IO.absolute;
         }
 
         my PDF::Font::Loader::FontObj:D $font := $class.load-font: :$file, :$dict, |c;
