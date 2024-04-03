@@ -670,6 +670,14 @@ Kern text via the font's kerning tables. Returns chunks of text separated by num
 say $font.kern("ABCD"); # ["AB", -18, "CD"]
 =end code
 
+### shape
+
+Shape fonts via L<HarfBuzz::Shaper>. Returns encoded chunks, separated by 2-dimensional kern widths and heights.
+
+=begin code :lang<raku>
+say $font.shape("ABCD"); # ["AB", -18+0i, "CD"]
+=end code
+
 ### glyph-width
 
 Return the width of a glyph. This is a `rw` method that can be used to globally

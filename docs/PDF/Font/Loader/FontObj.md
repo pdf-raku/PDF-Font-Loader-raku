@@ -35,6 +35,14 @@ Kern text via the font's kerning tables. Returns chunks of text separated by num
 say $font.kern("ABCD"); # ["AB", -18, "CD"]
 ```
 
+### shape
+
+Shape fonts via [HarfBuzz::Shaper](https://harfbuzz-raku.github.io/HarfBuzz-raku/HarfBuzz/Shaper). Returns encoded chunks, separated by 2-dimensional kern widths and heights.
+
+```raku
+say $font.shape("ABCD"); # ["AB", -18+0i, "CD"]
+```
+
 ### glyph-width
 
 Return the width of a glyph. This is a `rw` method that can be used to globally adjust a font's glyph spacing for rendering and string-width calculations:

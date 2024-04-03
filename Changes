@@ -1,7 +1,7 @@
 {{$NEXT}}
 
 0.8.2  2024-02-27T08:40:06+13:00
-    - Add shape(:!kern) option. I.e shaping with horizontal disabled.
+    - Add shape(:!kern) option. I.e shaping with horizontal kerning disabled.
 
 0.8.1  2024-01-23T07:43:00+13:00
     - Set shaping direction from left-to-right
