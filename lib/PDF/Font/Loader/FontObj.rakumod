@@ -103,6 +103,7 @@ submethod TWEAK(
                         # however, HarfBuzz::Subset will convert it for us.
                         if (try subsetter()) === Nil {
                             warn "The HarfBuzz::Subset module is required to embed TrueType Collection font $!font-name";
+                            $!embed = False;
                         }
                         else {
                             $!subset = True;
@@ -300,10 +301,12 @@ method font-descriptor {
 
             if $!face.is-internally-keyed-cid {
                 # applicable to CID font descriptors
-                my $buf = .panose.Blob;
-                $buf.prepend: (.sFamilyClass div 256, .sFamilyClass mod 256);
-                my $Panose = hex-string => $buf.decode: "latin-1";
-                $dict<Style> //= %( :$Panose );
+                $dict<Style> //= do {
+                    my $buf = .panose.Blob;
+                    $buf.prepend: (.sFamilyClass div 256, .sFamilyClass mod 256);
+                    my $Panose = hex-string => $buf.decode: "latin-1";
+                    %( :$Panose );
+                }
             }
         }
 
