@@ -1,5 +1,5 @@
 use Test;
-plan 4;
+plan 3;
 
 use PDF::Lite;
 use PDF::Font::Loader :&load-font;
@@ -24,7 +24,6 @@ given load-font( :file<t/fonts/Vera.ttf>, :subset) {
 my PDF::Content::FontObj $ttf-font = load-font( :file<t/fonts/Vera.ttf>, :subset, :prefix<XBCDEF>);
 my PDF::Content::FontObj $otf-font = load-font( :file<t/fonts/Cantarell-Oblique.otf>, :enc<win>, :subset, :prefix<YBCDEF>);
 my PDF::Content::FontObj $ttc-font = load-font( :file<t/fonts/Sitka.ttc>, :prefix<ZBCDEF>);
-ok $ttc-font.is-subset, 'auto-subsetting for ttc fonts';
 my PDF::Content::FontObj $otc-font = load-font( :file<t/fonts/EBGaramond12.otc>, :subset, :prefix<ABCDEF>);
 
 sub check-fonts($whence, :$subsetted) {

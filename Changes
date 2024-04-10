@@ -1,5 +1,10 @@
 {{$NEXT}}
 
+0.8.3  2024-04-11T06:22:45+12:00
+    - Fix potential embedding of *.ttc (True Type collection) fonts. They
+      are not directly recognised as valid PDF font program and need to be
+      processed by HarfBuzz::Subset.
+
 0.8.2  2024-02-27T08:40:06+13:00
     - Add shape(:!kern) option. I.e shaping with horizontal kerning disabled.
 
