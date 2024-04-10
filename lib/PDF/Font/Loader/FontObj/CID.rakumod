@@ -1,8 +1,8 @@
-use PDF::Font::Loader::FontObj :FontFlags;
-
 #| Implements a PDF CID font
-unit class PDF::Font::Loader::FontObj::CID
-    is PDF::Font::Loader::FontObj;
+unit class PDF::Font::Loader::FontObj::CID;
+
+use PDF::Font::Loader::FontObj :FontFlags;
+also is PDF::Font::Loader::FontObj;
 
 use PDF::COS::Name;
 use PDF::IO::Util :pack;
