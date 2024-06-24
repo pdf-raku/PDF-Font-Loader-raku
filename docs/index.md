@@ -28,8 +28,9 @@ my PDF::Content::FontObj $deja-vu = load-font: :$file;
 # use the font to add text to a PDF
 use PDF::Lite;
 my PDF::Lite $pdf .= new;
+my $size = 12; # point-size
 $pdf.add-page.text: {
-  .font = $deja;
+  .font = $deja, $size;
   .text-position = [10, 600];
   .say: 'Hello, world';
 }
