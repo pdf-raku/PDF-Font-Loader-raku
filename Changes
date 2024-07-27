@@ -1,4 +1,6 @@
 {{$NEXT}}
+
+0.8.4  2024-07-28T10:30:37+12:00
    - Bug fixes to shaping. Make correct use of x/y advance and offset in
      shaping metrics.
 

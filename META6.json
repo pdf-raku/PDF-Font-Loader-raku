@@ -37,12 +37,12 @@
   "resources": [
     "font/FreeMono.ttf"
   ],
-  "source-url": "git://github.com/pdf-raku/PDF-Font-Loader-raku.git",
+  "source-url": "https://github.com/pdf-raku/PDF-Font-Loader-raku.git",
   "tags": [
     "pdf",
     "font"
   ],
   "test-depends": [
   ],
-  "version": "0.8.3"
+  "version": "0.8.4"
 }
