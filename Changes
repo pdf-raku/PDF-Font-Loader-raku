@@ -1,4 +1,6 @@
 {{$NEXT}}
+   - Bug fixes to shaping. Make correct use of x/y advance and offset in
+     shaping metrics.
 
 0.8.3  2024-04-11T06:22:45+12:00
     - Fix potential embedding of *.ttc (True Type collection) fonts. They

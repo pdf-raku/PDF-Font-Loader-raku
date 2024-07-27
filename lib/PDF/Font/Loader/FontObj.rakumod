@@ -492,7 +492,7 @@ method kern(Str $text) {
 
 method !harfbuzz-font(:@features) {
     $!face.font-format ~~ 'TrueType'|'OpenType'
-        ?? HarfBuzz::Font.COERCE: %( :blob($!font-buf), :@features)
+        ?? HarfBuzz::Font.COERCE: %( :blob($!font-buf), :@features )
         !! HarfBuzz::Font::FreeType.COERCE: %( :ft-face($!face), :@features);
 }
 
@@ -509,11 +509,14 @@ multi method shape(Str $text where $!face.font-format ~~ 'TrueType'|'OpenType', 
     my Bool $identity = $!enc.starts-with('identity')
                           && ! $!encoder.cid-to-gid-map;
     my Bool $glyphic = $!encoder.does(PDF::Font::Loader::Enc::Glyphic);
+    my $cur-y = 0.0;
+    my $x-kern = 0.0;
+    my $y-kern = 0.0;
+    my $font-scale := 1000 / $!face.units-per-EM;
 
     loop ($i = 0; $i < $n; $i++) {
         my HarfBuzz::Glyph $g = $shaper[$i];
-        my $dx   := $g.pos.x-offset;
-        my $dy   := $g.pos.y-offset;
+        my $shape:= $g.pos;
         my $gid  := $g.gid;
         my $name := $g.name;
         my $ord  := @!unicode-index[$gid];
@@ -539,19 +542,31 @@ multi method shape(Str $text where $!face.font-format ~~ 'TrueType'|'OpenType', 
         if $cluster-end > $cluster + 1 || (!$ord && $cluster-end == $cluster + 1)  {
             $!encoder.ligature{$cid} //= @ords[$cluster .. $cluster-end-1].Slip;
         }
+        my $glyph := self.glyph($cid);
 
-        $width += self.glyph($cid).ax;
+        $width += $shape.x-advance;
+
+        my $dx := round($shape.x-offset * $font-scale  +  $x-kern);
+        my $y  := round($shape.y-offset * $font-scale  +  $y-kern);
+        my $dy = $y - $cur-y;
 
         if $dx || $dy {
             @shaped.push: $!encoder.encode-cids(@cids) if @cids;
             @cids = ();
-            @shaped.push: Complex.new(-$dx, -$dy);
-            $width += $dx;
+            if $dy {
+                @shaped.push: Complex.new(-$dx, -$y);
+                $cur-y = $dy;
+            }
+            else {
+                @shaped.push: -$dx;
+            }
         }
         @cids.push: $cid;
+        $x-kern = $shape.x-advance * $font-scale  -  $glyph.ax;
+        $y-kern = $shape.y-advance * $font-scale  -  $glyph.ay;
     }
     @shaped.push: $!encoder.encode-cids(@cids) if @cids;
-    @shaped, $width;
+    @shaped, round($width * $font-scale);
 }
 
 multi method shape(Str $text is copy, Bool :$kern = $!face.has-kerning) {
