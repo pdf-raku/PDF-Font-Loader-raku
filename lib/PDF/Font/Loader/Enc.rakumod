@@ -226,13 +226,13 @@ method make-to-unicode-cmap(:$to-unicode = self.to-unicode) {
     my @cmap-range;
     my \last-char  = $.last-char;
     my \char-fmt  := '<%04X> <%s>';
-    my constant lig-fmt = '<%04X> [<%s>]';
+    my constant lig-fmt = '<%04X> <%04X> [<%s>]';
 
     loop (my uint16 $cid = $.first-char; $cid <= last-char; $cid++) {
         my uint32 $ord = $to-unicode[$cid];
         with %!ligature{$cid} // %LigatureExpansion{$ord} {
             my $lig-codes-hex = ligature-to-hex($_);
-            @cmap-char.push: lig-fmt.sprintf($cid, $lig-codes-hex);
+            @cmap-range.push: lig-fmt.sprintf($cid, $cid, $lig-codes-hex);
         }
         elsif ($ord) {
             my uint16 $start-cid = $cid;
