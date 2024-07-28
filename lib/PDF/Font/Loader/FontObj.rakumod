@@ -509,7 +509,7 @@ multi method shape(Str $text where $!face.font-format ~~ 'TrueType'|'OpenType', 
     my Bool $identity = $!enc.starts-with('identity')
                           && ! $!encoder.cid-to-gid-map;
     my Bool $glyphic = $!encoder.does(PDF::Font::Loader::Enc::Glyphic);
-    my $cur-y = 0.0;
+    my $cur-dy = 0.0;
     my $x-kern = 0.0;
     my $y-kern = 0.0;
     my $font-scale := 1000 / $!face.units-per-EM;
@@ -547,15 +547,13 @@ multi method shape(Str $text where $!face.font-format ~~ 'TrueType'|'OpenType', 
         $width += $shape.x-advance;
 
         my $dx := round($shape.x-offset * $font-scale  +  $x-kern);
-        my $y  := round($shape.y-offset * $font-scale  +  $y-kern);
-        my $dy = $y - $cur-y;
-
-        if $dx || $dy {
+        my $dy := round($shape.y-offset * $font-scale  +  $y-kern);
+        if $dx || $dy !== $cur-dy {
             @shaped.push: $!encoder.encode-cids(@cids) if @cids;
             @cids = ();
-            if $dy {
-                @shaped.push: Complex.new(-$dx, -$y);
-                $cur-y = $dy;
+            if $dy !== $cur-dy {
+                @shaped.push: Complex.new(-$dx, -$dy);
+                $cur-dy = $dy;
             }
             else {
                 @shaped.push: -$dx;
