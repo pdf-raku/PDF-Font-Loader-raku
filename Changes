@@ -1,5 +1,10 @@
 {{$NEXT}}
 
+0.8.6  2024-08-03T09:13:48+12:00
+   - Added more shaping tests.
+   - Fixed output of zero width glyphs in CID fonts (for Arabic
+     shaping test)
+
 0.8.5  2024-07-29T07:21:53+12:00
    - Fix ToUnicode CMAP generation for ligature entries.
 
