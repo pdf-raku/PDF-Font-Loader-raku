@@ -15,18 +15,20 @@ my PDF::Content::FontObj @fonts = <t/fonts/TimesNewRomPS.pfb t/fonts/Vera.ttf t/
 lives-ok {
     @pages = (1..20).hyper(:batch(1)).map: -> $page-num {
         my PDF::Content::Page:D $page = PDF::Content::PageTree.page-fragment;
-        $page.graphics: {
+        $page.text: {
             .font = $core-font;
             .say: "Page $page-num", :position[50, 700]; # using a core font
             my $y = 650;
             @fonts.map: -> $font {
-                .font = $font;
+                .font = $font, 12;
                 .say: '';
-                .say: q:to"TEXT", :width(300), :position[50, $y];
+                .print: q:to"TEXT", :width(300), :position[50, $y];
                 Lorem ipsum dolor sit amet, consectetur adipiscing elit,
                 sed do eiusmod tempor incididunt ut labore et dolore
-                magna aliqua.
                 TEXT
+                .font = $font, 10;
+                .say: 'magna aliqua.', :position[50, $y - 40];
+
                 $y -= 80;
             }
         }

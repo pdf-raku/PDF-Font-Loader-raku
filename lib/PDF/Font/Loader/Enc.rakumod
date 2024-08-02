@@ -27,7 +27,7 @@ constant %LigatureExpansion = %Ligatures.map({.value => .key.ords}).Hash;
 
 has uint16 @.cid-to-gid-map;
 has uint $.first-char;
-has uint16 @!widths;
+has int16 @!widths;
 has Slip %.ligature;
 has Bool $.widths-updated is rw;
 has Bool $.encoding-updated is rw;
@@ -83,8 +83,8 @@ method local-glyph-name($cid) {
     ...
 }
 
-method glyph($cid is raw) {
-    self.protect: { %!glyphs-seen{$cid} //= self!make-glyph($cid); }
+method glyph($cid is raw, |c) {
+    self.protect: { %!glyphs-seen{$cid} //= self!make-glyph($cid, |c); }
 }
 
 multi method get-glyphs(Str:D $text) {
@@ -108,14 +108,14 @@ method glyph-width(Str $ch) is rw {
     );
 }
 
-method !make-glyph(UInt $cid) {
+method !make-glyph(UInt $cid, FT_UInt :$gid is copy) {
     my uint32 $code-point = $.to-unicode[$cid] || 0;
     my $chr := $code-point.chr;
     my Str $name;
-    my FT_UInt $gid = @!cid-to-gid-map[$cid]
-        if @!cid-to-gid-map;
+    $gid ||= @!cid-to-gid-map[$cid] if @!cid-to-gid-map;
     $gid ||= $.face.glyph-index($code-point)
         if $code-point;
+    @!cid-to-gid-map[$cid] ||= $gid if @!cid-to-gid-map;
     my FT_UInt $ax;
     if self.width($cid) -> $width {
         $ax = $width;
@@ -131,8 +131,8 @@ method !make-glyph(UInt $cid) {
 
     if $sx && !$ax {
         $ax = $sx;
-        self.width($cid) = $ax;
     }
+    self.width($cid) = $ax || -1;
 
     if $code-point {
         # prefer standard names

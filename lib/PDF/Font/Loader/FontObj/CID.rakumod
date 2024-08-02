@@ -31,21 +31,23 @@ method !cid-font-type-entry {
 }
 
 method !make-widths {
+    my $tail;
     my @W;
     my uint $j = -2;
-    my $chars = [];
     my @widths := @.widths;
     my uint16 $fc = $.first-char;
     my uint16 $n = $.last-char - $fc;
     loop (my uint16 $i = 0; $i <= $n; $i++) {
-        if @widths[$i] -> $w {
+        if @widths[$i] -> $width is copy {
+            $width = 0 if $width < 0;
             if ++$j == $i {
-                $chars.push: $w;
+                $tail.push: $width;
             }
             else {
-                $chars = [$w, ];
+                $tail = [$width, ];
                 $j = $i;
-                @W.append: ($i + $fc, $chars);
+                my uint16 $cid = $i + $fc;
+                @W.append: ($cid, $tail);
             }
         }
     }

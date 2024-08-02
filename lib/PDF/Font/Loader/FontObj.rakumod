@@ -11,6 +11,7 @@ use Font::FreeType::Raw::Defs;
 use Font::FreeType::Raw::TT_Sfnt;
 use Font::FreeType::Raw;
 use Font::FreeType;
+use HarfBuzz::Buffer;
 use HarfBuzz::Feature;
 use HarfBuzz::Font;
 use HarfBuzz::Font::FreeType;
@@ -60,7 +61,7 @@ has Blob $.font-buf;
 has PDF::COS::Dict $!dict;
 my subset EncodingScheme is export(:EncodingScheme) where 'mac'|'win'|'zapf'|'sym'|'identity'|'identity-h'|'identity-v'|'std'|'mac-extra'|'cmap'|'utf8'|'utf16'|'utf32';
 has EncodingScheme $.enc is required;
-has Bool $.subset = False;
+has Bool $.subset;
 has Str:D $.family          = $!face.family-name // 'Untitled';
 has Str:D $.font-name is rw = $!face.postscript-name // $!family;
 # Font descriptors are needed for all but core fonts
@@ -144,6 +145,7 @@ submethod TWEAK(
             PDF::Font::Loader::Enc::Unicode.new: :$!face, :$!enc, |%encoder, :@cid-to-gid-map;
         }
         when $!enc eq 'cmap' || %encoder<cmap>.defined {
+            fail "todo create cmap from scratch" unless $!dict;
             PDF::Font::Loader::Enc::CMap.new: :$!face, |%encoder, :@cid-to-gid-map;
         }
         when $!enc ~~ 'identity-h'|'identity-v' {
@@ -390,9 +392,10 @@ method finish-font($dict, :$save-widths) {
     $dict<ToUnicode> //= self.make-to-unicode-stream
         if $!encoder.encoding-updated;
     if $save-widths {
+        my uint16 @widths = @.widths.map({$_ >= 0 ?? $_ !! 0});
         $dict<FirstChar> = $.first-char;
         $dict<LastChar>  = $.last-char;
-        $dict<Widths>    = $.widths;
+        $dict<Widths>    = @widths;
     }
     my $Differences = $!encoder.differences;
     my $BaseEncoding = self.encoding;
@@ -496,10 +499,13 @@ method !harfbuzz-font(:@features) {
         !! HarfBuzz::Font::FreeType.COERCE: %( :ft-face($!face), :@features);
 }
 
-multi method shape(Str $text where $!face.font-format ~~ 'TrueType'|'OpenType', Bool :$kern = True) {
+multi method shape(Str $text where $!face.font-format ~~ 'TrueType'|'OpenType', Bool :$kern = True, Str :$script, Str :$lang) {
     my HarfBuzz::Feature() @features = $kern ?? <kern> !! <-kern>;
     my HarfBuzz::Font $font = self!harfbuzz-font: :@features;
-    my HarfBuzz::Shaper $shaper .= new: :buf{ :$text, :direction(HB_DIRECTION_LTR) }, :$font;
+    my HarfBuzz::Buffer $buf .= new: :$text, :direction(HB_DIRECTION_LTR);
+    $buf.script = $_ with $script;
+    $buf.language = $_ with $lang;
+    my HarfBuzz::Shaper $shaper .= new: :$buf, :$font;
     my uint32 @ords = $text.ords;
     my @shaped;
     my uint16 @cids;
@@ -524,12 +530,13 @@ multi method shape(Str $text where $!face.font-format ~~ 'TrueType'|'OpenType', 
         my $cluster = $g.cluster;
         my $cluster-end = $i+1 < $n ?? $shaper[$i+1].cluster !! @ords.elems;
 
-        if $ord {
-            $cid = $!encoder.charset{$ord} // $!encoder.add-encoding($ord);
+        if $identity {
+            $cid = $gid;
+            $!encoder.set-encoding($ord, $cid) if $ord;
         }
         else {
-            if $identity {
-                $cid = $gid;
+            if $ord {
+                $cid = $!encoder.charset{$ord} // $!encoder.add-encoding($ord);
             }
             else {
                 $cid = $!encoder.allocate-cid;
@@ -542,8 +549,8 @@ multi method shape(Str $text where $!face.font-format ~~ 'TrueType'|'OpenType', 
         if $cluster-end > $cluster + 1 || (!$ord && $cluster-end == $cluster + 1)  {
             $!encoder.ligature{$cid} //= @ords[$cluster .. $cluster-end-1].Slip;
         }
-        my $glyph := self.glyph($cid);
 
+        my $glyph := self.glyph($cid, :$gid);
         $width += $shape.x-advance;
 
         my $dx := round($shape.x-offset * $font-scale  +  $x-kern);
@@ -581,23 +588,23 @@ multi method shape(Str $text is copy, Bool :$kern = $!face.has-kerning) {
         my $scale = 1000 / $!face.units-per-EM;
 
         for $text.ords -> $ord {
-            my uint16 $cid = $!encoder.protect: { $!encoder.charset{$ord} // $!encoder.add-encoding($ord) };
-            if $cid {
-                $width += self.glyph($cid).ax;
-                my FT_UInt $this-gid = $face-struct.FT_Get_Char_Index( $ord );
-                if $prev-gid && $this-gid {
-                    ft-try({ $face-struct.FT_Get_Kerning($prev-gid, $this-gid, FT_KERNING_UNSCALED, $kerning); });
-                    my $dx := ($kerning.x * $scale).round;
-                    my $dy := ($kerning.y * $scale).round;
-                    if $dx || $dy {
-                        @shaped.push: $!encoder.encode-cids: @cids;
-                        @cids = ();
-                        @shaped.push: Complex.new(-$dx, $dy);
-                        $width += $dx;
+            if $!encoder.protect({ $!encoder.charset{$ord} // $!encoder.add-encoding($ord) }) -> uint16 $cid {
+                if $face-struct.FT_Get_Char_Index( $ord ) -> $gid {
+                    $width += self.glyph($cid, :$gid).ax;
+                    if $prev-gid  {
+                        ft-try({ $face-struct.FT_Get_Kerning($prev-gid, $gid, FT_KERNING_UNSCALED, $kerning); });
+                        my $dx := ($kerning.x * $scale).round;
+                        my $dy := ($kerning.y * $scale).round;
+                        if $dx || $dy {
+                            @shaped.push: $!encoder.encode-cids: @cids;
+                            @cids = ();
+                            @shaped.push: Complex.new(-$dx, $dy);
+                            $width += $dx;
+                        }
                     }
+                    @cids.push: $cid;
+                    $prev-gid = $gid;
                 }
-                @cids.push: $cid;
-                $prev-gid = $this-gid;
             }
         }
 
