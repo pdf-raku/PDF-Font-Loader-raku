@@ -8,6 +8,7 @@ use PDF::COS::Name;
 use PDF::IO::Util :pack;
 use PDF::IO::Writer;
 use PDF::COS::Stream;
+use PDF::Font::Loader::Enc :ZeroWidth;
 use PDF::Font::Loader::Enc::CMap;
 use PDF::Font::Loader::Enc::Identity16;
 use PDF::Font::Loader::Enc::Unicode;
@@ -39,7 +40,7 @@ method !make-widths {
     my uint16 $n = $.last-char - $fc;
     loop (my uint16 $i = 0; $i <= $n; $i++) {
         if @widths[$i] -> $width is copy {
-            $width = 0 if $width < 0;
+            $width = 0 if $width == ZeroWidth;
             if ++$j == $i {
                 $tail.push: $width;
             }

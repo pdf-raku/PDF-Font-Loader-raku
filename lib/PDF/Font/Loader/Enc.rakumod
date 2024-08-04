@@ -23,6 +23,7 @@ constant %Ligatures is export(:Ligatures) = %(
     # .. + more, see https://en.wikipedia.org/wiki/Orthographic_ligature
 );
 
+constant ZeroWidth is export(:ZeroWidth) = -32767;
 constant %LigatureExpansion = %Ligatures.map({.value => .key.ords}).Hash;
 
 has uint16 @.cid-to-gid-map;
@@ -132,7 +133,7 @@ method !make-glyph(UInt $cid, FT_UInt :$gid is copy) {
     if $sx && !$ax {
         $ax = $sx;
     }
-    self.width($cid) = $ax || -1;
+    self.width($cid) = $ax || ZeroWidth;
 
     if $code-point {
         # prefer standard names

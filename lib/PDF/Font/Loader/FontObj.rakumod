@@ -26,6 +26,7 @@ use PDF::COS;
 use PDF::Content::Font::CoreFont;
 use PDF::Content::Font;
 use PDF::Content;
+use PDF::Font::Loader::Enc :ZeroWidth;
 use PDF::Font::Loader::Enc::CMap;
 use PDF::Font::Loader::Enc::Glyphic;
 use PDF::Font::Loader::Enc::Identity16;
@@ -142,6 +143,7 @@ submethod TWEAK(
 
     $!encoder = do {
         when $!enc ~~ 'utf8'|'utf16'|'utf32' {
+            fail "todo create UTF from scratch" unless $!dict;
             PDF::Font::Loader::Enc::Unicode.new: :$!face, :$!enc, |%encoder, :@cid-to-gid-map;
         }
         when $!enc eq 'cmap' || %encoder<cmap>.defined {
@@ -392,7 +394,7 @@ method finish-font($dict, :$save-widths) {
     $dict<ToUnicode> //= self.make-to-unicode-stream
         if $!encoder.encoding-updated;
     if $save-widths {
-        my uint16 @widths = @.widths.map({$_ >= 0 ?? $_ !! 0});
+        my uint16 @widths = @.widths.map({$_ == ZeroWidth ?? 0  !! $_});
         $dict<FirstChar> = $.first-char;
         $dict<LastChar>  = $.last-char;
         $dict<Widths>    = @widths;
