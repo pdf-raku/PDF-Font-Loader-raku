@@ -129,11 +129,10 @@ method make-dict {
         :Subtype( /<Type0> ),
         :$BaseFont,
         :DescendantFonts[ $cid-font ],
-        :Encoding(/(self.encoding)),
     );
     given self.encoding {
         $dict<Encoding> = /($_)
-            unless $_ eq 'CMap';
+            unless $_ ~~ 'CMap'|'StandardEncoding'; # implied anyway;
     }
     $dict;
 }
