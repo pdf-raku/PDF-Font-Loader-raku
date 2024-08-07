@@ -27,7 +27,6 @@ use PDF::Font::Loader::Enc::Type1;
 use PDF::Font::Loader::Enc::Unicode;
 use PDF::Font::Loader::Glyph;
 use PDF::Font::Loader::Type1::Stream;
-use PDF::Font::Loader::HarfBuzz;
 use PDF::IO::Blob;
 use PDF::IO::Util :pack;
 
@@ -69,9 +68,8 @@ has Str $.afm;
 has Font::AFM $!metrics;
 has uint32 @.unicode-index;
 
-sub subsetter {
-    PDF::COS.required("HarfBuzz::Subset")
-}
+sub subsetter { PDF::COS.required("HarfBuzz::Subset") }
+sub shaper { PDF::COS.required("PDF::Font::Loader::HarfBuzz") }
 
 method !metrics {
     $!metrics //= Font::AFM.new: :name(.IO.absolute)
@@ -491,14 +489,19 @@ method kern(Str $text) {
 
 
 multi method shape(Str $text where $!face.font-format ~~ 'TrueType'|'OpenType', Bool :$kern = True, Str :$script, Str :$lang) {
-    my $font = PDF::Font::Loader::HarfBuzz::make-harfbuzz-font(:$!face, :$.font-buf, :$kern);
-    my $shaper = PDF::Font::Loader::HarfBuzz::make-harfbuzz-shaper(:$text, :$font, :$script, :$lang);
+    my $shaper-maker := try shaper();
+    if $shaper-maker === Nil {
+        warn "The PDF::Font::Loader::HarfBuzz modules is required for proper shaping";
+        nextsame; # shaping emulation
+    }
+    my $font      = $shaper-maker.make-harfbuzz-font(:$!face, :$.font-buf, :$kern);
+    my $hb-shaper = $shaper-maker.make-harfbuzz-shaper(:$text, :$font, :$script, :$lang);
     my uint32 @ords = $text.ords;
     my @shaped;
     my uint16 @cids;
     my Numeric $width = 0;
     my UInt $i;
-    my $n = $shaper.elems;
+    my $n = $hb-shaper.elems;
     my Bool $identity = $!enc.starts-with('identity')
                           && ! $!encoder.cid-to-gid-map;
     my Bool $glyphic = $!encoder.does(PDF::Font::Loader::Enc::Glyphic);
@@ -508,12 +511,12 @@ multi method shape(Str $text where $!face.font-format ~~ 'TrueType'|'OpenType', 
     my $font-scale := 1000 / $!face.units-per-EM;
 
     loop ($i = 0; $i < $n; $i++) {
-        my $hb-glyph = $shaper[$i];
+        my $hb-glyph = $hb-shaper[$i];
         my $shape   := $hb-glyph.pos;
         my $gid     := $hb-glyph.gid;
         my $name    := $hb-glyph.name;
         my $cluster := $hb-glyph.cluster;
-        my $cluster-end = $i+1 < $n ?? $shaper[$i+1].cluster !! @ords.elems;
+        my $cluster-end = $i+1 < $n ?? $hb-shaper[$i+1].cluster !! @ords.elems;
         my $ord  := @!unicode-index[$gid];
         my $cid;
 

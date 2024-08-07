@@ -8,8 +8,6 @@
   "depends": [
     "Font::AFM:ver<1.24.10+>",
     "Font::FreeType:ver<0.5.5+>",
-    "HarfBuzz:ver<0.1.3+>",
-    "HarfBuzz::Font::FreeType",
     "Hash::int",
     "Native::Packing",
     "PDF::Content:ver<0.8.4+>",
@@ -32,8 +30,7 @@
     "PDF::Font::Loader::FontObj": "lib/PDF/Font/Loader/FontObj.rakumod",
     "PDF::Font::Loader::FontObj::CID": "lib/PDF/Font/Loader/FontObj/CID.rakumod",
     "PDF::Font::Loader::Glyph": "lib/PDF/Font/Loader/Glyph.rakumod",
-    "PDF::Font::Loader::Type1::Stream": "lib/PDF/Font/Loader/Type1/Stream.rakumod",
-    "PDF::Font::Loader::HarfBuzz": "lib/PDF/Font/Loader/HarfBuzz.rakumod"
+    "PDF::Font::Loader::Type1::Stream": "lib/PDF/Font/Loader/Type1/Stream.rakumod"
   },
   "resources": [
     "font/FreeMono.ttf"
