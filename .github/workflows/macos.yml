@@ -1,0 +1,37 @@
+name: test
+
+on:
+  push:
+    branches:
+      - '*'
+    tags-ignore:
+      - '*'
+  pull_request:
+
+jobs:
+  raku:
+    strategy:
+      matrix:
+        os:
+          - macOS-latest
+        raku-version:
+          - 'latest'
+          - '2022.07'
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: Raku/setup-raku@v1
+        with:
+          raku-version: ${{ matrix.raku-version }}
+      - name: macOS specific setup
+        run: |
+          brew update
+          brew install harfbuzz
+          brew install openssl
+      - name: Install Dependencies
+        run: |
+          # install and test if need be (includes [test-depends])
+          zef install --/test App::Prove6
+          zef install --deps-only .
+      - name: Run Tests
+        run: prove6 -I. t
