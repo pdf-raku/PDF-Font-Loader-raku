@@ -37,7 +37,7 @@ say $font.kern("ABCD"); # ["AB", -18, "CD"]
 
 ### shape
 
-Shape fonts via [HarfBuzz::Shaper](https://harfbuzz-raku.github.io/HarfBuzz-raku/HarfBuzz/Shaper). Returns encoded chunks, separated by 2-dimensional kern widths and heights.
+Shape fonts via [PDF::Font::Loader::HarfBuzz](https://pdf-raku.github.io/PDF-Font-Loader-raku/PDF/Font/Loader/HarfBuzz). Returns encoded chunks, separated by 2-dimensional kern widths and heights.
 
 ```raku
 say $font.shape("ABCD"); # ["AB", -18+0i, "CD"]

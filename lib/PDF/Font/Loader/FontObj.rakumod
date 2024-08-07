@@ -11,13 +11,6 @@ use Font::FreeType::Raw::Defs;
 use Font::FreeType::Raw::TT_Sfnt;
 use Font::FreeType::Raw;
 use Font::FreeType;
-use HarfBuzz::Buffer;
-use HarfBuzz::Feature;
-use HarfBuzz::Font;
-use HarfBuzz::Font::FreeType;
-use HarfBuzz::Raw::Defs :hb-direction;
-use HarfBuzz::Glyph;
-use HarfBuzz::Shaper;
 use NativeCall;
 use PDF::COS::Dict;
 use PDF::COS::Name;
@@ -34,6 +27,7 @@ use PDF::Font::Loader::Enc::Type1;
 use PDF::Font::Loader::Enc::Unicode;
 use PDF::Font::Loader::Glyph;
 use PDF::Font::Loader::Type1::Stream;
+use PDF::Font::Loader::HarfBuzz;
 use PDF::IO::Blob;
 use PDF::IO::Util :pack;
 
@@ -468,10 +462,10 @@ method kern(Str $text) {
         my $scale = 1000 / $!face.units-per-EM;
 
         for $text.ords -> $char-code {
-            my FT_UInt $this-gid = $face-struct.FT_Get_Char_Index( $char-code );
-            if $this-gid {
+            my FT_UInt $gid = $face-struct.FT_Get_Char_Index( $char-code );
+            if $gid {
                 if $prev-gid {
-                    ft-try({ $face-struct.FT_Get_Kerning($prev-gid, $this-gid, FT_KERNING_UNSCALED, $kerning); });
+                    ft-try({ $face-struct.FT_Get_Kerning($prev-gid, $gid, FT_KERNING_UNSCALED, $kerning); });
                     my $dx := ($kerning.x * $scale).round;
                     if $dx {
                         @chunks.push: $str;
@@ -481,7 +475,7 @@ method kern(Str $text) {
                     }
                 }
                 $str ~= $char-code.chr;
-                $prev-gid = $this-gid;
+                $prev-gid = $gid;
             }
         }
 
@@ -495,19 +489,10 @@ method kern(Str $text) {
     @chunks, self.stringwidth($text) + $kernwidth.round;
 }
 
-method !harfbuzz-font(:@features) {
-    $!face.font-format ~~ 'TrueType'|'OpenType'
-        ?? HarfBuzz::Font.COERCE: %( :blob($!font-buf), :@features )
-        !! HarfBuzz::Font::FreeType.COERCE: %( :ft-face($!face), :@features);
-}
 
 multi method shape(Str $text where $!face.font-format ~~ 'TrueType'|'OpenType', Bool :$kern = True, Str :$script, Str :$lang) {
-    my HarfBuzz::Feature() @features = $kern ?? <kern> !! <-kern>;
-    my HarfBuzz::Font $font = self!harfbuzz-font: :@features;
-    my HarfBuzz::Buffer $buf .= new: :$text, :direction(HB_DIRECTION_LTR);
-    $buf.script = $_ with $script;
-    $buf.language = $_ with $lang;
-    my HarfBuzz::Shaper $shaper .= new: :$buf, :$font;
+    my $font = PDF::Font::Loader::HarfBuzz::make-harfbuzz-font(:$!face, :$.font-buf, :$kern);
+    my $shaper = PDF::Font::Loader::HarfBuzz::make-harfbuzz-shaper(:$text, :$font, :$script, :$lang);
     my uint32 @ords = $text.ords;
     my @shaped;
     my uint16 @cids;
@@ -523,14 +508,14 @@ multi method shape(Str $text where $!face.font-format ~~ 'TrueType'|'OpenType', 
     my $font-scale := 1000 / $!face.units-per-EM;
 
     loop ($i = 0; $i < $n; $i++) {
-        my HarfBuzz::Glyph $g = $shaper[$i];
-        my $shape:= $g.pos;
-        my $gid  := $g.gid;
-        my $name := $g.name;
+        my $hb-glyph = $shaper[$i];
+        my $shape   := $hb-glyph.pos;
+        my $gid     := $hb-glyph.gid;
+        my $name    := $hb-glyph.name;
+        my $cluster := $hb-glyph.cluster;
+        my $cluster-end = $i+1 < $n ?? $shaper[$i+1].cluster !! @ords.elems;
         my $ord  := @!unicode-index[$gid];
         my $cid;
-        my $cluster = $g.cluster;
-        my $cluster-end = $i+1 < $n ?? $shaper[$i+1].cluster !! @ords.elems;
 
         if $identity {
             $cid = $gid;
@@ -697,7 +682,7 @@ say $font.kern("ABCD"); # ["AB", -18, "CD"]
 
 ### shape
 
-Shape fonts via L<HarfBuzz::Shaper>. Returns encoded chunks, separated by 2-dimensional kern widths and heights.
+Shape fonts via L<PDF::Font::Loader::HarfBuzz>. Returns encoded chunks, separated by 2-dimensional kern widths and heights.
 
 =begin code :lang<raku>
 say $font.shape("ABCD"); # ["AB", -18+0i, "CD"]
