@@ -1,5 +1,9 @@
 {{$NEXT}}
 
+0.8.7  2024-08-09T05:32:42+12:00
+   - Removed shaping support to PDF::Font::Loader::HarfBuzz. This module
+     must be loaded to enable full shaping.
+
 0.8.6  2024-08-03T09:13:48+12:00
    - Added more shaping tests.
    - Fixed output of zero width glyphs in CID fonts (for Arabic

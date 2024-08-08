@@ -26,7 +26,6 @@ jobs:
       - name: macOS specific setup
         run: |
           brew update
-          brew install harfbuzz
           brew install openssl
       - name: Install Dependencies
         run: |
