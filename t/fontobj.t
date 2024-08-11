@@ -73,10 +73,11 @@ is font-type($otf-font), 'Type1';
 is font-type($cff-font), 'Type1';
 is font-type($cid-keyed-font), 'CIDFontType0';
 is font-type($ttc-font), 'TrueType';
-# ensure consistant document ID generation
-$pdf.id = $*PROGRAM-NAME.fmt('%-16.16s');
 
-lives-ok { $pdf.save-as: "t/fontobj.pdf"; };
+# ensure consistant document ID generation
+my $basename := "t/fontobj";
+$pdf.id =  "{$basename}.t".fmt('%-16s').substr(0,16);
+lives-ok { $pdf.save-as: "{$basename}.pdf"; };
 
 done-testing;
 

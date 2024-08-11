@@ -40,7 +40,7 @@ lives-ok {
 $pdf.add-page($_) for @pages;
 
 # ensure consistant document ID generation
-$pdf.id = $*PROGRAM-NAME.fmt('%-16.16s');
-
-lives-ok { $pdf.save-as('t/threads.pdf'); }, 'save-as';
+my $basename := "t/threads";
+$pdf.id =  "{$basename}.t".fmt('%-16s').substr(0,16);
+lives-ok { $pdf.save-as: "{$basename}.pdf"; };
 

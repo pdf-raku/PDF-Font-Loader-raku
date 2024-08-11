@@ -1,5 +1,5 @@
 use Test;
-plan 20;
+plan 21;
 use PDF::COS::Dict;
 use PDF::Lite;
 use PDF::Font::Loader;
@@ -35,8 +35,8 @@ $pdf.page(2).gfx.text: -> $gfx {
 }
 
 # ensure consistant document ID generation
-$pdf.id =  $*PROGRAM-NAME.fmt('%-16.16s');
-
-$pdf.save-as: "t/reuse-type1.pdf";
+my $basename := "t/reuse-type1";
+$pdf.id =  "{$basename}.t".fmt('%-16s').substr(0,16);
+lives-ok { $pdf.save-as: "{$basename}.pdf"; };
 
 done-testing;

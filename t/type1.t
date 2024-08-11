@@ -30,9 +30,9 @@ $page.text: {
 }
 
 # ensure consistant document ID generation
-$pdf.id =  $*PROGRAM-NAME.fmt('%-16s').substr(0,16);
-
-lives-ok { $pdf.save-as: "t/type1.pdf"; };
+my $basename := "t/type1";
+$pdf.id =  "{$basename}.t".fmt('%-16s').substr(0,16);
+lives-ok { $pdf.save-as: "{$basename}.pdf"; };
 
 done-testing;
 

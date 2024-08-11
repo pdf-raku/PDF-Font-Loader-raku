@@ -1,5 +1,5 @@
 use Test;
-plan 2;
+plan 3;
 use PDF::COS::Dict;
 use PDF::Lite;
 use PDF::Font::Loader;
@@ -44,10 +44,8 @@ $pdf.page(2).gfx.text: -> $gfx {
         }, 'reuse core font';
     }
 }
-
-# ensure consistant document ID generation
-$pdf.id =  $*PROGRAM-NAME.fmt('%-16.16s');
-
-$pdf.save-as: "t/reuse-unembedded.pdf";
+my $basename := "t/reuse-unembedded";
+$pdf.id =  "{$basename}.t".fmt('%-16s').substr(0,16);
+lives-ok { $pdf.save-as: "{$basename}.pdf"; };
 
 done-testing;

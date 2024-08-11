@@ -60,9 +60,10 @@ for <top center bottom> -> $valign {
 }
 
 $gfx.Restore;
-# ensure consistant document ID generation
-$pdf.id =  $*PROGRAM-NAME.fmt('%-16.16s');
 
-lives-ok {$pdf.save-as('t/pdf-text-align.pdf')};
+# ensure consistant document ID generation
+my $basename := "t/pdf-text-align";
+$pdf.id =  "{$basename}.t".fmt('%-16s').substr(0,16);
+lives-ok {$pdf.save-as("{$basename}.pdf")};
 
 done-testing;

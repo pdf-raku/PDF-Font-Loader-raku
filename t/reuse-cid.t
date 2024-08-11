@@ -61,7 +61,8 @@ $pdf.add-page.graphics: {
     .say: "reused Vera (CID) font", :position[10,500];
 }
 
-$pdf.id =  $*PROGRAM-NAME.fmt('%-16.16s');
-$pdf.save-as: "t/reuse-cid.pdf";
+my $basename := "t/reuse-cid";
+$pdf.id =  "{$basename}.t".fmt('%-16s').substr(0,16);
+$pdf.save-as: "{$basename}.pdf";
 
 done-testing;

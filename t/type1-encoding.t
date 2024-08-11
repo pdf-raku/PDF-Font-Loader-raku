@@ -15,10 +15,11 @@ $page.text: {
     .font = $times;
     .say: "encoding check: abcdxyz";;
 }
-# ensure consistant document ID generation
-$pdf.id =  $*PROGRAM-NAME.fmt('%-16.16s');
 
-lives-ok { $pdf.save-as: "t/type1-encoding.pdf"; };
+# ensure consistant document ID generation
+my $basename := "t/type1-encoding";
+$pdf.id =  "{$basename}.t".fmt('%-16s').substr(0,16);
+lives-ok { $pdf.save-as: "{$basename}.pdf"; };
 
 my Hash $dict = $page.resources('Font').values[0];
 
