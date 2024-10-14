@@ -651,10 +651,8 @@ method type { $.to-dict<Subtype>.fmt; }
 method is-embedded {
     do with $!font-descriptor {
         .{self!font-file-entry}:exists;
-    } || False;
+    } // False;
 }
-method is-subset { so ($!font-name ~~ m/^<[A..Z]>**6"+"/) }
-method is-core-font { self.type ~~ 'Type1' && ! self.font-descriptor.defined && PDF::Content::Font::CoreFont.core-font-name($!font-name).defined }
 
 =begin pod
 =head2 Methods
