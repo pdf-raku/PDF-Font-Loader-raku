@@ -1,5 +1,8 @@
 {{$NEXT}}
 
+0.8.8  2024-10-16T07:26:50+13:00
+   - Fix handling of CID-keyed CFF fonts
+
 0.8.7  2024-08-09T05:32:42+12:00
    - Removed shaping support to PDF::Font::Loader::HarfBuzz. This module
      must be loaded to enable full shaping.
