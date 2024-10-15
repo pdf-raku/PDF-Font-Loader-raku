@@ -79,5 +79,32 @@ my $basename := "t/fontobj";
 $pdf.id =  "{$basename}.t".fmt('%-16s').substr(0,16);
 lives-ok { $pdf.save-as: "{$basename}.pdf"; };
 
+$pdf .= new;
+
+$pdf.add-page.text: {
+   .text-position = [10, 700];
+   .font = $otf-font;
+   .say: "shared otf font";
+
+   .text-position = [10, 650];
+   .font = $cff-font;
+   .say: "shared cff font";
+
+   .text-position = [10, 600];
+   .font = $ttc-font;
+   .say: "shared TTC font";
+
+   .text-position = [10, 550];
+   .font = $cid-keyed-font;
+   .say: "shared cid keyed font";
+
+   .text-position = [10, 500];
+   .font = .core-font: 'Times';
+   .say: "shared core font";
+}
+
+$pdf.id =  "{$basename}-shared.t".fmt('%-16s').substr(0,16);
+lives-ok { $pdf.save-as: "{$basename}-shared.pdf"; };
+
 done-testing;
 

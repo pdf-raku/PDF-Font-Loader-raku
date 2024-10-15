@@ -219,18 +219,11 @@ method !make-other-font-file(Blob:D $buf) {
 
     given $!face.font-format {
         when 'OpenType' {
-            %dict<Subtype> = $!face.is-internally-keyed-cid
-                ?? /<CIDFontType0C> !! /<OpenType>;
+            %dict<Subtype> = /<OpenType>;
         }
         when 'CFF' {
-            %dict<Subtype> = /<Type1C>;
-            if Font::FreeType.^ver <= v0.5.4 {
-                # Peek at the buffer to distinguish simple CFF from OpenType/CFF
-                # See https://learn.microsoft.com/en-us/typography/opentype/spec/otff#organization-of-an-opentype-font
-                my subset OpenTypeCFF of Blob:D where .subbuf(0,4).decode('latin-1') eq 'OTTO';
-                %dict<Subtype> = /<OpenType>
-                    if $buf ~~ OpenTypeCFF;
-            }
+            %dict<Subtype> =  $!face.is-internally-keyed-cid
+                ?? /<CIDFontType0C> !! /<Type1C>;
         }
     }
 
