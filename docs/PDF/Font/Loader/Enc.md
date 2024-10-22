@@ -32,8 +32,7 @@ This method should be used on a font loaded from a PDF dictionary to ensure that
 
 The first [CID](PDF::Font::Loader::Glyph#cid) in the fonts character-set.
 
-last-char
----------
+### last-char
 
 The last [CID](PDF::Font::Loader::Glyph#cid) in the fonts character-set.
 

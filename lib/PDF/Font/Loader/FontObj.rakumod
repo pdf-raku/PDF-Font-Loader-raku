@@ -135,11 +135,11 @@ submethod TWEAK(
 
     $!encoder = do {
         when $!enc ~~ 'utf8'|'utf16'|'utf32' {
-            fail "todo create UTF from scratch" unless $!dict;
+            fail "todo create UTF encoding from scratch" unless $!dict;
             PDF::Font::Loader::Enc::Unicode.new: :$!face, :$!enc, |%encoder, :@cid-to-gid-map;
         }
         when $!enc eq 'cmap' || %encoder<cmap>.defined {
-            fail "todo create cmap from scratch" unless $!dict;
+            fail "todo create CMap encoding from scratch" unless $!dict;
             PDF::Font::Loader::Enc::CMap.new: :$!face, |%encoder, :@cid-to-gid-map;
         }
         when $!enc ~~ 'identity-h'|'identity-v' {
@@ -557,6 +557,7 @@ multi method shape(Str $text where $!face.font-format ~~ 'TrueType'|'OpenType', 
     @shaped, round($width * $font-scale);
 }
 
+# Emulate using FreeType
 multi method shape(Str $text is copy, Bool :$kern = $!face.has-kerning) {
     my Numeric $width = 0.0;
     my @shaped;
@@ -676,7 +677,7 @@ say $font.kern("ABCD"); # ["AB", -18, "CD"]
 
 ### shape
 
-Shape fonts via L<PDF::Font::Loader::HarfBuzz>. Returns encoded chunks, separated by 2-dimensional kern widths and heights.
+Shape fonts via L<PDF::Font::Loader::HarfBuzz>. Returns encoded chunks, separated by 2-dimensional text positioning adjustments.
 
 =begin code :lang<raku>
 say $font.shape("ABCD"); # ["AB", -18+0i, "CD"]

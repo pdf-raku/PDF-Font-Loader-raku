@@ -382,7 +382,7 @@ has an character encoding layer and `encode()` and `decode()` methods can be cal
 
 The first L<CID|PDF::Font::Loader::Glyph#cid> in the fonts character-set.
 
-=head2 last-char
+=head3 last-char
 
 The last L<CID|PDF::Font::Loader::Glyph#cid> in the fonts character-set.
 
