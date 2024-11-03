@@ -1,4 +1,5 @@
 {{$NEXT}}
+   - Add can-subset() method.
 
 0.8.8  2024-10-16T07:26:50+13:00
    - Fix handling of CID-keyed CFF fonts

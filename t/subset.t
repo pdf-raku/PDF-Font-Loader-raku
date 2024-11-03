@@ -1,5 +1,5 @@
 use Test;
-plan 3;
+plan 6;
 
 use PDF::Lite;
 use PDF::Font::Loader :&load-font;
@@ -10,10 +10,14 @@ my constant Glyph = PDF::Font::Loader::Glyph;
 
 try {require HarfBuzz::Subset;}
 if $! {
+    nok PDF::Font::Loader.can-subset, "can-subset() returns False";
     skip-rest 'HarfBuzz::Subset required to run subset tests';
     exit;
 }
 
+ok PDF::Font::Loader.can-subset, "can-subset() returns True";
+ok PDF::Font::Loader.can-subset('t/fonts/Vera.ttf'), 'can-subset("file.ttf")';
+nok PDF::Font::Loader.can-subset('t/fonts/TimesNewRomPS.pfb'), 'can-subset("file.pfb")';
 given load-font( :file<t/fonts/Vera.ttf>, :subset) {
    # since the remaining tests hard-code the prefix
    like .font-name, /^<[A..Z]>**6 '+BitstreamVeraSans-Roman'$/, 'font prefix generation';

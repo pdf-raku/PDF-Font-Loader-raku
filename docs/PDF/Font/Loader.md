@@ -199,3 +199,19 @@ $best-font //= @best.head;
 note "best font: " ~ $best-font;
 ```
 
+### can-subset
+
+```raku
+multi method can-subset returns Bool;
+```
+
+Returns `True` if [PDF::Font::Loader](https://pdf-raku.github.io/PDF-Font-Loader-raku/PDF/Font/Loader) is capable of font subsetting; I.E. the optional [HarfBuzz::Subset](https://harfbuzz-raku.github.io/HarfBuzz-Subset-raku/HarfBuzz/Subset) module has been installed.
+
+```raku
+multi method can-subset(IO() $font-file) returns Bool;
+```
+
+Returns `True` if [PDF::Font::Loader](https://pdf-raku.github.io/PDF-Font-Loader-raku/PDF/Font/Loader) has font subsetting capability for the particular font.
+
+This will usually be be `True` for `TrueType` and `OpenType` fonts (extensions `.ttf`, `.otf`, `.ttc`, and `.otc`), if the optional [HarfBuzz::Subset](https://harfbuzz-raku.github.io/HarfBuzz-Subset-raku/HarfBuzz/Subset) module has been installed.
+

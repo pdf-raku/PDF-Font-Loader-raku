@@ -1,174 +1,184 @@
 use v6;
 
-class PDF::Font::Loader:ver<0.8.8> {
+unit class PDF::Font::Loader:ver<0.8.8>;
 
-    use Font::FreeType;
-    use Font::FreeType::Face;
-    use PDF::Content::Font;
-    use PDF::Content::Font::CoreFont;
-    use PDF::Content::Font::Enc::Type1 :Type1EncodingScheme;
-    use PDF::COS;
-    use PDF::COS::Dict;
-    use PDF::Font::Loader::FontObj;
-    use PDF::Font::Loader::FontObj::CID;
-    use PDF::Font::Loader::Dict :&load-font-opts;
+use Font::FreeType;
+use Font::FreeType::Face;
+use PDF::Content::Font;
+use PDF::Content::Font::CoreFont;
+use PDF::Content::Font::Enc::Type1 :Type1EncodingScheme;
+use PDF::COS;
+use PDF::COS::Dict;
+use PDF::Font::Loader::FontObj;
+use PDF::Font::Loader::FontObj::CID;
+use PDF::Font::Loader::Dict :&load-font-opts;
 
-    proto method load-font($?: |c) is export(:load-font) {*};
+proto method load-font($?: |c) is export(:load-font) {*};
 
-    multi sub find-afm(IO:D $file where .extension ~~ 'pfa'|'pfb') {
-        my $afm-file = $file.Str.subst(/'.pf'[a|b]$/, '.afm');
-        $afm-file.IO.e ?? $afm-file !! Str;
+multi sub find-afm(IO:D $file where .extension ~~ 'pfa'|'pfb') {
+    my $afm-file = $file.Str.subst(/'.pf'[a|b]$/, '.afm');
+    $afm-file.IO.e ?? $afm-file !! Str;
+}
+multi sub find-afm(IO:D $file where .extension ~~ 'PFA'|'PFB') {
+    my $afm-file = $file.Str.subs(/'.PF'[A|B]$/, '.AFM');
+    $afm-file.IO.e ?? $afm-file !! Str;
+}
+multi sub find-afm($) { Str }
+
+multi method load-font($class = $?CLASS: IO() :$file!, Str :$afm = find-afm($file), |c) {
+    my Blob $font-buf = $file.slurp: :bin;
+    $class.load-font: :$font-buf, :$afm, |c;
+}
+
+my subset Type1 where .font-format ~~ 'Type 1'|'CFF'|'OpenType' && !.is-internally-keyed-cid;
+my subset CIDEncoding of Str where m/^[identity|utf]/;
+multi method load-font(
+    $?: Font::FreeType::Face :$face!,
+    Blob :$font-buf!,
+    Bool :$embed = True,
+    Str  :$enc = $face ~~ Type1 || !$embed || ($face.num-glyphs <= 255 && !$face.is-internally-keyed-cid)
+        ?? 'win'
+        !! 'identity-h',
+    Bool :$cid = $face !~~ Type1 && $enc ~~ 'cmap'|CIDEncoding,
+    |c,
+) is hidden-from-backtrace {
+    unless c<dict>.defined {
+        fail "Type1 fonts cannot be used as a CID font"
+            if $cid && $face ~~ Type1;
+        fail "'$enc' encoding can only be used with CID fonts"
+            if !$cid && $enc ~~ CIDEncoding;
     }
-    multi sub find-afm(IO:D $file where .extension ~~ 'PFA'|'PFB') {
-        my $afm-file = $file.Str.subs(/'.PF'[A|B]$/, '.AFM');
-        $afm-file.IO.e ?? $afm-file !! Str;
-    }
-    multi sub find-afm($) { Str }
+    my \fontobj-class = $cid
+        ?? PDF::Font::Loader::FontObj::CID
+        !! PDF::Font::Loader::FontObj;
+    fontobj-class.new: :$face, :$font-buf, :$enc, :$embed, |c;
+}
 
-    multi method load-font($class = $?CLASS: IO() :$file!, Str :$afm = find-afm($file), |c) {
-        my Blob $font-buf = $file.slurp: :bin;
-        $class.load-font: :$font-buf, :$afm, |c;
-    }
+multi method load-font($class = $?CLASS: Blob :$font-buf!, Font::FreeType :$ft-lib, |c) is hidden-from-backtrace {
+    my Font::FreeType::Face:D $face = $ft-lib.face($font-buf);
+    $class.load-font: :$face, :$font-buf, |c;
+}
 
-    my subset Type1 where .font-format ~~ 'Type 1'|'CFF'|'OpenType' && !.is-internally-keyed-cid;
-    my subset CIDEncoding of Str where m/^[identity|utf]/;
-    multi method load-font(
-        $?: Font::FreeType::Face :$face!,
-        Blob :$font-buf!,
-        Bool :$embed = True,
-        Str  :$enc = $face ~~ Type1 || !$embed || ($face.num-glyphs <= 255 && !$face.is-internally-keyed-cid)
-            ?? 'win'
-            !! 'identity-h',
-        Bool :$cid = $face !~~ Type1 && $enc ~~ 'cmap'|CIDEncoding,
-        |c,
-    ) is hidden-from-backtrace {
-        unless c<dict>.defined {
-            fail "Type1 fonts cannot be used as a CID font"
-                if $cid && $face ~~ Type1;
-            fail "'$enc' encoding can only be used with CID fonts"
-                if !$cid && $enc ~~ CIDEncoding;
-        }
-        my \fontobj-class = $cid
-            ?? PDF::Font::Loader::FontObj::CID
-            !! PDF::Font::Loader::FontObj;
-        fontobj-class.new: :$face, :$font-buf, :$enc, :$embed, |c;
-    }
+# core font load
+multi method load-font(
+    $class is copy = $?CLASS:
+    :core-font($)! where .so,
+    Str:D :$family!,
+    Str:D :$enc = 'win',
+    :dict($), :encoder($),
+    |c
+) {
+    $class = PDF::Content::Font::CoreFont
+        unless c<encoder> || $enc !~~ Type1EncodingScheme;
+    $class.load-font: :$family, :$enc, |c;
+}
 
-    multi method load-font($class = $?CLASS: Blob :$font-buf!, Font::FreeType :$ft-lib, |c) is hidden-from-backtrace {
-        my Font::FreeType::Face:D $face = $ft-lib.face($font-buf);
-        $class.load-font: :$face, :$font-buf, |c;
-    }
-
-    # core font load
-    multi method load-font(
-        $class is copy = $?CLASS:
-        :core-font($)! where .so,
-        Str:D :$family!,
-        Str:D :$enc = 'win',
-        :dict($), :encoder($),
-        |c
-    ) {
-        $class = PDF::Content::Font::CoreFont
-            unless c<encoder> || $enc !~~ Type1EncodingScheme;
-        $class.load-font: :$family, :$enc, |c;
-    }
-
-    # resolve font name via FontConfig
-    multi method load-font($class is copy = $?CLASS: Str:D :$family!, PDF::COS::Dict :$dict, :$quiet, |c) is hidden-from-backtrace {
-	my Str:D $file = $class.find-font(:$family, |c)
-	    || do {
-            note "unable to locate font. Falling back to mono-spaced font"
-	        unless $quiet;
-            %?RESOURCES<font/FreeMono.ttf>.IO.absolute;
-        }
-
-        my PDF::Font::Loader::FontObj:D $font := $class.load-font: :$file, :$dict, |c;
-	unless $quiet // !$dict {
-	    my $name = c<font-name> // $family;
-            note "loading font: $name -> $file";
-	}
-        $font;
+# resolve font name via FontConfig
+multi method load-font($class is copy = $?CLASS: Str:D :$family!, PDF::COS::Dict :$dict, :$quiet, |c) is hidden-from-backtrace {
+    my Str:D $file = $class.find-font(:$family, |c)
+        || do {
+        note "unable to locate font. Falling back to mono-spaced font"
+            unless $quiet;
+        %?RESOURCES<font/FreeMono.ttf>.IO.absolute;
     }
 
-    # resolve via PDF font dictionary
-    multi method load-font(
-        $class is copy = $?CLASS:
-        PDF::Content::Font:D :$dict!,
-        Bool :$core-font,
-        |c) is hidden-from-backtrace {
-        my %opts = load-font-opts(:$dict, |c);
-        $class = PDF::Content::Font::CoreFont
-            if $core-font && PDF::Font::Loader::Dict.is-core-font(:$dict) && %opts<enc> ~~ Type1EncodingScheme && !%opts<encoder>;
-        $class.load-font: |%opts, |c;
+    my PDF::Font::Loader::FontObj:D $font := $class.load-font: :$file, :$dict, |c;
+    unless $quiet // !$dict {
+        my $name = c<font-name> // $family;
+        note "loading font: $name -> $file";
+    }
+    $font;
+}
+
+# resolve via PDF font dictionary
+multi method load-font(
+    $class is copy = $?CLASS:
+    PDF::Content::Font:D :$dict!,
+    Bool :$core-font,
+    |c) is hidden-from-backtrace {
+    my %opts = load-font-opts(:$dict, |c);
+    $class = PDF::Content::Font::CoreFont
+        if $core-font && PDF::Font::Loader::Dict.is-core-font(:$dict) && %opts<enc> ~~ Type1EncodingScheme && !%opts<encoder>;
+    $class.load-font: |%opts, |c;
+}
+
+subset Weight is export(:Weight) where /^[thin|extralight|light|book|regular|medium|semibold|bold|extrabold|black|<[0..9]>**3]$/;
+subset Stretch of Str is export(:Stretch) where /^[[ultra|extra]?[condensed|expanded]]|normal$/;
+subset Slant   of Str is export(:Slant) where /^[normal|oblique|italic]$/;
+
+method find-font($?: Str :$family is copy,
+                 Weight  :$weight is copy = 'medium',
+                 Stretch :$stretch = 'normal',
+                 Slant   :$slant = 'normal',
+                 UInt    :$limit, # deprecated
+                 UInt    :$best is copy = $limit,
+                 Bool    :$seq, # deprecated
+                 Bool    :$all is copy = $seq,
+                 Bool    :$serif, # restrict to serif or sans-serif
+                 :cid($), :differences($), :embed($), :enc($), :encoder($),
+                 :font-name($), :font-descriptor($), :subset($),
+                 *%props,
+                ) is raw is export(:find-font) is hidden-from-backtrace {
+
+    warn ':seq option is deprecated. please use :all, or :$best'
+        with $seq;
+
+    warn ':limit option is deprecated. please use :all, or :$best'
+       with $limit;
+
+   # https://wiki.archlinux.org/title/Font_configuration/Examples#Default_fonts
+    with $serif {
+        $family = $_ ?? 'serif' !! 'sans-serif';
     }
 
-    subset Weight is export(:Weight) where /^[thin|extralight|light|book|regular|medium|semibold|bold|extrabold|black|<[0..9]>**3]$/;
-    subset Stretch of Str is export(:Stretch) where /^[[ultra|extra]?[condensed|expanded]]|normal$/;
-    subset Slant   of Str is export(:Slant) where /^[normal|oblique|italic]$/;
+    with $weight {
+        # convert CSS/PDF numeric weights for fontconfig
+        #      000  100        200   300  400     500    600      700  800       900
+        $_ =  <thin extralight light book regular medium semibold bold extrabold black>[.substr(0,1).Int]
+            if /^<[0..9]>/;
+    }
 
-    method find-font($?: Str :$family is copy,
-                     Weight  :$weight is copy = 'medium',
-                     Stretch :$stretch = 'normal',
-                     Slant   :$slant = 'normal',
-                     UInt    :$limit, # deprecated
-                     UInt    :$best is copy = $limit,
-                     Bool    :$seq, # deprecated
-                     Bool    :$all is copy = $seq,
-                     Bool    :$serif, # restrict to serif or sans-serif
-                     :cid($), :differences($), :embed($), :enc($), :encoder($),
-                     :font-name($), :font-descriptor($), :subset($),
-                     *%props,
-                    ) is raw is export(:find-font) is hidden-from-backtrace {
-
-        warn ':seq option is deprecated. please use :all, or :$best'
-            with $seq;
-
-        warn ':limit option is deprecated. please use :all, or :$best'
-           with $limit;
-
-       # https://wiki.archlinux.org/title/Font_configuration/Examples#Default_fonts
-        with $serif {
-            $family = $_ ?? 'serif' !! 'sans-serif';
-        }
-
-        with $weight {
-            # convert CSS/PDF numeric weights for fontconfig
-            #      000  100        200   300  400     500    600      700  800       900
-            $_ =  <thin extralight light book regular medium semibold bold extrabold black>[.substr(0,1).Int]
-                if /^<[0..9]>/;
-        }
-
-        my $FontConfig := try PDF::COS.required("FontConfig::Pattern");
+    my $FontConfig := try PDF::COS.required("FontConfig::Pattern");
+    if $FontConfig === Nil {
+        $all = Nil;
+        $best = Nil;
+        # Try for an older FontConfig version
+        $FontConfig := try PDF::COS.required("FontConfig");
         if $FontConfig === Nil {
-            $all = Nil;
-            $best = Nil;
-            # Try for an older FontConfig version
-            $FontConfig := try PDF::COS.required("FontConfig");
-            if $FontConfig === Nil {
-                warn "FontConfig is required for the find-font method";
-                return Str;
-            }
+            warn "FontConfig is required for the find-font method";
+            return Str;
         }
-        my $patt = $FontConfig.new: |%props;
-        $patt.family = $_ with $family;
-        $patt.weight = $weight  unless $weight eq 'medium';
-        $patt.width  = $stretch unless $stretch eq 'normal';
-        $patt.slant  = $slant   unless $slant eq 'normal';
+    }
+    my $patt = $FontConfig.new: |%props;
+    $patt.family = $_ with $family;
+    $patt.weight = $weight  unless $weight eq 'medium';
+    $patt.width  = $stretch unless $stretch eq 'normal';
+    $patt.slant  = $slant   unless $slant eq 'normal';
 
-        if $all || $best {
-            $patt.match-series(:$all, :$best).map: *.file;
+    if $all || $best {
+        $patt.match-series(:$all, :$best).map: *.file;
+    }
+    else {
+        with $patt.match -> $match {
+            $match.file;
         }
         else {
-            with $patt.match -> $match {
-                $match.file;
-	    }
-	    else {
-	        Str;
-            }
-	}
+            Str;
+        }
     }
-
 }
+
+multi method can-subset returns Bool {
+    (try require HarfBuzz::Subset) !=== Nil;
+}
+
+multi method can-subset(IO() $file!) returns Bool is hidden-from-backtrace {
+    my Blob $font-buf = $file.slurp: :bin;
+    $.can-subset
+    && $font-buf.subbuf(0,4).decode('latin-1') ne 'wOFF'
+    && Font::FreeType.face($font-buf).font-format ~~ 'TrueType'|'OpenType'
+}
+
 
 =begin pod
 
@@ -397,6 +407,20 @@ $best-font //= @best.head;
 
 note "best font: " ~ $best-font;
 =end code
+
+=head3 can-subset
+
+=for code :lang<raku>
+multi method can-subset returns Bool;
+
+=para Returns C<True> if L<PDF::Font::Loader> is capable of font subsetting; I.E. the optional L<HarfBuzz::Subset> module has been installed.
+
+=for code :lang<raku>
+multi method can-subset(IO() $font-file) returns Bool;
+
+=para Returns C<True> if L<PDF::Font::Loader> has font subsetting capability for the particular font.
+
+=para This will usually be be C<True> for C<TrueType> and C<OpenType> fonts (extensions C<.ttf>, C<.otf>, C<.ttc>, and C<.otc>), if the optional L<HarfBuzz::Subset> module has been installed.
 
 =end pod
 
