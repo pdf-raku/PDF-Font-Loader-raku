@@ -1,6 +1,6 @@
 use v6;
 
-unit class PDF::Font::Loader:ver<0.8.8>;
+unit class PDF::Font::Loader:ver<0.8.9>;
 
 use Font::FreeType;
 use Font::FreeType::Face;
@@ -292,7 +292,8 @@ Prefer to load simple Type1 objects as L<PDF::Content::Font::CoreFont>, rather t
 
 =end item
 
-=head4 C<PDF::Font::Loader.load-font(Str :$family, Str :$weight, Str :$stretch, Str :$slant, Bool :$core-font, Bool :$subset, Str :$enc, Str :$lang);>
+=for code :lang<raku>
+load-font(Str :$family, Str :$weight, Str :$stretch, Str :$slant, Bool :$core-font, Bool :$subset, Str :$enc, Str :$lang);
 
  my $vera = PDF::Font::Loader.load-font: :family<vera>;
  my $deja = PDF::Font::Loader.load-font: :family<Deja>, :weight<bold>, :stretch<condensed> :slant<italic>);
