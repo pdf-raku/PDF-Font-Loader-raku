@@ -4,7 +4,7 @@ use PDF::Lite;
 use PDF::Font::Loader;
 use PDF::Content::FontObj;
 
-plan 9;
+plan 10;
 # see if we can re-load the CID font that we wrote in pdf-text.align.t
 
 class FontLoader {
@@ -48,6 +48,7 @@ sub font-sanity($font) {
     my $enc = $font.encode($text, :str);
     is-deeply $enc, [~]("\0\x[24]", "\0\x[45]", "\0\x[46]", "\x[1]\x[2]", "\x[0]\x[a5]", "\0\x[45]"), 'encode';
     is $font.decode($enc, :str), $text, "font encode/decode round-trip";
+    nok $font.file, 'lacks an external file path';
 }
 
 my PDF::Lite $pdf .= open: "t/pdf-text-align.pdf";

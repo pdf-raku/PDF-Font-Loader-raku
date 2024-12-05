@@ -14,6 +14,7 @@ my PDF::Content::FontObj $ttc-font = load-font :file<t/fonts/Sitka.ttc>, :!embed
 
 is $vera.underline-position, -284;
 is $vera.underline-thickness, 143;
+is $vera.file.path, 't/fonts/Vera.ttf';
 
 my $n = 0;
 my $vera-chars;

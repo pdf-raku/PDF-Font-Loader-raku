@@ -67,6 +67,7 @@ has Bool $!build-widths;
 has Str $.afm;
 has Font::AFM $!metrics;
 has uint32 @.unicode-index;
+has IO::Path $.file;
 
 sub subsetter { PDF::COS.required("HarfBuzz::Subset") }
 sub shaper { PDF::COS.required("PDF::Font::Loader::HarfBuzz") }

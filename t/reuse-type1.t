@@ -9,7 +9,6 @@ use PDF::Content::FontObj;
 my PDF::Lite $pdf .= open: "t/fontobj.pdf";
 my PDF::Lite::Page $page = $pdf.page(2);
 
-
 $pdf.page(2).gfx.text: -> $gfx {
     my PDF::COS::Dict %fonts = $gfx.resources('Font');
     $gfx.text-position = 10, 400;
@@ -36,7 +35,7 @@ $pdf.page(2).gfx.text: -> $gfx {
 
 # ensure consistant document ID generation
 my $basename := "t/reuse-type1";
-$pdf.id =  "{$basename}.t".fmt('%-16s').substr(0,16);
+$pdf.id = "{$basename}.t".fmt('%-16s').substr(0,16);
 lives-ok { $pdf.save-as: "{$basename}.pdf"; };
 
 done-testing;

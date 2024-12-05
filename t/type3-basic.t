@@ -1,5 +1,5 @@
 use Test;
-plan 11;
+plan 12;
 use PDF::COS::Dict;
 use PDF::Lite;
 use PDF::Font::Loader;
@@ -25,6 +25,7 @@ $pdf.page(1).gfx.text: -> $gfx {
     is $f1.enc, 'std', 'enc';
     nok $f1.is-embedded, "isn't embedded";
     nok $f1.is-subset, "isn't subset";
+    ok $f1.file.path, 'has file path';
     my @cids = 1, 2, 3;
     my @glyphs = $f1.get-glyphs(@cids);
     is-deeply @glyphs[0], PDF::Font::Loader::Glyph.new(:name<square>, :cid(1), :gid(1), :ax(1000), :sx(1000) );
