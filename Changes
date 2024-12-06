@@ -1,4 +1,6 @@
 {{$NEXT}}
+
+0.8.10  2024-12-07T08:25:26+13:00
   - Add file attribute to font objects.
 
 0.8.9  2024-11-04T08:54:13+13:00

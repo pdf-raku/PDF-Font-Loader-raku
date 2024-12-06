@@ -49,7 +49,7 @@ multi method load-font(
     fontobj-class.new: :$face, :$font-buf, :$enc, :$embed, |c;
 }
 
-multi method load-font($class = $?CLASS: Blob :$font-buf!, Font::FreeType :$ft-lib, :$file, |c) is hidden-from-backtrace {
+multi method load-font($class = $?CLASS: Blob :$font-buf!, Font::FreeType :$ft-lib, IO :$file, |c) is hidden-from-backtrace {
     my Font::FreeType::Face:D $face = $ft-lib.face($font-buf, :$file);
     $class.load-font: :$face, :$font-buf, |c;
 }
