@@ -47,7 +47,7 @@ my enum FontFlags is export(:FontFlags) «
     »;
 enum <Width Height>;
 
-has Font::FreeType::Face:D $.face is required handles<underline-thickness underline-position>;
+has Font::FreeType::Face:D $.face is required handles<underline-thickness underline-position file>;
 use PDF::Font::Loader::Enc;
 has PDF::Font::Loader::Enc $!encoder handles <decode first-char last-char widths has-encoding glyph get-glyphs glyph-width height stringwidth encode-cids>;
 method encoder { $!encoder }
@@ -67,7 +67,6 @@ has Bool $!build-widths;
 has Str $.afm;
 has Font::AFM $!metrics;
 has uint32 @.unicode-index;
-has IO::Path $.file;
 
 sub subsetter { PDF::COS.required("HarfBuzz::Subset") }
 sub shaper { PDF::COS.required("PDF::Font::Loader::HarfBuzz") }
@@ -85,7 +84,6 @@ submethod TWEAK(
     :%encoder,
     Str :$prefix is copy,
 ) {
-
     @!unicode-index := $!face.index-to-unicode;
     $!face.attach-file($_) with $!afm;
 
@@ -480,7 +478,6 @@ method kern(Str $text) {
 
     @chunks, self.stringwidth($text) + $kernwidth.round;
 }
-
 
 multi method shape(Str $text where $!face.font-format ~~ 'TrueType'|'OpenType', Bool :$kern = True, Str :$script, Str :$lang) {
     my $shaper-maker := try shaper();

@@ -1,6 +1,6 @@
 use v6;
 
-unit class PDF::Font::Loader:ver<0.8.9>;
+unit class PDF::Font::Loader:ver<0.8.10>;
 
 use Font::FreeType;
 use Font::FreeType::Face;
@@ -49,8 +49,8 @@ multi method load-font(
     fontobj-class.new: :$face, :$font-buf, :$enc, :$embed, |c;
 }
 
-multi method load-font($class = $?CLASS: Blob :$font-buf!, Font::FreeType :$ft-lib, |c) is hidden-from-backtrace {
-    my Font::FreeType::Face:D $face = $ft-lib.face($font-buf);
+multi method load-font($class = $?CLASS: Blob :$font-buf!, Font::FreeType :$ft-lib, :$file, |c) is hidden-from-backtrace {
+    my Font::FreeType::Face:D $face = $ft-lib.face($font-buf, :$file);
     $class.load-font: :$face, :$font-buf, |c;
 }
 
@@ -75,11 +75,11 @@ multi method load-font(
 
 # resolve font name via FontConfig
 multi method load-font($class is copy = $?CLASS: Str:D :$family!, PDF::COS::Dict :$dict, :$quiet, |c) is hidden-from-backtrace {
-    my Str:D $file = $class.find-font(:$family, |c)
+    my IO:D() $file = $class.find-font(:$family, |c)
         || do {
         note "unable to locate font. Falling back to mono-spaced font"
             unless $quiet;
-        %?RESOURCES<font/FreeMono.ttf>.IO.absolute;
+        %?RESOURCES<font/FreeMono.ttf>.IO;
     }
 
     my PDF::Font::Loader::FontObj:D $font := $class.load-font: :$file, :$dict, |c;
