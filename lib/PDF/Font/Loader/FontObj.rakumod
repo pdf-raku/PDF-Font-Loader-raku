@@ -509,23 +509,23 @@ multi method shape(Str $text where $!face.font-format ~~ 'TrueType'|'OpenType', 
         my $cluster := $hb-glyph.cluster;
         my $cluster-end = $i+1 < $n ?? $hb-shaper[$i+1].cluster !! @ords.elems;
         my $ord  := @!unicode-index[$gid];
-        my $cid;
-
-        if $identity {
-            $cid = $gid;
-            $!encoder.set-encoding($ord, $cid) if $ord;
+        my $cid  := do if $identity {
+            $!encoder.set-encoding($ord, $gid) if $ord;
+            $gid
+        }
+        elsif $ord {
+            $!encoder.charset{$ord} // $!encoder.add-encoding($ord);
         }
         else {
-            if $ord {
-                $cid = $!encoder.charset{$ord} // $!encoder.add-encoding($ord);
-            }
-            else {
-                $cid = $!encoder.allocate-cid;
-                $!encoder.cid-to-gid-map[$cid] = $gid;
-                $!encoder.add-glyph-diff($cid, $name)
+            given $!encoder.allocate-cid {
+                $!encoder.cid-to-gid-map[$_] = $gid;
+                $!encoder.add-glyph-diff($_, $name)
                     if $glyphic;
+                $_;
             }
         }
+
+        next unless $cid;
 
         if $cluster-end > $cluster + 1 || (!$ord && $cluster-end == $cluster + 1)  {
             $!encoder.ligature{$cid} //= @ords[$cluster .. $cluster-end-1].Slip;
