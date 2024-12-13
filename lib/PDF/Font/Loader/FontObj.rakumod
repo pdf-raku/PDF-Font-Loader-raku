@@ -482,7 +482,7 @@ method kern(Str $text) {
 multi method shape(Str $text where $!face.font-format ~~ 'TrueType'|'OpenType', Bool :$kern = True, Str :$script, Str :$lang) {
     my $shaper-maker := try shaper();
     if $shaper-maker === Nil {
-        warn "The PDF::Font::Loader::HarfBuzz modules is required for proper shaping";
+        warn "The PDF::Font::Loader::HarfBuzz module is required for proper shaping";
         nextsame; # shaping emulation
     }
     my $font      = $shaper-maker.make-harfbuzz-font(:$!face, :$.font-buf, :$kern);

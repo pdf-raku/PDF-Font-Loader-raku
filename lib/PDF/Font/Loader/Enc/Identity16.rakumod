@@ -42,7 +42,8 @@ class PDF::Font::Loader::Enc::Identity16
 
     method is-wide {True}
 
-    method set-encoding($ord, $cid) {
+    multi method set-encoding($_, 0) { 0 }
+    multi method set-encoding($ord, $cid) {
         @!to-unicode[$cid] ||= $ord;
         %!charset{$ord} ||= $cid;        
         $cid;
@@ -69,9 +70,9 @@ class PDF::Font::Loader::Enc::Identity16
 
     multi method encode(Str $text, :cids($)!) {
         $.lock.protect: {
-            blob16.new: $text.ords.map: -> $ord {
+            blob16.new: ($text.ords.map: -> $ord {
                 self.add-encoding($ord);
-            }
+            }).grep: {$_};
         }
     }
 
