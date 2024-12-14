@@ -25,25 +25,38 @@ multi sub find-afm(IO:D $file where .extension ~~ 'PFA'|'PFB') {
 }
 multi sub find-afm($) { Str }
 
+sub is-cid(Font::FreeType::Face $_, Blob $font-buf) {
+    .is-internally-keyed-cid || (
+        .font-format ~~ 'OpenType'|'TrueType'
+        && $font-buf.subbuf(0,4).decode('latin-1') eq 'ttcf'
+    )
+}
+
+sub is-type1(Font::FreeType::Face $_, Blob $font-buf) {
+    .font-format ~~ 'Type 1'|'CFF'|'OpenType'
+    && !.&is-cid($font-buf);
+}
+
 my subset Type1 where .font-format ~~ 'Type 1'|'CFF'|'OpenType' && !.is-internally-keyed-cid;
 my subset CIDEncoding of Str where m/^[identity|utf]/;
 multi method load-font(
     $?: Font::FreeType::Face :$face!,
     Blob :$font-buf!,
     Bool :$embed = True,
-    Str  :$enc = $face ~~ Type1 || !$embed || ($face.num-glyphs <= 255 && !$face.is-internally-keyed-cid)
-        ?? 'win'
-        !! 'identity-h',
-    Bool :$cid = $face !~~ Type1 && $enc ~~ 'cmap'|CIDEncoding,
+    Str  :$enc is copy,
     |c,
 ) is hidden-from-backtrace {
-    unless c<dict>.defined {
-        fail "Type1 fonts cannot be used as a CID font"
-            if $cid && $face ~~ Type1;
-        fail "'$enc' encoding can only be used with CID fonts"
-            if !$cid && $enc ~~ CIDEncoding;
+    my $is-cid = do with c<dict> {
+        fail "missing :enc option for :dict" without $enc;
+        .<Subtype> ~~ 'Type0';
     }
-    my \fontobj-class = $cid
+    else {
+        $enc //= $face.&is-type1($font-buf) || !$embed || ($face.num-glyphs <= 255 && !$face.&is-cid($font-buf))
+        ?? 'win'
+        !! 'identity-h';
+        $enc ~~ 'cmap'|CIDEncoding;
+    }
+    my \fontobj-class = $is-cid
         ?? PDF::Font::Loader::FontObj::CID
         !! PDF::Font::Loader::FontObj;
     fontobj-class.new: :$face, :$font-buf, :$enc, :$embed, |c;

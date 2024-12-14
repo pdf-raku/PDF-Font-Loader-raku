@@ -59,15 +59,13 @@ sub check-fonts($whence, :$subsetted) {
 
         ok $otc-font.is-subset, '$otc-font.is-subset';
         like $otc-font.font-name, /^<[A..Z]>**6 '+EBGaramond12-Regular'$/, 'font-name';
-        is $otc-font.encoding, 'WinAnsiEncoding', '$otc-font.encoding';
+        is $otc-font.encoding, 'Identity-H', '$otc-font.encoding';
         @shape = $otc-font.get-glyphs("Ab");
 
         # can't avoid gid remapping in an OpenType/CFF font
-        my $gid = $subsetted ?? 6 !! 34;
-        is-deeply @shape.head, Glyph.new(:name<A>, :code-point(65), :cid(65), :$gid, :ax(692), :sx(692) :ay(0)), 'otc-font glyph "A"';
+        is-deeply @shape.head, Glyph.new(:name<A>, :code-point(65), :cid(34), :gid(34), :ax(692), :sx(692) :ay(0)), 'otc-font glyph "A"';
 
-        $gid = $subsetted ?? 16 !! 67;
-        is-deeply @shape.tail, Glyph.new(:name<b>, :code-point(98), :cid(98), :$gid, :ax(515), :sx(515), :ay(0)), 'otc-font glyph "b"';
+        is-deeply @shape.tail, Glyph.new(:name<b>, :code-point(98), :cid(67), :gid(67), :ax(515), :sx(515), :ay(0)), 'otc-font glyph "b"';
 
     }
 }

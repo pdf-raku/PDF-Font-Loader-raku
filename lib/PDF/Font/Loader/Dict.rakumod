@@ -112,8 +112,7 @@ class PDF::Font::Loader::Dict {
             %encoder<cmap> //= $cmap;
         }
 
-        %opt<cid> = $dict<Subtype> ~~ 'Type0';
-        if %opt<cid> {
+        if $dict<Subtype> ~~ 'Type0' {
             # CiD Font
             given base-font($dict) {
                 with .<W> -> $W {
