@@ -1,6 +1,6 @@
 use v6;
 
-unit class PDF::Font::Loader:ver<0.8.10>;
+unit class PDF::Font::Loader:ver<0.8.11>;
 
 use Font::FreeType;
 use Font::FreeType::Face;
@@ -36,9 +36,8 @@ sub is-type1(Font::FreeType::Face $_, Blob $font-buf) {
     .font-format ~~ 'Type 1'|'CFF'|'OpenType'
     && !.&is-cid($font-buf);
 }
-
-my subset Type1 where .font-format ~~ 'Type 1'|'CFF'|'OpenType' && !.is-internally-keyed-cid;
 my subset CIDEncoding of Str where m/^[identity|utf]/;
+
 multi method load-font(
     $?: Font::FreeType::Face :$face!,
     Blob :$font-buf!,
@@ -286,10 +285,7 @@ Selects the encoding mode: common modes are `win`, `mac` and `identity-h`.
 =item `win` Windows platform single byte encoding
 =item `identity-h` a two byte encoding mode
 
-`win` is used as the default encoding for fonts with no more than 255 glyphs. `identity-h` is used otherwise.
-
-It is recommended that you use a single byte encoding such as `:enc<mac>` or `:enc<win>` when it known that
-no more that 255 distinct characters will actually be used from the font within the PDF.
+`win` is used as the default encoding for type-1 fonts. `identity-h` is used for CID fonts (most `TrueType` and `OpenType` fonts.
 =end item
 
 =begin item

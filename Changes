@@ -1,4 +1,6 @@
 {{$NEXT}}
+
+0.8.11  2024-12-15T08:17:01+13:00
   - Fix handling of unmapped characters Identity-H encoding
   - Fix mis-classification of OpenType collections as non-CID fonts.
 

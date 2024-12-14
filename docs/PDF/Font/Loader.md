@@ -94,9 +94,7 @@ parameters:
 
       * `identity-h` a two byte encoding mode
 
-    `win` is used as the default encoding for fonts with no more than 255 glyphs. `identity-h` is used otherwise.
-
-    It is recommended that you use a single byte encoding such as `:enc<mac>` or `:enc<win>` when it known that no more that 255 distinct characters will actually be used from the font within the PDF.
+    `win` is used as the default encoding for type-1 fonts. `identity-h` is used for CID fonts (most `TrueType` and `OpenType` fonts.
 
   * `:$dict`
 
