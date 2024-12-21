@@ -300,6 +300,12 @@ Selects the encoding mode: common modes are `win`, `mac` and `identity-h`.
 =end item
 
 =begin item
+C<:$index>
+
+The font index> This option is applicable to TrueType collections (C<*.ttc>) and OpenType collections (C<*.otc>).
+=end item
+
+=begin item
 C<:$dict>
 
 Associated font dictionary.

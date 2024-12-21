@@ -104,6 +104,10 @@ parameters:
 
     `win` is used as the default encoding for type-1 fonts. `identity-h` is used for CID fonts (most `TrueType` and `OpenType` fonts.
 
+  * `:$index`
+
+    The font index> This option is applicable to TrueType collections (`*.ttc`) and OpenType collections (`*.otc`).
+
   * `:$dict`
 
     Associated font dictionary.
