@@ -88,12 +88,7 @@ submethod TWEAK(
     $!face.attach-file($_) with $!afm;
 
     if $!embed {
-        if $!face.face-index != 0 {
-            warn "Font collection face index > 0 is not supported for embedded fonts";
-            $!embed = False;
-            $!subset = False;
-        }
-        elsif $!face.font-format ~~ 'TrueType'|'OpenType' {
+        if $!face.font-format ~~ 'TrueType'|'OpenType' {
             given $!font-buf.subbuf(0,4).decode('latin-1') {
                 when 'ttcf' {
                     unless $!subset {
@@ -613,7 +608,7 @@ method !make-subset {
     # need to retain gids for identity based encodings
     my Bool() $retain-gids = $!enc ~~ m/^[identity|utf]/ ;
     my %input = :@glyphs, :$retain-gids;
-    my %face = :buf($!font-buf);
+    my %face = :buf($!font-buf), :index($!face.face-index);
     my $subset = subsetter().new: :%input, :%face;
     $subset.Blob;
 }

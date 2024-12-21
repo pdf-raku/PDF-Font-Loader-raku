@@ -86,15 +86,20 @@ multi method load-font(
 }
 
 # resolve font name via FontConfig
-multi method load-font($class is copy = $?CLASS: Str:D :$family!, PDF::COS::Dict :$dict, :$quiet, |c) is hidden-from-backtrace {
-    my IO:D() $file = $class.find-font(:$family, |c)
-        || do {
+multi method load-font($class is copy = $?CLASS: Str:D :$family!, PDF::COS::Dict :$dict, :$quiet, :all($), :best($), |c) is hidden-from-backtrace {
+    my IO() $file;
+    my $index = 0;
+    with $class.match-font(:$family, |c) {
+        $file  = .file;
+        $index = .index;
+    }
+    else {
         note "unable to locate font. Falling back to mono-spaced font"
             unless $quiet;
-        %?RESOURCES<font/FreeMono.ttf>.IO;
+        $file = %?RESOURCES<font/FreeMono.ttf>.IO;
     }
 
-    my PDF::Font::Loader::FontObj:D $font := $class.load-font: :$file, :$dict, |c;
+    my PDF::Font::Loader::FontObj:D $font := $class.load-font: :$file, :$index, :$dict, |c;
     unless $quiet // !$dict {
         my $name = c<font-name> // $family;
         note "loading font: $name -> $file";
@@ -118,26 +123,17 @@ subset Weight is export(:Weight) where /^[thin|extralight|light|book|regular|med
 subset Stretch of Str is export(:Stretch) where /^[[ultra|extra]?[condensed|expanded]]|normal$/;
 subset Slant   of Str is export(:Slant) where /^[normal|oblique|italic]$/;
 
-method find-font($?: Str :$family is copy,
+method match-font($?: Str :$family is copy,
                  Weight  :$weight is copy = 'medium',
                  Stretch :$stretch = 'normal',
                  Slant   :$slant = 'normal',
-                 UInt    :$limit, # deprecated
-                 UInt    :$best is copy = $limit,
-                 Bool    :$seq, # deprecated
-                 Bool    :$all is copy = $seq,
+                 UInt    :$best is copy,
+                 Bool    :$all is copy,
                  Bool    :$serif, # restrict to serif or sans-serif
                  :cid($), :differences($), :embed($), :enc($), :encoder($),
                  :font-name($), :font-descriptor($), :subset($),
                  *%props,
-                ) is raw is export(:find-font) is hidden-from-backtrace {
-
-    warn ':seq option is deprecated. please use :all, or :$best'
-        with $seq;
-
-    warn ':limit option is deprecated. please use :all, or :$best'
-       with $limit;
-
+                ) is raw is export(:match-font) is hidden-from-backtrace {
    # https://wiki.archlinux.org/title/Font_configuration/Examples#Default_fonts
     with $serif {
         $family = $_ ?? 'serif' !! 'sans-serif';
@@ -158,7 +154,7 @@ method find-font($?: Str :$family is copy,
         $FontConfig := try PDF::COS.required("FontConfig");
         if $FontConfig === Nil {
             warn "FontConfig is required for the find-font method";
-            return Str;
+            return Nil;
         }
     }
     my $patt = $FontConfig.new: |%props;
@@ -166,18 +162,26 @@ method find-font($?: Str :$family is copy,
     $patt.weight = $weight  unless $weight eq 'medium';
     $patt.width  = $stretch unless $stretch eq 'normal';
     $patt.slant  = $slant   unless $slant eq 'normal';
-    $patt.index = 0; # Current limitation in collections #40
 
     if $all || $best {
-        $patt.match-series(:$all, :$best).map: *.file;
+        $patt.match-series(:$all, :$best);
     }
     else {
-        with $patt.match -> $match {
-            $match.file;
-        }
-        else {
-            Str;
-        }
+        $patt.match;
+    }
+}
+
+method find-font(
+    UInt    :$best,
+    Bool    :$all,
+    |c) {
+    with self.match-font(:$all, :$best) {
+        $all || $best
+        ?? .map(*.file)
+        !! .file
+    }
+    else {
+        Str;
     }
 }
 
@@ -261,8 +265,14 @@ Font file to load. Currently supported formats are:
 =item Postscript (C<.pfb>, or C<.pfa>)
 =item CFF (C<.cff>)
 
-TrueType Collections (C<*.ttc>) and OpenType Collections (C<*.otc>) are also accepted,
-but must be subsetted, if they are being embedded.
+TrueType Collections (C<*.ttc>) and OpenType Collections (C<*.otc>) are also accepted.
+
+The C<:index> option can be used to select a font from the collection.
+
+They must be subsetted, if they are being embedded.
+
+=for code :lang<raku>
+my PDF::Content::FontObj $otc-font-italic = load-font :file<t/fonts/EBGaramond12.otc>, :subset, :index(1);
 
 =end item
 

@@ -76,7 +76,15 @@ parameters:
 
       * CFF (`.cff`)
 
-    TrueType Collections (`*.ttc`) and OpenType Collections (`*.otc`) are also accepted, but must be subsetted, if they are being embedded.
+    TrueType Collections (`*.ttc`) and OpenType Collections (`*.otc`) are also accepted.
+
+    The `:index` option can be used to select a font from the collection.
+
+    They must be subsetted, if they are being embedded.
+
+    ```raku
+    my PDF::Content::FontObj $otc-font-italic = load-font :file<t/fonts/EBGaramond12.otc>, :subset, :index(1);
+    ```
 
   * `:$subset`
 
