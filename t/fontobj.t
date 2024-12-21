@@ -6,11 +6,12 @@ use Test;
 
 my PDF::Lite $pdf .= new;
 my PDF::Content::FontObj $vera     = load-font :file<t/fonts/Vera.ttf>, :!subset;
-my PDF::Content::FontObj $otf-font = load-font :file<t/fonts/Cantarell-Oblique.otf>, :enc<win>;
-my PDF::Content::FontObj $cff-font = load-font :file<t/fonts/NimbusRoman-Regular.cff>, :enc<win>;
+my PDF::Content::FontObj $otf-font = load-font :file<t/fonts/Cantarell-Oblique.otf>;
+my PDF::Content::FontObj $cff-font = load-font :file<t/fonts/NimbusRoman-Regular.cff>;
 my PDF::Content::FontObj $cid-keyed-font = load-font :file<t/fonts/NotoSansHK-Regular-subset.otf>, :!subset;
 # True collections don't embed without subsetting
 my PDF::Content::FontObj $ttc-font = load-font :file<t/fonts/Sitka.ttc>, :!embed, :!subset;
+my PDF::Content::FontObj $ttc-font2 = load-font :file<t/fonts/Sitka.ttc>, :!embed, :!subset, :index(1);
 
 is $vera.underline-position, -284;
 is $vera.underline-thickness, 143;
@@ -47,15 +48,20 @@ $pdf.add-page.text: {
 
    .text-position = [10, 600];
    .font = $ttc-font;
-   .say: "Sample TTC (TrueType collection) Font - not embedded";
+   .say: "Sample TTC (TrueType collection) Font[0] - not embedded";
    .say: 'Grumpy wizards make toxic brew for the evil Queen and Jack';
 
    .text-position = [10, 550];
+   .font = $ttc-font2;
+   .say: "Sample TTC (TrueType collection) Font[1] - not embedded";
+   .say: 'Grumpy wizards make toxic brew for the evil Queen and Jack';
+
+   .text-position = [10, 500];
    .font = $cid-keyed-font;
    .say: "sample cid keyed font embedded";
    .say: 'Grumpy wizards make toxic brew for the evil Queen and Jack';
 
-   .text-position = [10, 500];
+   .text-position = [10, 450];
    .font = .core-font: 'Times';
    .say: "Core Font (Times)";
    .say: 'Grumpy wizards make toxic brew for the evil Queen and Jack';

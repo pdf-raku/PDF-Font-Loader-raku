@@ -61,8 +61,8 @@ multi method load-font(
     fontobj-class.new: :$face, :$font-buf, :$enc, :$embed, |c;
 }
 
-multi method load-font($class = $?CLASS: Blob :$font-buf!, Font::FreeType :$ft-lib, IO :$file, |c) is hidden-from-backtrace {
-    my Font::FreeType::Face:D $face = $ft-lib.face($font-buf, :$file);
+multi method load-font($class = $?CLASS: Blob :$font-buf!, UInt:D :$index = 0, Font::FreeType :$ft-lib, IO :$file, |c) is hidden-from-backtrace {
+    my Font::FreeType::Face:D $face = $ft-lib.face($font-buf, :$file, :$index);
     $class.load-font: :$face, :$font-buf, |c;
 }
 
@@ -166,6 +166,7 @@ method find-font($?: Str :$family is copy,
     $patt.weight = $weight  unless $weight eq 'medium';
     $patt.width  = $stretch unless $stretch eq 'normal';
     $patt.slant  = $slant   unless $slant eq 'normal';
+    $patt.index = 0; # Current limitation in collections #40
 
     if $all || $best {
         $patt.match-series(:$all, :$best).map: *.file;

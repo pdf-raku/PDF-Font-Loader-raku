@@ -1,5 +1,5 @@
 use Test;
-plan 21;
+plan 24;
 use PDF::COS::Dict;
 use PDF::Lite;
 use PDF::Font::Loader;
@@ -12,11 +12,12 @@ my PDF::Lite::Page $page = $pdf.page(2);
 $pdf.page(2).gfx.text: -> $gfx {
     my PDF::COS::Dict %fonts = $gfx.resources('Font');
     $gfx.text-position = 10, 400;
-    is-deeply %fonts.keys.sort, ("F1", "F2", "F3", "F4", "F5");
-    for 'F1'..'F5' {
+    my @keys = 'F1'..'F6';
+    is-deeply %fonts.keys.sort, @keys.List;
+    for @keys  {
         my $dict = %fonts{$_};
         my Bool $core-font = PDF::Font::Loader::Dict.is-core-font: :$dict;
-        ok $core-font == ($_ eq 'F5');
+        ok $core-font == ($_ eq 'F6');
         my Bool $embed = !$core-font;
         my PDF::Content::FontObj $font = PDF::Font::Loader.load-font: :$dict, :$core-font, :$embed, :quiet;
         ok $font.is-core-font == $core-font;

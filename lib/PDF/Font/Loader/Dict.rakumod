@@ -12,7 +12,7 @@ class PDF::Font::Loader::Dict {
             ?? $dict<DescendantFonts>[0]
             !! $dict;
     }
-    sub font-descriptor(FontDict $dict is copy) is rw {
+    sub font-descriptor(FontDict $dict) is rw {
         base-font($dict)<FontDescriptor>;
     }
 

@@ -88,14 +88,19 @@ submethod TWEAK(
     $!face.attach-file($_) with $!afm;
 
     if $!embed {
-        if $!face.font-format ~~ 'TrueType'|'OpenType' {
+        if $!face.face-index != 0 {
+            warn "Font collection face index > 0 is not supported for embedded fonts";
+            $!embed = False;
+            $!subset = False;
+        }
+        elsif $!face.font-format ~~ 'TrueType'|'OpenType' {
             given $!font-buf.subbuf(0,4).decode('latin-1') {
                 when 'ttcf' {
                     unless $!subset {
                         # Its a TrueType collection which is not directly supported as a format,
-                        # however, HarfBuzz::Subset will convert it for us.
+                        # however, HarfBuzz::Subset will extract it for us.
                         if (try subsetter()) === Nil {
-                            warn "The HarfBuzz::Subset module is required to embed TrueType Collection font $!font-name";
+                            warn "The HarfBuzz::Subset module is required to embed {$!face.font-format} Collection font $!font-name";
                             $!embed = False;
                         }
                         else {
@@ -106,6 +111,7 @@ submethod TWEAK(
                 when 'wOFF' {
                     warn "unable to embed wOFF font $!font-name";
                     $!embed = False;
+                    $!subset = False;
                 }
             }
         }

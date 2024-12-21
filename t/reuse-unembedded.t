@@ -29,17 +29,17 @@ $pdf.page(2).gfx.text: -> $gfx {
     }
     subtest 'unembedded core-font' => {
         plan 8;
-        my PDF::Content::FontObj $f5 = PDF::Font::Loader.load-font: :dict(%fonts<F5>), :quiet;
-        is $f5.font-name, 'Times-Roman', 'font name';
-        ok $f5.is-core-font, "is core-font";
-        is $f5.enc, 'win', 'enc';
-        nok $f5.is-embedded, 'is embedded';
-        nok $f5.is-subset, "isn't subset";
-        ok $f5.encoder.core-metrics.defined, 'has core metrics';
-        is $f5.encoder.core-metrics.stringwidth('Raku'), 2111, 'sample core metrics';
+        my PDF::Content::FontObj $f6 = PDF::Font::Loader.load-font: :dict(%fonts<F6>), :quiet;
+        is $f6.font-name, 'Times-Roman', 'font name';
+        ok $f6.is-core-font, "is core-font";
+        is $f6.enc, 'win', 'enc';
+        nok $f6.is-embedded, 'is embedded';
+        nok $f6.is-subset, "isn't subset";
+        ok $f6.encoder.core-metrics.defined, 'has core metrics';
+        is $f6.encoder.core-metrics.stringwidth('Raku'), 2111, 'sample core metrics';
         lives-ok {
-            $gfx.font = $f5;
-            $gfx.say: "reused " ~ $f5.font-name;
+            $gfx.font = $f6;
+            $gfx.say: "reused " ~ $f6.font-name;
             $gfx.say: "abcxyzABCXYZ";
         }, 'reuse core font';
     }
