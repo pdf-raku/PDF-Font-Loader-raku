@@ -106,7 +106,7 @@ parameters:
 
   * `:$index`
 
-    The font index> This option is applicable to TrueType collections (`*.ttc`) and OpenType collections (`*.otc`).
+    The font index. This option is applicable to TrueType collections (`*.ttc`) and OpenType collections (`*.otc`).
 
   * `:$dict`
 
@@ -187,11 +187,11 @@ say $file;  # /usr/share/fonts/truetype/dejavu/DejaVuSansCondensed-BoldOblique.t
 my $font = PDF::Font::Loader.load-font: :$file;
 ```
 
-The `:all` option returns a sequence of all fonts, ordered by best to worst matching. This method may be useful, if you wish to apply your own selection critera.
+The `:all` option returns a sequence of all fonts, ordered by best to worst matching. This method may be useful, if you wish to apply your own selection criteria.
 
 The `:best($n)` is similar to `:all`, but returns at most the `$n` best matching fonts.
 
-Any additional options are treated as a [FontConfig](https://pdf-raku.github.io/FontConfig-raku/FontConfig) pattern attributes. For example `:spacing<mono>` will select monospace fonts.
+Any additional options are treated as a [FontConfig](https://pdf-raku.github.io/FontConfig-raku/FontConfig) pattern attributes. For example `:spacing<mono>` will select mono-space fonts.
 
 ```raku
 use PDF::Font::Loader;

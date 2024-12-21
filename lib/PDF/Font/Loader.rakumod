@@ -302,7 +302,7 @@ Selects the encoding mode: common modes are `win`, `mac` and `identity-h`.
 =begin item
 C<:$index>
 
-The font index> This option is applicable to TrueType collections (C<*.ttc>) and OpenType collections (C<*.otc>).
+The font index. This option is applicable to TrueType collections (C<*.ttc>) and OpenType collections (C<*.otc>).
 =end item
 
 =begin item
@@ -411,11 +411,11 @@ say $file;  # /usr/share/fonts/truetype/dejavu/DejaVuSansCondensed-BoldOblique.t
 my $font = PDF::Font::Loader.load-font: :$file;
 =end code
 
-The `:all` option returns a sequence of all fonts, ordered by best to worst matching. This method may be useful, if you wish to apply your own selection critera.
+The `:all` option returns a sequence of all fonts, ordered by best to worst matching. This method may be useful, if you wish to apply your own selection criteria.
 
 The `:best($n)` is similar to `:all`, but returns at most the `$n` best matching fonts.
 
-Any additional options are treated as a L<FontConfig> pattern attributes. For example `:spacing<mono>` will select monospace fonts.
+Any additional options are treated as a L<FontConfig> pattern attributes. For example `:spacing<mono>` will select mono-space fonts.
 
 =begin code :lang<raku>
 use PDF::Font::Loader;
