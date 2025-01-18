@@ -77,7 +77,7 @@ multi method load-font(
     :core-font($)! where .so,
     Str:D :$family!,
     Str:D :$enc = 'win',
-    :dict($), :encoder($),
+    :dict($),
     |c
 ) {
     $class = PDF::Content::Font::CoreFont
