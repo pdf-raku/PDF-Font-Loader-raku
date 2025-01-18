@@ -94,7 +94,7 @@ multi method load-font($class is copy = $?CLASS: Str:D :$family!, PDF::COS::Dict
         $index = .index;
     }
     else {
-        note "unable to locate font. Falling back to mono-spaced font"
+        note "Unable to locate font. Falling back to mono-spaced font"
             unless $quiet;
         $file = %?RESOURCES<font/FreeMono.ttf>.IO;
     }
@@ -172,16 +172,20 @@ method match-font($?: Str :$family is copy,
 }
 
 method find-font(
+     $class = $?CLASS:
     UInt    :$best,
     Bool    :$all,
-    |c) {
-    with self.match-font(:$all, :$best) {
+    Bool    :$quiet,
+    |c) is export(:find-font) {
+    with $class.match-font(:$all, :$best, |c) {
         $all || $best
         ?? .map(*.file)
         !! .file
     }
     else {
-        Str;
+        note "Unable to locate font. Falling back to mono-spaced font"
+            unless $quiet;
+        %?RESOURCES<font/FreeMono.ttf>.IO.path;
     }
 }
 
