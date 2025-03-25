@@ -1,7 +1,7 @@
 #| /Identity-H or /Identity-V encoded fonts
-use PDF::Font::Loader::Enc;
-class PDF::Font::Loader::Enc::Identity16
-    is PDF::Font::Loader::Enc {
+class PDF::Font::Loader::Enc::Identity16 {
+    use PDF::Font::Loader::Enc;
+    also is PDF::Font::Loader::Enc;
 
     use PDF::Content::Font::Encoder;
     also does PDF::Content::Font::Encoder;
@@ -22,11 +22,10 @@ class PDF::Font::Loader::Enc::Identity16
     submethod TWEAK {
         $!raw = $!face.raw;
         if self.cid-to-gid-map -> $cid-gid {
-            my $gid-uni:= $!face.index-to-unicode;
+            my $gid-uni := $!face.index-to-unicode;
             for $cid-gid.kv -> $cid, $gid {
                 if $gid {
-                    my $cp := $gid-uni[$gid];
-                    if $cp {
+                    if $gid-uni[$gid] -> $cp {
                         @!to-unicode[$cid] = $cp
                     }
                     else {

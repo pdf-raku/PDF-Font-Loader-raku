@@ -17,7 +17,7 @@ my Font::FreeType $freetype .= new;
 my $face = $freetype.face('t/fonts/DejaVuSans.ttf');
 
 sub utf8-checks($encoder) {
-    plan 14;
+    plan 15;
     isa-ok $encoder, PDF::Font::Loader::Enc::Unicode;
     ok $encoder.is-wide;
 
@@ -26,6 +26,8 @@ sub utf8-checks($encoder) {
     is @codespaces[1].bytes, 2;
     is @codespaces[2].bytes, 3;
     is @codespaces[3].bytes, 4;
+    my @range0 = @codespaces[0].iterate-range;
+    is-deeply @range0, [0..127], 'single byte code space';
     enum ( :H-cid(43), :i-cid(76), :heart-cid(3901) );
 
     is-deeply $encoder.encode("Hi", :cids), $(+H-cid, +i-cid), "cid encoding sanity";

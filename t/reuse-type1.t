@@ -1,5 +1,5 @@
 use Test;
-plan 24;
+plan 30;
 use PDF::COS::Dict;
 use PDF::Lite;
 use PDF::Font::Loader;
@@ -18,7 +18,8 @@ $pdf.page(2).gfx.text: -> $gfx {
         my $dict = %fonts{$_};
         my Bool $core-font = PDF::Font::Loader::Dict.is-core-font: :$dict;
         ok $core-font == ($_ eq 'F6');
-        my Bool $embed = !$core-font;
+        my Bool $embed = PDF::Font::Loader::Dict.is-embedded: :$dict;
+        ok $embed == ($_ !~~ 'F3'|'F4'|'F6'),  $_ ~ ' is embedded';
         my PDF::Content::FontObj $font = PDF::Font::Loader.load-font: :$dict, :$core-font, :$embed, :quiet;
         ok $font.is-core-font == $core-font;
         if $_ eq 'F1' {

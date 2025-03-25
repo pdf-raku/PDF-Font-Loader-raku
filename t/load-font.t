@@ -1,6 +1,6 @@
 use v6;
 use Test;
-plan 26;
+plan 27;
 use PDF::Grammar::Test :&is-json-equiv;
 use PDF::Font::Loader :Weight, :Stretch, :Slant;
 use PDF::Content::FontObj;
@@ -27,6 +27,7 @@ is-json-equiv $times.shape("flAVX" ), (["\x[2]A", <128+0i>, "VX"], 2594.0), 'typ
 is-json-equiv $times.shape("flAVX", :!kern ), (["\x[2]AVX"], 2722.0), 'type 1 shaping';
 
 is $vera.stringwidth("RVX", :!kern), 2064, 'stringwidth :!kern';
+is $vera.stringwidth("RVX", 10, :!kern), 20.64, 'stringwidth :!kern @point-size';
 is $vera.stringwidth("RVX", :kern), 2064 - 55, 'stringwidth :kern';
 is-deeply $vera.kern("RVX" ), (['R', -55, 'VX'], 2064 - 55), '.kern(...)';
 is-deeply $vera.kern('ABCD' ), (['AB', -18, 'CD'], 2820), '.kern(...)';

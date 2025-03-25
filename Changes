@@ -1,7 +1,9 @@
 {{$NEXT}}
+  - Rename Dict is-embedded-font() -> is-embedded() for consistency
+    with equivalent FontObj method.
 
 0.8.13  2025-01-19T09:16:13+13:00
-  - Provide fix find-font() method and provide it as an export sub #42
+  - Fix find-font() method and provide it as an export sub #42
 
 0.8.12  2024-12-22T07:40:11+13:00
   - Support indexing, to select individual fonts from FreeType

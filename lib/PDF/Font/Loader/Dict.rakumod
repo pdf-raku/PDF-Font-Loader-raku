@@ -42,11 +42,12 @@ class PDF::Font::Loader::Dict {
         && PDF::Content::Font::CoreFont.core-font-name($dict<BaseFont> // 'courier').defined;
     }
 
-    method is-embedded-font( FontDict :$dict! ) {
-        do with font-descriptor($dict) {
+    method is-embedded( FontDict :$dict! ) {
+        so do with font-descriptor($dict) {
             (.<FontFile>:exists) || (.<FontFile2>:exists) || (.<FontFile3>:exists)
         }
     }
+    method is-embedded-font(|c) is DEPRECATED<is-embedded> { $.is-embedded: c } 
 
     # Decode widths from a /FontDescriptor /W array
     sub decode-widths($W) {
