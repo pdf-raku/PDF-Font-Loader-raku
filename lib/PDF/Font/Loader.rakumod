@@ -300,19 +300,19 @@ Selects the encoding mode: common modes are `win`, `mac` and `identity-h`.
 =item `win` Windows platform single byte encoding
 =item `identity-h` a two byte encoding mode
 
-`win` is used as the default encoding for type-1 fonts. `identity-h` is used for CID fonts (most `TrueType` and `OpenType` fonts.
+`win` is used as the default encoding for type-1 fonts. `identity-h` is used for CID fonts (most `TrueType` and `OpenType` fonts).
 =end item
 
 =begin item
-C<:$index>
+UInt C<:$index>
 
-The font index. This option is applicable to TrueType collections (C<*.ttc>) and OpenType collections (C<*.otc>).
+The index of a font in a font-collection. This option is applicable to TrueType collections (C<*.ttc>) and OpenType collections (C<*.otc>).
 =end item
 
 =begin item
 C<:$dict>
 
-Associated font dictionary.
+Associated PDF font dictionary.
 =end item
 
 =begin item
@@ -323,7 +323,7 @@ Prefer to load simple Type1 objects as L<PDF::Content::Font::CoreFont>, rather t
 =end item
 
 =for code :lang<raku>
-load-font(Str :$family, Str :$weight, Str :$stretch, Str :$slant, Bool :$core-font, Bool :$subset, Str :$enc, Str :$lang);
+multi method load-font(Str :$family, Str :$weight, Str :$stretch, Str :$slant, Bool :$core-font, Bool :$subset, Str :$enc, Str :$lang);
 
  my $vera = PDF::Font::Loader.load-font: :family<vera>;
  my $deja = PDF::Font::Loader.load-font: :family<Deja>, :weight<bold>, :stretch<condensed> :slant<italic>);
@@ -444,7 +444,7 @@ note "best font: " ~ $best-font;
 =for code :lang<raku>
 multi method can-subset returns Bool;
 
-=para Returns C<True> if L<PDF::Font::Loader> is capable of font subsetting; I.E. the optional L<HarfBuzz::Subset> module has been installed.
+=para Returns C<True> if L<PDF::Font::Loader> has general font subsetting capability; I.E. the optional L<HarfBuzz::Subset> module has been installed.
 
 =for code :lang<raku>
 multi method can-subset(IO() $font-file) returns Bool;

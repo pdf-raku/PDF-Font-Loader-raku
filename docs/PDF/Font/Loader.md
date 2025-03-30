@@ -102,22 +102,22 @@ parameters:
 
       * `identity-h` a two byte encoding mode
 
-    `win` is used as the default encoding for type-1 fonts. `identity-h` is used for CID fonts (most `TrueType` and `OpenType` fonts.
+    `win` is used as the default encoding for type-1 fonts. `identity-h` is used for CID fonts (most `TrueType` and `OpenType` fonts).
 
-  * `:$index`
+  * UInt `:$index`
 
-    The font index. This option is applicable to TrueType collections (`*.ttc`) and OpenType collections (`*.otc`).
+    The index of a font in a font-collection. This option is applicable to TrueType collections (`*.ttc`) and OpenType collections (`*.otc`).
 
   * `:$dict`
 
-    Associated font dictionary.
+    Associated PDF font dictionary.
 
   * `:$core-font`
 
     Prefer to load simple Type1 objects as [PDF::Content::Font::CoreFont](https://pdf-raku.github.io/PDF-Content-raku/PDF/Content/Font/CoreFont), rather than [PDF::Font::Loader::FontObj](https://pdf-raku.github.io/PDF-Font-Loader-raku/PDF/Font/Loader/FontObj) (both perform the [PDF::Content::FontObj](https://pdf-raku.github.io/PDF-Content-raku/PDF/Content/FontObj) role).
 
 ```raku
-load-font(Str :$family, Str :$weight, Str :$stretch, Str :$slant, Bool :$core-font, Bool :$subset, Str :$enc, Str :$lang);
+multi method load-font(Str :$family, Str :$weight, Str :$stretch, Str :$slant, Bool :$core-font, Bool :$subset, Str :$enc, Str :$lang);
 ```
 
     my $vera = PDF::Font::Loader.load-font: :family<vera>;
@@ -217,7 +217,7 @@ note "best font: " ~ $best-font;
 multi method can-subset returns Bool;
 ```
 
-Returns `True` if [PDF::Font::Loader](https://pdf-raku.github.io/PDF-Font-Loader-raku/PDF/Font/Loader) is capable of font subsetting; I.E. the optional [HarfBuzz::Subset](https://harfbuzz-raku.github.io/HarfBuzz-Subset-raku/HarfBuzz/Subset) module has been installed.
+Returns `True` if [PDF::Font::Loader](https://pdf-raku.github.io/PDF-Font-Loader-raku/PDF/Font/Loader) has general font subsetting capability; I.E. the optional [HarfBuzz::Subset](https://harfbuzz-raku.github.io/HarfBuzz-Subset-raku/HarfBuzz/Subset) module has been installed.
 
 ```raku
 multi method can-subset(IO() $font-file) returns Bool;

@@ -64,3 +64,5 @@ The `find-font` method requires installation of the [FontConfig](https://pdf-rak
 
 [PDF::Font::Loader::HarfBuzz](https://pdf-raku.github.io/PDF-Font-Loader-HarfBuzz-raku) - is an optional module, but needs to be installed for font-shaping.
 
+[HarfBuzz::Subset](https://harfbuzz-raku.github.io/HarfBuzz-Subset-raku/) - an optional module, but needs to be installed for font-subsetting.
+
