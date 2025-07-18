@@ -53,7 +53,7 @@ subtest 'integration-tests', {
         .text-position = 10, 500;
         .say: "Hi♥";
     }
-    $pdf.id = $*PROGRAM-NAME.fmt('%-16.16s');
+    $pdf.id = $*PROGRAM.basename.fmt('%-16.16s');
     $pdf.save-as: "t/cmap-utf32.pdf";
 }
 
