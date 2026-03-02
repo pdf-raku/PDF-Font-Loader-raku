@@ -34,7 +34,7 @@ my class CodeSpace is export(:CodeSpace) {
             die "Bad CMAP code range {@!from.raku} ... {@!to.raku}";
         }
     }
-    method iterate-range {
+    method iterate-range(::?CLASS:D $codespace:) {
         # Iterate a range such as <AaBbCc> <XxYyZz>.  Each of the hex
         # digits are individually constrained to counting in the ranges
         # Aa..Xx Bb..Yy Cc..Zz (inclusive)
@@ -72,7 +72,7 @@ my class CodeSpace is export(:CodeSpace) {
             }
             method iterator { self }
         }
-        Iteration.new: :codespace(self);
+        Iteration.new: :$codespace;
     }
     sub to-hex(@bytes) {
         '<' ~ @bytes.map({.fmt("%02X")}).join ~ '>';
@@ -318,12 +318,12 @@ method add-encoding($ord) {
 }
 method !skip-cid-block($cid is rw) {
     # we can't use a wide encoding who's leading byte sequence conflicts
-    # with shorter encodings. Only possible when reusing a CMap with
-    # variable encoding.
+    # with shorter encoding ranges. E.g. can use AABB, if AA is within a range
+    # Only possible when reusing a CMap with variable encoding.
     my $cid-block = $cid div 256;
     my Bool $skip := False;
     if $cid-block {
-        with @!codespaces.first({.ACCEPTS($cid-block) && .bytes < $.enc-width($cid)}) {
+        with @!codespaces.first({.bytes < $.enc-width($cid) && .ACCEPTS($cid-block)}) {
             $skip := True;
             $cid-block = .to + 1;
         }

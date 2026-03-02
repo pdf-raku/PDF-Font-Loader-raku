@@ -1,5 +1,3 @@
-use v6;
-
 unit class PDF::Font::Loader:ver<0.8.13>;
 
 use Font::FreeType;
@@ -86,17 +84,14 @@ multi method load-font(
 }
 
 # resolve font name via FontConfig
-multi method load-font($class is copy = $?CLASS: Str:D :$family!, PDF::COS::Dict :$dict, :$quiet, :all($), :best($), |c) is hidden-from-backtrace {
-    my IO() $file;
-    my $index = 0;
-    with $class.match-font(:$family, |c) {
-        $file  = .file;
-        $index = .index;
+multi method load-font($class = $?CLASS: Str:D :$family!, PDF::COS::Dict :$dict, :$quiet, :all($), :best($), |c) is hidden-from-backtrace {
+    my :(IO() $file, UInt $index = 0) := do with $class.match-font(:$family, |c) {
+        .file, .index;
     }
     else {
         note "Unable to locate font. Falling back to mono-spaced font"
             unless $quiet;
-        $file = %?RESOURCES<font/FreeMono.ttf>.IO;
+        %?RESOURCES<font/FreeMono.ttf>;
     }
 
     my PDF::Font::Loader::FontObj:D $font := $class.load-font: :$file, :$index, :$dict, |c;
@@ -136,7 +131,14 @@ method match-font($?: Str :$family is copy,
                 ) is raw is export(:match-font) is hidden-from-backtrace {
    # https://wiki.archlinux.org/title/Font_configuration/Examples#Default_fonts
     with $serif {
-        $family = $_ ?? 'serif' !! 'sans-serif';
+        if .so {
+            $family = 'serif'
+                if !$family || $family !~~ /:i serif|roman|book /;
+        }
+        else {
+            $family = 'sans-serif'
+                if !$family || $family !~~ /:i sans|gothic|swiss /;
+        }
     }
 
     with $weight {
