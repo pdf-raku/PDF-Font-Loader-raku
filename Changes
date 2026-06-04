@@ -1,6 +1,13 @@
 {{$NEXT}}
+
+0.8.14  2026-06-05T02:22:06+12:00
   - Rename Dict is-embedded-font() -> is-embedded() for consistency
     with equivalent FontObj method.
+  - Fix construction of CID fonts; /Encoding needs to set early as
+    it's a required field
+  - Fine tune detection of serif and sans-serif fonts. Font families
+    matching 'serif'|'roman'|'book' are now assumed to be serif, and
+    'sans|gothic|swiss' to be sans-serif.
 
 0.8.13  2025-01-19T09:16:13+13:00
   - Fix find-font() method and provide it as an export sub #42
