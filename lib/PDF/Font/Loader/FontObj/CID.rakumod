@@ -115,6 +115,7 @@ method make-dict {
     my $BaseFont = /($.font-name);
     my $Type = /<Font>;
     my $FontDescriptor = self.font-descriptor;
+    my $Encoding = / self.encoding;
     my PDF::COS::Dict() $cid-font = {
         :$Type,
         :Subtype(/(self!cid-font-type-entry)),
@@ -130,11 +131,8 @@ method make-dict {
         :Subtype( /<Type0> ),
         :$BaseFont,
         :DescendantFonts[ $cid-font ],
+        :$Encoding,
     );
-    given self.encoding {
-        $dict<Encoding> = /($_)
-            unless $_ ~~ 'CMap'|'StandardEncoding'; # implied anyway;
-    }
     $dict;
 }
 
