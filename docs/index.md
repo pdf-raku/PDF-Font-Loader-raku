@@ -60,9 +60,10 @@ PDF::Font::Loader depends on:
 
 [Font::FreeType](https://pdf-raku.github.io/Font-FreeType-raku/) Raku module which further depends on the [freetype](https://www.freetype.org/download.html) library, so you must install that prior to installing this module.
 
-The `find-font` method requires installation of the [FontConfig](https://pdf-raku.github.io/FontConfig/) library.
+[FontConfig](https://pdf-raku.github.io/FontConfig/). For font discovery via the `find-font()` method. This module, and the `find-font()` method are not available on Windows platforms.
 
 [PDF::Font::Loader::HarfBuzz](https://pdf-raku.github.io/PDF-Font-Loader-HarfBuzz-raku) - is an optional module, but needs to be installed for font-shaping.
+
 
 [HarfBuzz::Subset](https://harfbuzz-raku.github.io/HarfBuzz-Subset-raku/) - an optional module, but needs to be installed for font-subsetting.
 

@@ -27,6 +27,7 @@ jobs:
         run: |
           brew update
           brew install openssl
+          brew reinstall fontconfig
       - name: Install Dependencies
         run: |
           # install and test if need be (includes [test-depends])

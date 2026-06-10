@@ -25,7 +25,7 @@ jobs:
           raku-version: ${{ matrix.raku-version }}
       - name: Linux specific setup
         run: |
-          sudo apt-get install -y libharfbuzz-dev
+          sudo apt-get install -y libharfbuzz-dev libfontconfig1-dev
       - name: Install Dependencies
         run: |
           # install and test if need be (includes [test-depends])
