@@ -93,7 +93,7 @@ submethod TWEAK(
                 when 'ttcf' {
                     unless $!subset {
                         # Its a TrueType collection which is not directly supported as a format,
-                        # however, HarfBuzz::Subset will extract it for us.
+                        # however, HarfBuzz::Subset will extract a font for us.
                         if (try subsetter()) === Nil {
                             warn "The HarfBuzz::Subset module is required to embed {$!face.font-format} Collection font $!font-name";
                             $!embed = False;
@@ -414,7 +414,7 @@ method make-dict {
 
     with self.font-descriptor {
         .<Flags> +|= Nonsymbolic;
-        $dict.self<FontDescriptor> = $_;
+        $dict<FontDescriptor> = $_;
     }
 
     $dict;
@@ -453,12 +453,10 @@ method kern(Str $text) {
         my $scale = 1000 / $!face.units-per-EM;
 
         for $text.ords -> $char-code {
-            my FT_UInt $gid = $face-struct.FT_Get_Char_Index( $char-code );
-            if $gid {
+            if $face-struct.FT_Get_Char_Index( $char-code ) -> FT_UInt $gid {
                 if $prev-gid {
                     ft-try({ $face-struct.FT_Get_Kerning($prev-gid, $gid, FT_KERNING_UNSCALED, $kerning); });
-                    my $dx := ($kerning.x * $scale).round;
-                    if $dx {
+                    if  ($kerning.x * $scale).round -> $dx {
                         @chunks.push: $str;
                         @chunks.push: $dx;
                         $kernwidth += $dx;
@@ -581,7 +579,7 @@ multi method shape(Str $text is copy, Bool :$kern = $!face.has-kerning) {
                         if $dx || $dy {
                             @shaped.push: $!encoder.encode-cids: @cids;
                             @cids = ();
-                            @shaped.push: Complex.new(-$dx, $dy);
+                            @shaped.push: $dy ?? Complex.new(-$dx, $dy) !! -$dx;
                             $width += $dx;
                         }
                     }
