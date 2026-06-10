@@ -1,4 +1,6 @@
 {{$NEXT}}
+  - Reinstate FontConfig as a required dependency; it's now optional on
+    Windows platforms only
 
 0.8.14  2026-06-05T02:22:06+12:00
   - Rename Dict is-embedded-font() -> is-embedded() for consistency
