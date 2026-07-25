@@ -22,6 +22,7 @@ is-deeply @shape.tail, Glyph.new(:name<o>, :code-point(111), :cid(82), :gid(82),
 
 my PDF::Lite $pdf .= open: 't/pdf/type1-subset.pdf';
 my $gfx =  $pdf.page(1).gfx;
+
 my PDF::Content::Font:D $dict = $gfx.resources('Font')<F1>;
 
 my PDF::Font::Loader::FontObj:D $font .= load-font: :$dict;
