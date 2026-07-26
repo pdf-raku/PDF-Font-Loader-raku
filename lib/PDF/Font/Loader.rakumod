@@ -91,7 +91,7 @@ multi method load-font($class = $?CLASS: Str:D :$family!, PDF::COS::Dict :$dict,
     else {
         note "Unable to locate font. Falling back to mono-spaced font"
             unless $quiet;
-        %?RESOURCES<font/FreeMono.ttf>;
+        (%?RESOURCES<font/FreeMono.ttf>, 0);
     }
 
     my PDF::Font::Loader::FontObj:D $font := $class.load-font: :$file, :$index, :$dict, |c;
