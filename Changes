@@ -1,4 +1,6 @@
 {{$NEXT}}
+
+0.8.15  2026-07-27T07:08:30+12:00
   - Reinstate FontConfig as a required dependency; it's now optional on
     Windows platforms only
 

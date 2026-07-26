@@ -1,4 +1,4 @@
-unit class PDF::Font::Loader:ver<0.8.14>;
+unit class PDF::Font::Loader:ver<0.8.15>;
 
 use Font::FreeType;
 use Font::FreeType::Face;
